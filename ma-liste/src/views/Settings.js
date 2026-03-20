@@ -1,8 +1,7 @@
 function Settings() {
     return (
-        <div className="settings"> 
-            <h1>Settings</h1>
-        </div>
+        <section className="settings">
+        </section>
     )
 }
 

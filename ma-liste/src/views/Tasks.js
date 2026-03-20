@@ -1,8 +1,7 @@
 function Tasks() {
     return (
-        <div className="tasks">
-            <h1>Tasks</h1>
-        </div>
+        <section className="tasks">
+        </section>
     )
 }
 export default Tasks;

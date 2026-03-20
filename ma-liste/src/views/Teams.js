@@ -1,8 +1,7 @@
-function Teams() {  
+function Teams() {
     return (
-        <div className="teams">
-            <h1>Teams</h1>
-        </div>
+        <section className="teams">
+        </section>
     )
 }
 export default Teams;

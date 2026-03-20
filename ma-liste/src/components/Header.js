@@ -1,13 +1,23 @@
 import React from 'react';
-import tasks from '../assets/tasks.svg';
+import { useLocation } from 'react-router-dom';
+import '../styles/Header.css';
 
 function Header() {
+  const location = useLocation();
+
+  const titles = {
+    '/': 'Liste de tâches',
+    '/agenda': 'Agenda',
+    '/teams': 'Groupes',
+    '/dashboard': 'Tableau de bord',
+    '/settings': 'Réglages'
+  };
+
+  const currentTitle = titles[location.pathname] || 'Ma Liste';
+
   return (
     <header className="App-header">
-      <img src={tasks} className="App-logo" alt="logo" />
-      <p>
-        Gestionnaire de tâches
-      </p>
+        <h1>{currentTitle}</h1>
     </header>
   );
 }
