@@ -1,6 +1,6 @@
 import './styles/App.css';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Nav from './components/Nav';
+import Footer from './components/Footer';
 import Header from './components/Header';
 import Tasks from './views/Tasks/Tasks';
 import Agenda from './views/Agenda';
@@ -13,7 +13,7 @@ function App() {
     <BrowserRouter>
       <main className="App">
         <Header />
-        <Nav />
+        <Footer />
         <Routes>
           <Route path="/" element={<Tasks />} />
           <Route path="/agenda" element={<Agenda />} />

@@ -1,6 +1,6 @@
 @import './Variables.css';
 
-.nav {
+.footer {
   position: fixed;
   bottom: 30px;
   left: 30px;
@@ -12,7 +12,7 @@
   box-sizing: border-box;
 }
 
-.nav ul {
+.footer ul {
   display: flex;
   margin: 0;
   padding: 0;
@@ -21,20 +21,20 @@
   list-style-type: none;
 }
 
-.nav-logo {
+.footer-logo {
   height: 80px;
 }
 
-.nav a {
+.footer a {
   text-decoration: none;
 }
 
-.nav a.active .nav-figure {
+.footer a.active .footer-figure {
   border-bottom: 3px solid var(--color-text-nav);
   padding-bottom: 5px;
 }
 
-.nav-figure {
+.footer-figure {
   margin: 0; 
   display: flex;
   flex-direction: column;
@@ -43,7 +43,7 @@
   
 }
 
-.nav-text {
+.footer-text {
   font-size: 25px;
   color: var(--color-text-nav);
   font-weight: 500;
@@ -52,7 +52,7 @@
 
 /* Mobile responsive */
 @media (max-width: 768px) {
-  .nav {
+  .footer {
     bottom: 15px;
     left: 15px;
     right: 15px;
@@ -60,17 +60,17 @@
     border-radius: 60px;
   }
 
-  .nav-logo {
+  .footer-logo {
     height: 50px;
   }
 
-  .nav-text {
+  .footer-text {
     font-size: 12px;
   }
 }
 
 @media (max-width: 480px) {
-  .nav {
+  .footer {
     bottom: 10px;
     left: 10px;
     right: 10px;
@@ -78,11 +78,11 @@
     border-radius: 50px;
   }
 
-  .nav-logo {
+  .footer-logo {
     height: 40px;
   }
 
-  .nav-text {
+  .footer-text {
     font-size: 10px;
   }
 }
