@@ -1,0 +1,41 @@
+.nav {
+  position: fixed;
+  bottom: 30px;
+  left: 30px;
+  right: 30px;
+  background-color: #ffb3d9;
+  border-radius: 100px;
+  padding: 20px 0;
+  z-index: 1000;
+  box-sizing: border-box;
+}
+
+.nav ul {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  justify-content: space-evenly;
+  align-items: center;
+  list-style-type: none;
+}
+
+.nav-logo {
+  height: 80px;
+}
+
+.nav a {
+  text-decoration: none;
+}
+
+.nav-figure {
+  margin: 0; 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px; 
+}
+
+.nav-text {
+  font-size: 25px;
+  color: #555;
+}
