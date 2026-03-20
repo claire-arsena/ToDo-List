@@ -1,0 +1,12 @@
+.App-header {
+  background-color: #ffeff3;
+  display: flex;
+  justify-content: left;
+  font-size: 30px;
+  color: rgb(100, 100, 100);
+}
+
+.App-header h1 {
+  height: 80px;
+  margin-left: 50px;
+}
