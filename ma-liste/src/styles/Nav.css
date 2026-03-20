@@ -27,6 +27,11 @@
   text-decoration: none;
 }
 
+.nav a.active .nav-figure {
+  border-bottom: 3px solid #555;
+  padding-bottom: 5px;
+}
+
 .nav-figure {
   margin: 0; 
   display: flex;
