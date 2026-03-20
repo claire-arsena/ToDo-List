@@ -28,13 +28,13 @@ function Nav() {
                 <Link to="/" className={location.pathname === '/' ? 'active' : ''}>
                     <figure className="nav-figure">
                         <img src={tasks} className="nav-logo" alt="Icône tasks" />
-                        <figcaption className="nav-text">Liste de tâches</figcaption>
+                        <figcaption className="nav-text">Tâches</figcaption>
                     </figure>
                 </Link>
                 <Link to="/dashboard" className={location.pathname === '/dashboard' ? 'active' : ''}>
                     <figure className="nav-figure">
                         <img src={dashbaord} className="nav-logo" alt="Icône dashboard" />
-                        <figcaption className="nav-text">Tableau de bord</figcaption>
+                        <figcaption className="nav-text">Dashboard</figcaption>
                     </figure>
                 </Link>
                 <Link to="/settings" className={location.pathname === '/settings' ? 'active' : ''}>

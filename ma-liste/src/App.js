@@ -2,7 +2,7 @@ import './styles/App.css';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Nav from './components/Nav';
 import Header from './components/Header';
-import Tasks from './views/Tasks';
+import Tasks from './views/Tasks/Tasks';
 import Agenda from './views/Agenda';
 import Teams from './views/Teams';
 import Dashboard from './views/Dashboard';

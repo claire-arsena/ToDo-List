@@ -1,7 +1,9 @@
+@import './Variables.css';
+
 body {
   margin: 0;
   padding: 0;
-  background-color: #efefef;
+  background-color: var(--color-bg-gray);
 }
 
 .App {
