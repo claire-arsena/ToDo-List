@@ -1,10 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
-import tasks from '../assets/tasks.svg';
-import dashbaord from '../assets/dashboard.svg';
-import agenda from '../assets/agenda.svg';
-import settings from '../assets/settings.svg';
-import teams from '../assets/teams.svg';
-import '../styles/Footer.css'; 
+import tasks from '../../assets/tasks.svg';
+import dashbaord from '../../assets/dashboard.svg';
+import agenda from '../../assets/agenda.svg';
+import settings from '../../assets/settings.svg';
+import teams from '../../assets/teams.svg';
+import './Footer.css'; 
 
 
 function Footer() {

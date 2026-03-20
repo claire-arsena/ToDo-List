@@ -1,4 +1,4 @@
-@import './Variables.css';
+@import '../../styles/Variables.css';
 
 .footer {
   position: fixed;

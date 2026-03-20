@@ -1,7 +1,7 @@
 import './styles/App.css';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Footer from './components/Footer';
-import Header from './components/Header';
+import Footer from './components/Footer/Footer';
+import Header from './components/Header/Header';
 import Tasks from './views/Tasks/Tasks';
 import Agenda from './views/Agenda';
 import Teams from './views/Teams';
