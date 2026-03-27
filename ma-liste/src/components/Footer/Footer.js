@@ -1,14 +1,17 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useContext } from 'react';
+import { ModalContext } from '../../ctx/ModalContext';
 import tasks from '../../assets/tasks.svg';
 import dashbaord from '../../assets/dashboard.svg';
 import agenda from '../../assets/agenda.svg';
-import settings from '../../assets/settings.svg';
 import teams from '../../assets/teams.svg';
+import add from '../../assets/add.svg';
 import './Footer.css'; 
 
 
 function Footer() {
     const location = useLocation();
+    const { openModal } = useContext(ModalContext);
 
     return (
         <footer className="footer">  
@@ -25,6 +28,14 @@ function Footer() {
                         <figcaption className="footer-text">Groupes</figcaption>
                     </figure>
                 </Link>
+                <button className="footer-add-button" onClick={openModal} title="Créer une tâche">
+                    <figure className="footer-figure">
+                        <b className="footer-add-bg">
+                            <img src={add} className="footer-logo footer-add-icon" alt="Icône ajouter" />
+                        </b>
+                        <figcaption className="footer-text">Ajouter</figcaption>
+                    </figure>
+                </button>
                 <Link to="/" className={location.pathname === '/' ? 'active' : ''}>
                     <figure className="footer-figure">
                         <img src={tasks} className="footer-logo" alt="Icône tasks" />
@@ -35,12 +46,6 @@ function Footer() {
                     <figure className="footer-figure">
                         <img src={dashbaord} className="footer-logo" alt="Icône dashboard" />
                         <figcaption className="footer-text">Dashboard</figcaption>
-                    </figure>
-                </Link>
-                <Link to="/settings" className={location.pathname === '/settings' ? 'active' : ''}>
-                    <figure className="footer-figure">
-                        <img src={settings} className="footer-logo" alt="Icône settings" />
-                        <figcaption className="footer-text">Réglages</figcaption>
                     </figure>
                 </Link>
             </ul>
