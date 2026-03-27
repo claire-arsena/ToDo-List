@@ -76,3 +76,11 @@
   border-radius: 12px;
   color: var(--color-gray-dark);
 }
+.task-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+  border-top: 1px solid var(--color-gray-light);
+  padding-top: 10px;
+}
