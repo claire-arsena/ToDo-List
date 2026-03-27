@@ -18,5 +18,23 @@
 .header-actions {
   display: flex;
   gap: 10px;
+  align-items: center;
+}
+
+.task-stats {
+  display: flex;
+  gap: 20px;
+  margin-right: 20px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-gray-dark);
+}
+
+.stat-item strong {
+  color: var(--color-pink-dark);
 }
 
