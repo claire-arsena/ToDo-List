@@ -5,8 +5,11 @@ import { ModalContext } from '../../ctx/ModalContext';
 function TasksItem({ task }) {
   const { folders, relations, deleteTask } = useContext(TodoContext);
   const { openModal } = useContext(ModalContext);
-  const relation = relations.find(r => r.taskId === task.id);
-  const folder = relation ? folders.find(d => d.id === relation.folderId) : null;
+  const taskRelations = relations.filter(r => r.taskId === task.id);
+  const taskFolders = taskRelations
+    .map(r => folders.find(f => f.id === r.folderId))
+    .filter(Boolean)
+    .slice(0, 2);
 
   const displayMembers = task.members && task.members.length > 0 
     ? task.members.slice(0, 2) 
@@ -15,7 +18,13 @@ function TasksItem({ task }) {
   return (
     <article className="task-item">
       <h3>{task.title}</h3>
-      {folder && <small className="task-category">{folder.title}</small>}
+      {taskFolders.length > 0 && (
+        <nav className="task-categories">
+          {taskFolders.map(f => (
+            <small key={f.id} className="task-category">{f.title}</small>
+          ))}
+        </nav>
+      )}
       {task.description && <p>{task.description}</p>}
       <footer className="task-meta">
         <strong className="task-status">{task.status}</strong>

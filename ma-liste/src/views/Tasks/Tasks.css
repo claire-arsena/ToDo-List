@@ -35,13 +35,18 @@
   color: var(--color-gray-dark);
 }
 
+.task-categories {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .task-category {
   display: inline-block;
   background-color: var(--color-pink-light);
   color: var(--color-pink-dark);
   padding: 4px 12px;
   border-radius: 20px;
-  align-self: flex-start;
 }
 
 .task-meta {
