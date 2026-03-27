@@ -1,23 +1,27 @@
 import { useContext, useMemo } from 'react';
 import { TodoContext } from '../ctx/TodoContext';
 import { ETATS } from '../config/constants';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Doughnut } from 'react-chartjs-2';
 import './Dashboard.css';
 
-const STATUS_COLORS = {
-  [ETATS.NOUVEAU]: 'var(--color-status-new)',
-  [ETATS.EN_COURS]: 'var(--color-status-progress)',
-  [ETATS.REUSSI]: 'var(--color-status-done)',
-  [ETATS.EN_ATTENTE]: 'var(--color-status-waiting)',
-  [ETATS.ABANDONNE]: 'var(--color-status-cancelled)',
-};
+ChartJS.register(ArcElement, Tooltip, Legend);
+
+const getCSSVar = (name) =>
+  getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+const getStatusColors = () => ({
+  [ETATS.NOUVEAU]: getCSSVar('--color-status-new'),
+  [ETATS.EN_COURS]: getCSSVar('--color-status-progress'),
+  [ETATS.REUSSI]: getCSSVar('--color-status-done'),
+  [ETATS.EN_ATTENTE]: getCSSVar('--color-status-waiting'),
+  [ETATS.ABANDONNE]: getCSSVar('--color-status-cancelled'),
+});
 
 function Dashboard() {
   const { tasks } = useContext(TodoContext);
 
-  const statusData = useMemo(() => {
-    const total = tasks.length;
-    if (total === 0) return { segments: [], total: 0 };
-
+  const chartData = useMemo(() => {
     const counts = {};
     Object.values(ETATS).forEach(status => {
       counts[status] = 0;
@@ -28,52 +32,78 @@ function Dashboard() {
       }
     });
 
-    let cumulative = 0;
-    const segments = Object.entries(counts)
-      .filter(([, count]) => count > 0)
-      .map(([status, count]) => {
-        const percent = (count / total) * 100;
-        const start = cumulative;
-        cumulative += percent;
-        return { status, count, percent, start, end: cumulative };
-      });
+    const labels = [];
+    const data = [];
+    const colors = [];
 
-    return { segments, total };
+    const statusColors = getStatusColors();
+
+    Object.entries(counts).forEach(([status, count]) => {
+      if (count > 0) {
+        labels.push(status);
+        data.push(count);
+        colors.push(statusColors[status]);
+      }
+    });
+
+    return {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: colors,
+        borderWidth: 0,
+      }],
+    };
   }, [tasks]);
 
-  const gradientParts = statusData.segments.map(
-    seg => `${STATUS_COLORS[seg.status]} ${seg.start}% ${seg.end}%`
-  );
-  const gradient = gradientParts.length > 0
-    ? `conic-gradient(${gradientParts.join(', ')})`
-    : 'none';
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          padding: 20,
+          usePointStyle: true,
+          pointStyle: 'circle',
+          font: {
+            family: "'ShadowsIntoLightTwo', cursive",
+            size: 16,
+            weight: 'bold',
+          },
+          color: '#555',
+        },
+      },
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+            const percent = Math.round((context.parsed / total) * 100);
+            return ` ${context.label}: ${context.parsed} (${percent}%)`;
+          },
+        },
+        titleFont: {
+          family: "'ShadowsIntoLightTwo', cursive",
+          size: 14,
+        },
+        bodyFont: {
+          family: "'ShadowsIntoLightTwo', cursive",
+          size: 14,
+        },
+      },
+    },
+  };
 
   return (
     <section className="dashboard">
       <h1>Tableau de bord</h1>
-      {statusData.total === 0 ? (
+      {tasks.length === 0 ? (
         <p>Aucune tâche à afficher</p>
       ) : (
         <article className="chart-container">
-          <figure
-            className="pie-chart"
-            style={{ background: gradient }}
-            aria-label="Répartition des tâches par statut"
-          ></figure>
-          <figcaption className="chart-legend">
-            {statusData.segments.map(seg => (
-              <p key={seg.status} className="legend-item">
-                <b
-                  className="legend-color"
-                  style={{ backgroundColor: STATUS_COLORS[seg.status] }}
-                ></b>
-                <strong className="legend-label">{seg.status}</strong>
-                <small className="legend-value">
-                  {seg.count} ({Math.round(seg.percent)}%)
-                </small>
-              </p>
-            ))}
-          </figcaption>
+          <figure className="pie-chart">
+            <Doughnut data={chartData} options={chartOptions} />
+          </figure>
         </article>
       )}
     </section>

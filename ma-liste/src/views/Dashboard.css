@@ -23,42 +23,9 @@
 }
 
 .pie-chart {
-  width: 250px;
-  height: 250px;
-  border-radius: 50%;
+  width: 100%;
+  max-width: 400px;
   margin: 0;
-}
-
-.chart-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  font-weight: bold;
-  font-size: 16px;
-}
-
-.legend-color {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  display: inline-block;
-}
-
-.legend-label {
-  color: var(--color-gray-dark);
-}
-
-.legend-value {
-  color: var(--color-gray-medium);
-  font-size: 14px;
 }
 
 @media (max-width: 768px) {
@@ -76,31 +43,17 @@
   }
 
   .pie-chart {
-    width: 200px;
-    height: 200px;
-  }
-
-  .legend-item {
-    font-size: 14px;
+    max-width: 300px;
   }
 }
 
 @media (max-width: 480px) {
   .pie-chart {
-    width: 160px;
-    height: 160px;
+    max-width: 220px;
   }
 
   .chart-container {
     padding: 16px;
     gap: 20px;
-  }
-
-  .legend-item {
-    font-size: 13px;
-  }
-
-  .legend-value {
-    font-size: 12px;
   }
 }
