@@ -4,6 +4,7 @@
   top: 0;
   left: 0;
   right: 0;
+  z-index: 1001;
   background-color: var(--color-pink-light);
   display: flex;
   justify-content: space-between;
@@ -42,3 +43,52 @@
   color: var(--color-pink-dark);
 }
 
+@media (max-width: 768px) {
+  .App-header {
+    flex-direction: column;
+    padding: 10px 20px;
+    gap: 5px;
+    font-size: 20px;
+  }
+
+  .App-header h1 {
+    height: auto;
+    font-size: 22px;
+  }
+
+  .header-actions {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .task-stats {
+    margin-right: 0;
+    gap: 12px;
+  }
+
+  .stat-item {
+    font-size: 14px;
+  }
+
+  .header-actions .btn {
+    font-size: 12px;
+    padding: 6px 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .App-header {
+    padding: 8px 12px;
+    font-size: 16px;
+  }
+
+  .App-header h1 {
+    font-size: 18px;
+  }
+
+  .header-actions .btn {
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+}
