@@ -5,27 +5,27 @@ import './Header.css';
 
 function Header() {
   const location = useLocation();
-  const { resetData, loadBackup, taches, getActiveTasks } = useContext(TodoContext);
+  const { resetData, loadBackup, tasks, getActiveTasks } = useContext(TodoContext);
 
   const titles = {
     '/': 'Liste de tâches',
     '/agenda': 'Agenda',
-    '/dossiers': 'Dossiers',
+    '/folders': 'Dossiers',
     '/dashboard': 'Tableau de bord'
   };
 
   const currentTitle = titles[location.pathname] || 'Ma Liste';
-  const totalTasks = taches.length;
+  const totalTasks = tasks.length;
   const activeTasksCount = getActiveTasks().length;
 
   return (
     <header className="App-header">
         <h1>{currentTitle}</h1>
         <nav className="header-actions">
-          <div className="task-stats">
-            <span className="stat-item">Total: <strong>{totalTasks}</strong></span>
-            <span className="stat-item">En cours: <strong>{activeTasksCount}</strong></span>
-          </div>
+          <section className="task-stats">
+            <p className="stat-item">Total: <strong>{totalTasks}</strong></p>
+            <p className="stat-item">En cours: <strong>{activeTasksCount}</strong></p>
+          </section>
           <button 
             className="btn btn-secondary"
             onClick={resetData}

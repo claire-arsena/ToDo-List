@@ -5,9 +5,10 @@ import { ModalContextProvider } from './ctx/ModalContext';
 import Footer from './components/Footer/Footer';
 import Header from './components/Header/Header';
 import TaskFormModal from './components/Modal/TaskFormModal';
+import FolderFormModal from './components/Modal/FolderFormModal';
 import Tasks from './views/Tasks/Tasks';
 import Agenda from './views/Agenda';
-import Dossiers from './views/Dossiers';
+import Folders from './views/Folders';
 import Dashboard from './views/Dashboard';
 
 function App() {
@@ -19,10 +20,11 @@ function App() {
             <Header />
             <Footer />
             <TaskFormModal />
+            <FolderFormModal />
             <Routes>
               <Route path="/" element={<Tasks />} />
               <Route path="/agenda" element={<Agenda />} />
-              <Route path="/dossiers" element={<Dossiers />} />
+              <Route path="/folders" element={<Folders />} />
               <Route path="/dashboard" element={<Dashboard />} />
             </Routes>
           </main>

@@ -22,13 +22,13 @@ function Footer() {
                             <figcaption className="footer-text">Agenda</figcaption>
                         </figure>
                 </Link>
-                <Link to="/dossiers" className={location.pathname === '/dossiers' ? 'active' : ''}>
+                <Link to="/folders" className={location.pathname === '/folders' ? 'active' : ''}>
                     <figure className="footer-figure">
                         <img src={folder} className="footer-logo" alt="Icône dossiers" />
                         <figcaption className="footer-text">Dossiers</figcaption>
                     </figure>
                 </Link>
-                <button className="footer-add-button" onClick={openModal} title="Créer une tâche">
+                <button className="footer-add-button" onClick={() => openModal('task')} title="Créer une tâche">
                     <figure className="footer-figure">
                         <b className="footer-add-bg">
                             <img src={add} className="footer-logo footer-add-icon" alt="Icône ajouter" />

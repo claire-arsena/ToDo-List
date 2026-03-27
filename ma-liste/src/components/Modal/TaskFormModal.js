@@ -1,20 +1,43 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { TodoContext } from '../../ctx/TodoContext';
 import { ModalContext } from '../../ctx/ModalContext';
 import { ETATS } from '../../config/constants';
 import './TaskFormModal.css';
 
 function TaskFormModal() {
-  const { addTask, dossiers } = useContext(TodoContext);
-  const { isModalOpen, closeModal } = useContext(ModalContext);
+  const { addTask, updateTask, folders, relations } = useContext(TodoContext);
+  const { isModalOpen, modalType, modalData, closeModal } = useContext(ModalContext);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    date_echeance: '',
-    etat: ETATS.NOUVEAU,
-    equipiersInput: '',
-    id_dossier: '',
+    dueDate: '',
+    status: ETATS.NOUVEAU,
+    membersInput: '',
+    folderId: '',
   });
+
+  useEffect(() => {
+    if (modalData && modalType === 'task') {
+      const relation = relations.find(r => r.taskId === modalData.id);
+      setFormData({
+        title: modalData.title || '',
+        description: modalData.description || '',
+        dueDate: modalData.dueDate || '',
+        status: modalData.status || ETATS.NOUVEAU,
+        membersInput: modalData.members ? modalData.members.map(m => m.name).join(', ') : '',
+        folderId: relation ? relation.folderId.toString() : '',
+      });
+    } else {
+      setFormData({
+        title: '',
+        description: '',
+        dueDate: '',
+        status: ETATS.NOUVEAU,
+        membersInput: '',
+        folderId: '',
+      });
+    }
+  }, [modalData, modalType, relations]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,26 +50,32 @@ function TaskFormModal() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (formData.title.trim()) {
-      const equipiers = formData.equipiersInput
+      const members = formData.membersInput
         .split(',')
         .map(name => ({ name: name.trim() }))
         .filter(obj => obj.name !== '');
       
-      addTask({
+      const taskPayload = {
         title: formData.title,
         description: formData.description,
-        date_echeance: formData.date_echeance,
-        etat: formData.etat,
-        equipiers
-      }, formData.id_dossier);
+        dueDate: formData.dueDate,
+        status: formData.status,
+        members
+      };
+
+      if (modalData) {
+        updateTask(modalData.id, taskPayload, formData.folderId);
+      } else {
+        addTask(taskPayload, formData.folderId);
+      }
 
       setFormData({
         title: '',
         description: '',
-        date_echeance: '',
-        etat: ETATS.NOUVEAU,
-        equipiersInput: '',
-        id_dossier: '',
+        dueDate: '',
+        status: ETATS.NOUVEAU,
+        membersInput: '',
+        folderId: '',
       });
       closeModal();
     }
@@ -58,7 +87,7 @@ function TaskFormModal() {
     }
   };
 
-  if (!isModalOpen) return null;
+  if (!isModalOpen || modalType !== 'task') return null;
 
   return (
     <dialog className="modal-backdrop" onClick={handleBackdropClick}>
@@ -94,53 +123,53 @@ function TaskFormModal() {
           </fieldset>
 
           <fieldset className="form-group">
-            <label htmlFor="date_echeance">Date d'échéance</label>
+            <label htmlFor="dueDate">Date d'échéance</label>
             <input
               type="date"
-              id="date_echeance"
-              name="date_echeance"
-              value={formData.date_echeance}
+              id="dueDate"
+              name="dueDate"
+              value={formData.dueDate}
               onChange={handleChange}
             />
           </fieldset>
 
           <fieldset className="form-group">
-            <label htmlFor="id_dossier">Dossier</label>
+            <label htmlFor="folderId">Dossier</label>
             <select
-              id="id_dossier"
-              name="id_dossier"
-              value={formData.id_dossier}
+              id="folderId"
+              name="folderId"
+              value={formData.folderId}
               onChange={handleChange}
             >
               <option value="">Aucun dossier</option>
-              {dossiers.map(dossier => (
-                <option key={dossier.id} value={dossier.id}>{dossier.title}</option>
+              {folders.map(folder => (
+                <option key={folder.id} value={folder.id}>{folder.title}</option>
               ))}
             </select>
           </fieldset>
 
           <fieldset className="form-group">
-            <label htmlFor="equipiersInput">Équipiers (séparés par des virgules)</label>
+            <label htmlFor="membersInput">Équipiers (séparés par des virgules)</label>
             <input
               type="text"
-              id="equipiersInput"
-              name="equipiersInput"
-              value={formData.equipiersInput}
+              id="membersInput"
+              name="membersInput"
+              value={formData.membersInput}
               onChange={handleChange}
               placeholder="Ex: Paul, Marie, Bob"
             />
           </fieldset>
           
           <fieldset className="form-group">
-            <label htmlFor="etat">Statut</label>
+            <label htmlFor="status">Statut</label>
             <select
-              id="etat"
-              name="etat"
-              value={formData.etat}
+              id="status"
+              name="status"
+              value={formData.status}
               onChange={handleChange}
             >
-              {Object.values(ETATS).map(etat => (
-                <option key={etat} value={etat}>{etat}</option>
+              {Object.values(ETATS).map(status => (
+                <option key={status} value={status}>{status}</option>
               ))}
             </select>
           </fieldset>
@@ -150,7 +179,7 @@ function TaskFormModal() {
               Annuler
             </button>
             <button type="submit" className="btn btn-primary">
-              Créer la tâche
+              {modalData ? 'Enregistrer les modifications' : 'Créer la tâche'}
             </button>
           </footer>
         </form>
