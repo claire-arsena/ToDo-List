@@ -1,3 +1,17 @@
+@font-face {
+  font-family: 'ShadowsIntoLightTwo';
+  src: url('../assets/Shadows_Into_Light_Two/ShadowsIntoLightTwo-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Mynerve';
+  src: url('../assets/Mynerve/Mynerve-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 :root {
   --color-pink-light: #ffeff3;
   --color-pink: #ffb3d9;
@@ -11,4 +25,6 @@
   --color-backdrop: rgba(0, 0, 0, 0.5);
   --color-red: #ff5c5c;
   --color-red-dark: #e60000;
+  --font-body: 'ShadowsIntoLightTwo', cursive;
+  --font-heading: 'Mynerve', cursive;
 }

@@ -46,7 +46,7 @@
 .footer-text {
   font-size: 25px;
   color: var(--color-gray-dark);
-  font-weight: 500;
+  font-weight: bold;
   letter-spacing: 0.5px;
 }
 .footer-add-button {
@@ -84,7 +84,8 @@
   }
 
   .footer-text {
-    font-size: 14px;
+    font-size: 16px;
+    font-weight: bold;
   }
 
   .footer-add-bg {
@@ -112,7 +113,8 @@
   }
 
   .footer-text {
-    font-size: 11px;
+    font-size: 12px;
+    font-weight: bold;
   }
 
   .footer-add-bg {

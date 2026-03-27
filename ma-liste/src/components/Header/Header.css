@@ -37,6 +37,7 @@
   align-items: center;
   gap: 5px;
   color: var(--color-gray-dark);
+  font-weight: bold;
 }
 
 .stat-item strong {
@@ -72,8 +73,9 @@
   }
 
   .header-actions .btn {
-    font-size: 12px;
+    font-size: 14px;
     padding: 6px 14px;
+    font-weight: bold;
   }
 }
 
@@ -88,7 +90,8 @@
   }
 
   .header-actions .btn {
-    font-size: 11px;
+    font-size: 12px;
     padding: 5px 10px;
+    font-weight: bold;
   }
 }

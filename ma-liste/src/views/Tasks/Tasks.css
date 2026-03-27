@@ -54,6 +54,8 @@
   color: var(--color-pink-dark);
   padding: 4px 12px;
   border-radius: 20px;
+  font-weight: bold;
+  font-size: 16px;
 }
 
 .task-meta {
@@ -68,6 +70,7 @@
   background-color: var(--color-pink-light);
   padding: 2px 8px;
   border-radius: 4px;
+  font-weight: bold;
 }
 
 .task-date {
