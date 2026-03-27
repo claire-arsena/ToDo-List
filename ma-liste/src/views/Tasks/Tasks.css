@@ -18,6 +18,47 @@
   margin-bottom: 20px;
 }
 
+.filter-bar {
+  background-color: var(--color-white);
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px var(--color-shadow);
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.filter-group h3 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: var(--color-gray-dark);
+}
+
+.filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.filter-chip {
+  background-color: var(--color-pink-light);
+  color: var(--color-pink-dark);
+  border: none;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.filter-chip-active {
+  background-color: var(--color-pink-dark);
+  color: var(--color-white);
+}
+
 .tasks-list {
   display: flex;
   flex-direction: column;
