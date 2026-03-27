@@ -24,6 +24,7 @@
   gap: 15px;
   padding: 0;
   margin: 0;
+  list-style: none;
 }
 
 .task-item {
@@ -37,9 +38,23 @@
   gap: 10px;
 }
 
+.task-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .task-item h3 {
   margin: 0;
   color: var(--color-gray-dark);
+}
+
+.toggle-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--color-pink-dark);
+  padding: 4px 8px;
 }
 
 .task-categories {
@@ -56,6 +71,7 @@
   border-radius: 20px;
   font-weight: bold;
   font-size: 16px;
+  border: none;
 }
 
 .task-meta {
@@ -75,6 +91,8 @@
 
 .task-date {
   color: var(--color-gray-medium);
+  font-weight: bold;
+  font-size: 16px;
 }
 
 .task-members {
@@ -92,6 +110,12 @@
   color: var(--color-gray-dark);
 }
 
+.task-expanded {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .task-actions {
   display: flex;
   justify-content: flex-end;
@@ -99,6 +123,41 @@
   margin-top: 10px;
   border-top: 1px solid var(--color-gray-light);
   padding-top: 10px;
+}
+
+.edit-fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.edit-fieldset label {
+  font-weight: bold;
+  font-size: 14px;
+  color: var(--color-gray-dark);
+}
+
+.edit-input {
+  padding: 10px 14px;
+  background-color: var(--color-pink-light);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  color: var(--color-gray-dark);
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.edit-input:focus {
+  outline: none;
+  border-color: var(--color-pink-dark);
+  background-color: var(--color-white);
+}
+
+.edit-title {
+  font-size: 18px;
 }
 
 @media (max-width: 768px) {
