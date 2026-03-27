@@ -114,6 +114,13 @@ export function TodoContextProvider({ children }) {
     }
   };
 
+  const addRelation = (taskId, folderId) => {
+    const exists = relations.some(r => r.taskId === taskId && r.folderId === folderId);
+    if (!exists) {
+      setRelations([...relations, { taskId, folderId: parseInt(folderId) }]);
+    }
+  };
+
   const getActiveTasks = () => {
     return tasks.filter(task => !ETAT_TERMINE.includes(task.status));
   };
@@ -145,6 +152,7 @@ export function TodoContextProvider({ children }) {
     resetData,
     getActiveTasks,
     getActiveSortedTasks,
+    addRelation,
   };
 
   return (
