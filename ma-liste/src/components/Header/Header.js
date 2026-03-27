@@ -1,16 +1,17 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { useLocation } from 'react-router-dom';
+import { TodoContext } from '../../ctx/TodoContext';
 import './Header.css';
 
 function Header() {
   const location = useLocation();
+  const { resetData, loadBackup } = useContext(TodoContext);
 
   const titles = {
     '/': 'Liste de tâches',
     '/agenda': 'Agenda',
     '/teams': 'Groupes',
-    '/dashboard': 'Tableau de bord',
-    '/settings': 'Réglages'
+    '/dashboard': 'Tableau de bord'
   };
 
   const currentTitle = titles[location.pathname] || 'Ma Liste';
@@ -18,6 +19,22 @@ function Header() {
   return (
     <header className="App-header">
         <h1>{currentTitle}</h1>
+        <nav className="header-actions">
+          <button 
+            className="btn btn-secondary"
+            onClick={resetData}
+            title="Réinitialiser les tâches"
+          >
+            Réinitialiser
+          </button>
+          <button 
+            className="btn btn-secondary"
+            onClick={loadBackup}
+            title="Charger le backup"
+          >
+            Charger le backup
+          </button>
+        </nav>
     </header>
   );
 }
