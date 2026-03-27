@@ -10,7 +10,7 @@ function Header() {
   const titles = {
     '/': 'Liste de tâches',
     '/agenda': 'Agenda',
-    '/teams': 'Groupes',
+    '/dossiers': 'Dossiers',
     '/dashboard': 'Tableau de bord'
   };
 

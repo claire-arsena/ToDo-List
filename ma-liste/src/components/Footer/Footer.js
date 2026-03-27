@@ -4,7 +4,7 @@ import { ModalContext } from '../../ctx/ModalContext';
 import tasks from '../../assets/tasks.svg';
 import dashbaord from '../../assets/dashboard.svg';
 import agenda from '../../assets/agenda.svg';
-import teams from '../../assets/teams.svg';
+import folder from '../../assets/folder.svg';
 import add from '../../assets/add.svg';
 import './Footer.css'; 
 
@@ -22,10 +22,10 @@ function Footer() {
                             <figcaption className="footer-text">Agenda</figcaption>
                         </figure>
                 </Link>
-                <Link to="/teams" className={location.pathname === '/teams' ? 'active' : ''}>
+                <Link to="/dossiers" className={location.pathname === '/dossiers' ? 'active' : ''}>
                     <figure className="footer-figure">
-                        <img src={teams} className="footer-logo" alt="Icône teams" />
-                        <figcaption className="footer-text">Groupes</figcaption>
+                        <img src={folder} className="footer-logo" alt="Icône dossiers" />
+                        <figcaption className="footer-text">Dossiers</figcaption>
                     </figure>
                 </Link>
                 <button className="footer-add-button" onClick={openModal} title="Créer une tâche">

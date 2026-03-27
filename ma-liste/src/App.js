@@ -7,7 +7,7 @@ import Header from './components/Header/Header';
 import TaskFormModal from './components/Modal/TaskFormModal';
 import Tasks from './views/Tasks/Tasks';
 import Agenda from './views/Agenda';
-import Teams from './views/Teams';
+import Dossiers from './views/Dossiers';
 import Dashboard from './views/Dashboard';
 
 function App() {
@@ -22,7 +22,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Tasks />} />
               <Route path="/agenda" element={<Agenda />} />
-              <Route path="/teams" element={<Teams />} />
+              <Route path="/dossiers" element={<Dossiers />} />
               <Route path="/dashboard" element={<Dashboard />} />
             </Routes>
           </main>
