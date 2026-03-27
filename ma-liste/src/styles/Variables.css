@@ -25,6 +25,11 @@
   --color-backdrop: rgba(0, 0, 0, 0.5);
   --color-red: #ff5c5c;
   --color-red-dark: #e60000;
+  --color-status-new: #9ac1ff;
+  --color-status-progress: #ffc87b;
+  --color-status-done: #aaffaa;
+  --color-status-waiting: #ffa2f4;
+  --color-status-cancelled: #b64747;
   --font-body: 'ShadowsIntoLightTwo', cursive;
   --font-heading: 'Mynerve', cursive;
 }
