@@ -1,11 +1,10 @@
-@import '../../styles/Variables.css';
-
+@import "../../styles/Variables.css";
 .footer {
   position: fixed;
   bottom: 30px;
   left: 30px;
   right: 30px;
-  background-color: var(--color-bg-nav);
+  background-color: var(--color-pink);
   border-radius: 100px;
   padding: 20px 0;
   z-index: 1000;
@@ -30,27 +29,47 @@
 }
 
 .footer a.active .footer-figure {
-  border-bottom: 3px solid var(--color-text-nav);
+  border-bottom: 3px solid var(--color-gray-dark);
   padding-bottom: 5px;
 }
-
-.footer-figure {
-  margin: 0; 
+.footer-figure,
+.footer-add-button {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px; 
-  
+}
+.footer-figure {
+  margin: 0;
+  gap: 5px;
 }
 
 .footer-text {
   font-size: 25px;
-  color: var(--color-text-nav);
+  color: var(--color-gray-dark);
   font-weight: 500;
   letter-spacing: 0.5px;
 }
-
-/* Mobile responsive */
+.footer-add-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--color-gray-dark);
+}
+.footer-add-bg {
+  height: 100px;
+  width: 100px;
+  background-color: var(--color-pink-dark);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 10px var(--color-shadow);
+}
+.footer-add-icon {
+  height: 50px;
+  width: 50px;
+}
 @media (max-width: 768px) {
   .footer {
     bottom: 15px;
@@ -64,9 +83,7 @@
     height: 50px;
   }
 
-  .footer-text {
-    font-size: 12px;
-  }
+
 }
 
 @media (max-width: 480px) {
@@ -82,7 +99,5 @@
     height: 40px;
   }
 
-  .footer-text {
-    font-size: 10px;
-  }
+
 }

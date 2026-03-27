@@ -1,22 +1,43 @@
-@import './Variables.css';
-
+@import "./Variables.css";
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--color-bg);
+  background-color: var(--color-gray-light);
 }
-
 .App {
   text-align: center;
   padding-bottom: 150px;
 }
-
 .App-logo {
   height: 40vmin;
   pointer-events: none;
 }
-
 .App-nav {
   display: flex;
   justify-content: center;
+}
+
+.btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background-color: var(--color-pink-dark);
+  color: var(--color-white);
+  box-shadow: 0 4px 10px var(--color-shadow);
+}
+
+
+
+.btn-secondary {
+  background-color: var(--color-pink-light);
+  color: var(--color-pink-dark);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-pink);
+  color: var(--color-white);
 }

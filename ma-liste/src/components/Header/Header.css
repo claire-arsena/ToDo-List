@@ -1,14 +1,22 @@
-@import '../../styles/Variables.css';
-
+@import "../../styles/Variables.css";
 .App-header {
-  background-color: var(--color-bg-header);
+  background-color: var(--color-pink-light);
   display: flex;
-  justify-content: left;
+  justify-content: space-between;
+  align-items: center;
   font-size: 30px;
-  color: var(--color-text-header);
+  color: var(--color-gray-dark);
+  padding: 0 50px;
 }
 
 .App-header h1 {
   height: 80px;
-  margin-left: 50px;
+  margin: 0;
+  display: flex;
+  align-items: center;
 }
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+

@@ -1,7 +1,12 @@
 :root {
-  --color-bg: #efefef;
-  --color-bg-header: #ffeff3;
-  --color-bg-nav: #ffb3d9;
-  --color-text-header: rgb(100, 100, 100);
-  --color-text-nav: #555;
+  --color-pink-light: #ffeff3;
+  --color-pink: #ffb3d9;
+  --color-pink-dark: #ff66b3;
+  --color-white: #ffffff;
+  --color-gray-light: #efefef;
+  --color-gray-medium: #ddd;
+  --color-gray-dark: #555;
+  --color-black: #333;
+  --color-shadow: rgba(0, 0, 0, 0.15);
+  --color-backdrop: rgba(0, 0, 0, 0.5);
 }

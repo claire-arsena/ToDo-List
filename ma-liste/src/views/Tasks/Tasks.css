@@ -1,1 +1,78 @@
 @import '../../styles/Variables.css';
+.tasks {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.tasks h1 {
+  color: var(--color-pink-dark);
+  text-align: left;
+  margin-bottom: 30px;
+}
+
+.tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 0;
+  margin: 0;
+}
+
+.task-item {
+  background-color: var(--color-white);
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px var(--color-shadow);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.task-item h3 {
+  margin: 0;
+  color: var(--color-gray-dark);
+}
+
+.task-category {
+  display: inline-block;
+  background-color: var(--color-pink-light);
+  color: var(--color-pink-dark);
+  padding: 4px 12px;
+  border-radius: 20px;
+  align-self: flex-start;
+}
+
+.task-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 5px;
+}
+
+.task-status {
+  color: var(--color-pink-dark);
+  background-color: var(--color-pink-light);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.task-date {
+  color: var(--color-gray-medium);
+}
+
+.task-members {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0 0;
+  display: flex;
+  gap: 5px;
+}
+
+.task-members li {
+  background-color: var(--color-gray-light);
+  padding: 3px 10px;
+  border-radius: 12px;
+  color: var(--color-gray-dark);
+}
