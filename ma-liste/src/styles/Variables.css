@@ -6,8 +6,8 @@
 }
 
 @font-face {
-  font-family: 'Mynerve';
-  src: url('../assets/Mynerve/Mynerve-Regular.ttf') format('truetype');
+  font-family: 'Limelight';
+  src: url('../assets/Limelight/Limelight-Regular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
@@ -31,5 +31,5 @@
   --color-status-waiting: #ffa2f4;
   --color-status-cancelled: #b64747;
   --font-body: 'ShadowsIntoLightTwo', cursive;
-  --font-heading: 'Mynerve', cursive;
+  --font-heading: 'Limelight', cursive;
 }
