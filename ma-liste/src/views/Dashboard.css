@@ -12,14 +12,15 @@
 }
 
 .chart-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 30px;
-  background-color: var(--color-white);
-  padding: 30px;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px var(--color-shadow);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: 40px;
+  padding: 50px;
+  margin: 30px auto;
+  max-width: 600px;
+  box-shadow: var(--glass-shadow);
 }
 
 .pie-chart {

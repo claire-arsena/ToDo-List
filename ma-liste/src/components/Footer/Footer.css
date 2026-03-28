@@ -4,11 +4,15 @@
   bottom: 30px;
   left: 30px;
   right: 30px;
-  background-color: var(--color-pink);
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
   border-radius: 100px;
-  padding: 20px 0;
+  padding: 15px 0;
   z-index: 1000;
   box-sizing: border-box;
+  box-shadow: var(--glass-shadow);
 }
 
 .footer ul {
@@ -46,24 +50,24 @@
 .footer-text {
   font-size: 25px;
   color: var(--color-gray-dark);
-  font-weight: bold;
+  font-weight: 900;
   letter-spacing: 0.5px;
 }
 .footer-add-button {
   background: none;
   border: none;
   padding: 0;
-  color: var(--color-gray-dark);
+  color: var(--color-white);
 }
 .footer-add-bg {
   height: 100px;
   width: 100px;
-  background-color: var(--color-pink-dark);
+  background: linear-gradient(135deg, var(--color-pink-dark), var(--color-red));
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 4px 10px var(--color-shadow);
+  box-shadow: 0 8px 16px rgba(255, 102, 179, 0.4);
 }
 .footer-add-icon {
   height: 50px;

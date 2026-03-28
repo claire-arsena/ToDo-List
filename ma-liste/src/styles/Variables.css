@@ -32,4 +32,15 @@
   --color-status-cancelled: #b64747;
   --font-body: 'VendSans', sans-serif;
   --font-heading: 'Limelight', cursive;
+  /* Intensified Glassmorphism System */
+  --glass-bg: rgba(255, 255, 255, 0.5);
+  --glass-blur: blur(28px);
+  --glass-border: 1.5px solid rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 16px 48px 0 rgba(255, 102, 179, 0.25);
+  
+  /* Vibrant Pink Background System */
+  --bg-gradient: linear-gradient(135deg, #ffd5df 0%, #ffb3d9 100%);
+  --blob-pink: radial-gradient(circle, rgba(255, 102, 179, 0.8) 0%, transparent 70%);
+  --blob-purple: radial-gradient(circle, rgba(224, 195, 252, 0.8) 0%, transparent 70%);
+  --blob-hotpink: radial-gradient(circle, rgba(255, 20, 147, 0.6) 0%, transparent 70%);
 }
