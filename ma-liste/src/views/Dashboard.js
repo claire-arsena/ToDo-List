@@ -67,7 +67,7 @@ function Dashboard() {
           usePointStyle: true,
           pointStyle: 'circle',
           font: {
-            family: "'ShadowsIntoLightTwo', cursive",
+            family: "'VendSans', sans-serif",
             size: 16,
             weight: 'bold',
           },
@@ -83,11 +83,11 @@ function Dashboard() {
           },
         },
         titleFont: {
-          family: "'ShadowsIntoLightTwo', cursive",
+          family: "'VendSans', sans-serif",
           size: 14,
         },
         bodyFont: {
-          family: "'ShadowsIntoLightTwo', cursive",
+          family: "'VendSans', sans-serif",
           size: 14,
         },
       },

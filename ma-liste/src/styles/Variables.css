@@ -1,7 +1,7 @@
 @font-face {
-  font-family: 'ShadowsIntoLightTwo';
-  src: url('../assets/Shadows_Into_Light_Two/ShadowsIntoLightTwo-Regular.ttf') format('truetype');
-  font-weight: normal;
+  font-family: 'VendSans';
+  src: url('../assets/Vend_Sans/VendSans-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
   font-style: normal;
 }
 
@@ -30,6 +30,6 @@
   --color-status-done: #aaffaa;
   --color-status-waiting: #ffa2f4;
   --color-status-cancelled: #b64747;
-  --font-body: 'ShadowsIntoLightTwo', cursive;
+  --font-body: 'VendSans', sans-serif;
   --font-heading: 'Limelight', cursive;
 }
