@@ -91,3 +91,73 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+@media (max-width: 768px) {
+  .agenda {
+    padding: 12px;
+  }
+
+  .agenda h1 {
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
+
+  .agenda-nav {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .agenda-month {
+    font-size: 16px;
+    min-width: 140px;
+  }
+
+  .agenda-grid th {
+    font-size: 12px;
+    padding: 8px 2px;
+  }
+
+  .agenda-grid td {
+    padding: 4px;
+    height: 70px;
+  }
+
+  .agenda-grid td em {
+    font-size: 12px;
+  }
+
+  .agenda-grid li {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .agenda {
+    padding: 8px;
+  }
+
+  .agenda h1 {
+    font-size: 18px;
+  }
+
+  .agenda-grid th {
+    font-size: 10px;
+    padding: 6px 1px;
+  }
+
+  .agenda-grid td {
+    padding: 2px;
+    height: 60px;
+  }
+
+  .agenda-grid td em {
+    font-size: 10px;
+  }
+
+  .agenda-grid li {
+    font-size: 8px;
+    padding: 1px 3px;
+    border-radius: 4px;
+  }
+}
