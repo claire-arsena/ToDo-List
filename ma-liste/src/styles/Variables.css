@@ -1,0 +1,46 @@
+@font-face {
+  font-family: 'VendSans';
+  src: url('../assets/Vend_Sans/VendSans-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Limelight';
+  src: url('../assets/Limelight/Limelight-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+:root {
+  --color-pink-light: #ffd5df;
+  --color-pink: #ffb3d9;
+  --color-pink-dark: #ff66b3;
+  --color-white: #ffffff;
+  --color-gray-light: #efefef;
+  --color-gray-medium: #ddd;
+  --color-gray-dark: #262626;
+  --color-black: #333;
+  --color-shadow: rgba(0, 0, 0, 0.15);
+  --color-backdrop: rgba(0, 0, 0, 0.5);
+  --color-red: #ff5c5c;
+  --color-red-dark: #e60000;
+  --color-status-new: #9ac1ff;
+  --color-status-progress: #ffc87b;
+  --color-status-done: #aaffaa;
+  --color-status-waiting: #ffa2f4;
+  --color-status-cancelled: #b64747;
+  --font-body: 'VendSans', sans-serif;
+  --font-heading: 'Limelight', cursive;
+  /* Intensified Glassmorphism System */
+  --glass-bg: rgba(255, 255, 255, 0.5);
+  --glass-blur: blur(28px);
+  --glass-border: 1.5px solid rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 16px 48px 0 rgba(255, 102, 179, 0.25);
+  
+  /* Vibrant Pink Background System */
+  --bg-gradient: linear-gradient(135deg, #ffd5df 0%, #ffb3d9 100%);
+  --blob-pink: radial-gradient(circle, rgba(255, 102, 179, 0.8) 0%, transparent 70%);
+  --blob-purple: radial-gradient(circle, rgba(224, 195, 252, 0.8) 0%, transparent 70%);
+  --blob-hotpink: radial-gradient(circle, rgba(255, 20, 147, 0.6) 0%, transparent 70%);
+}

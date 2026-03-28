@@ -1,0 +1,60 @@
+@import '../styles/Variables.css';
+.dashboard {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.dashboard h1 {
+  color: var(--color-pink-dark);
+  text-align: left;
+  margin-bottom: 30px;
+}
+
+.chart-container {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: 40px;
+  padding: 50px;
+  margin: 30px auto;
+  max-width: 600px;
+  box-shadow: var(--glass-shadow);
+}
+
+.pie-chart {
+  width: 100%;
+  max-width: 400px;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .dashboard {
+    padding: 12px;
+  }
+
+  .dashboard h1 {
+    font-size: 22px;
+    margin-bottom: 15px;
+  }
+
+  .chart-container {
+    padding: 20px;
+  }
+
+  .pie-chart {
+    max-width: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pie-chart {
+    max-width: 220px;
+  }
+
+  .chart-container {
+    padding: 16px;
+    gap: 20px;
+  }
+}
