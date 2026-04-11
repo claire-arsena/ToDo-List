@@ -3,7 +3,7 @@ import { View, Text, ScrollView, StyleSheet, Dimensions } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
 import { TodoContext } from '../ctx/TodoContext';
 import { ETATS } from '../config/constants';
-import { COLORS, STATUS_COLORS, RADIUS } from '../theme';
+import { COLORS, STATUS_COLORS } from '../theme';
 import GlassCard from '../components/GlassCard';
 
 const screenWidth = Dimensions.get('window').width;
@@ -18,7 +18,7 @@ const CHART_COLORS = {
 
 const chartConfig = {
   color: (opacity = 1) => `rgba(255, 102, 179, ${opacity})`,
-  labelColor: (opacity = 1) => `rgba(51, 51, 51, ${opacity})`,
+  labelColor: (opacity = 1) => `rgba(38, 38, 38, ${opacity})`,
 };
 
 export default function Dashboard() {
@@ -42,26 +42,26 @@ export default function Dashboard() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       {total === 0 ? (
-        <View style={styles.emptyState}><Text style={styles.emptyText}>Aucune tâche à afficher</Text></View>
+        <View style={styles.empty}><Text style={styles.emptyText}>Aucune tâche à afficher</Text></View>
       ) : (
         <>
-          {/* Graphique — glass */}
+          {/* chart-container — border-radius: 40px */}
           <GlassCard style={styles.chartCard}>
             <Text style={styles.sectionTitle}>Répartition par statut</Text>
             <PieChart
               data={chartData}
-              width={screenWidth - 64}
+              width={screenWidth - 80}
               height={200}
               chartConfig={chartConfig}
               accessor="population"
               backgroundColor="transparent"
               paddingLeft="10"
-              hasLegend={true}
+              hasLegend
               style={styles.chart}
             />
           </GlassCard>
 
-          {/* Tableau récap — glass */}
+          {/* Tableau détail */}
           <GlassCard style={styles.tableCard}>
             <Text style={styles.sectionTitle}>Détail</Text>
             {chartData.map((item) => {
@@ -90,13 +90,14 @@ export default function Dashboard() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 32 },
-  emptyState: { alignItems: 'center', paddingVertical: 60 },
+  empty: { alignItems: 'center', paddingVertical: 60 },
   emptyText: { fontSize: 15, color: COLORS.textMuted, fontStyle: 'italic' },
-  chartCard: { padding: 16, marginBottom: 16, alignItems: 'center' },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: COLORS.text, marginBottom: 12, alignSelf: 'flex-start' },
-  chart: { borderRadius: RADIUS.lg },
+  /* chart-container — border-radius: 40px */
+  chartCard: { padding: 20, marginBottom: 16, alignItems: 'center', borderRadius: 28 },
+  sectionTitle: { fontSize: 15, fontWeight: '800', color: COLORS.pinkDark, marginBottom: 12, alignSelf: 'flex-start' },
+  chart: { borderRadius: 16 },
   tableCard: { padding: 16 },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 0.5, borderBottomColor: 'rgba(0,0,0,0.07)' },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.4)' },
   dot: { width: 12, height: 12, borderRadius: 6, marginRight: 10 },
   rowLabel: { flex: 1, fontSize: 14, color: COLORS.text, fontWeight: '500' },
   rowCount: { fontSize: 14, fontWeight: '700', color: COLORS.text, marginRight: 16, minWidth: 24, textAlign: 'right' },

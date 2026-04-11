@@ -8,40 +8,39 @@ import { ModalContext } from '../ctx/ModalContext';
 import { COLORS, SHADOWS } from '../theme';
 
 const TAB_CONFIG = [
-  { routeName: 'Agenda', icon: 'calendar-outline', iconActive: 'calendar', label: 'Agenda' },
-  { routeName: 'Folders', icon: 'folder-outline', iconActive: 'folder', label: 'Dossiers' },
+  { routeName: 'Agenda',    icon: 'calendar-outline',  iconActive: 'calendar',   label: 'Agenda' },
+  { routeName: 'Folders',   icon: 'folder-outline',    iconActive: 'folder',     label: 'Dossiers' },
   { type: 'add' },
-  { routeName: 'Tasks', icon: 'list-outline', iconActive: 'list', label: 'Tâches' },
-  { routeName: 'Dashboard', icon: 'pie-chart-outline', iconActive: 'pie-chart', label: 'Stats' },
+  { routeName: 'Tasks',     icon: 'list-outline',      iconActive: 'list',       label: 'Tâches' },
+  { routeName: 'Dashboard', icon: 'pie-chart-outline', iconActive: 'pie-chart',  label: 'Stats' },
 ];
 
 export default function CustomTabBar({ state, navigation }) {
   const insets = useSafeAreaInsets();
   const { openModal } = useContext(ModalContext);
   const currentRouteName = state.routes[state.index].name;
-
   const navigateTo = (routeName) => navigation.navigate(routeName);
 
   return (
-    <View style={[styles.wrapper, { paddingBottom: insets.bottom > 0 ? insets.bottom : 20 }]}>
+    <View style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, 15) }]}>
       <BlurView intensity={70} tint="light" style={styles.pill}>
-        <View style={styles.tabBar}>
-          {TAB_CONFIG.map((tab, index) => {
+        <View style={styles.row}>
+          {TAB_CONFIG.map((tab) => {
             if (tab.type === 'add') {
               return (
                 <TouchableOpacity
                   key="add"
-                  style={styles.addButtonWrapper}
+                  style={styles.addWrapper}
                   onPress={() => openModal('task')}
                   activeOpacity={0.85}
                 >
                   <LinearGradient
-                    colors={[COLORS.pinkDark, '#ff3e5c']}
-                    style={styles.addButton}
+                    colors={[COLORS.pinkDark, '#ff5c5c']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
+                    style={styles.addBg}
                   >
-                    <Ionicons name="add" size={32} color="#fff" />
+                    <Ionicons name="add" size={30} color="#fff" />
                   </LinearGradient>
                   <Text style={styles.addLabel}>Ajouter</Text>
                 </TouchableOpacity>
@@ -56,14 +55,14 @@ export default function CustomTabBar({ state, navigation }) {
                 onPress={() => navigateTo(tab.routeName)}
                 activeOpacity={0.7}
               >
-                <View style={[styles.iconWrapper, isActive && styles.iconWrapperActive]}>
+                <View style={[styles.iconWrap, isActive && styles.iconWrapActive]}>
                   <Ionicons
                     name={isActive ? tab.iconActive : tab.icon}
                     size={22}
                     color={isActive ? COLORS.pinkDark : COLORS.textLight}
                   />
                 </View>
-                <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+                <Text style={[styles.label, isActive && styles.labelActive]}>
                   {tab.label}
                 </Text>
               </TouchableOpacity>
@@ -77,64 +76,53 @@ export default function CustomTabBar({ state, navigation }) {
 
 const styles = StyleSheet.create({
   wrapper: {
+    paddingHorizontal: 15,
+    paddingTop: 6,
     backgroundColor: 'transparent',
-    paddingHorizontal: 30,
-    paddingTop: 8,
   },
   pill: {
-    borderRadius: 100,
+    borderRadius: 60,
     borderWidth: 1.5,
-    borderColor: COLORS.glassBorder,
+    borderColor: 'rgba(255,255,255,0.6)',
     overflow: 'hidden',
-    ...SHADOWS.header,
+    ...SHADOWS.glass,
   },
-  tabBar: {
+  row: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    justifyContent: 'space-around',
+    justifyContent: 'space-evenly',
     paddingTop: 8,
-    paddingHorizontal: 8,
     paddingBottom: 10,
     backgroundColor: 'rgba(255,255,255,0.3)',
   },
-  tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingBottom: 2,
-  },
-  iconWrapper: {
+  tabItem: { flex: 1, alignItems: 'center', paddingBottom: 2 },
+  iconWrap: {
     width: 40,
     height: 40,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconWrapperActive: {
-    backgroundColor: 'rgba(255, 102, 179, 0.15)',
-  },
-  tabLabel: {
-    fontSize: 10,
-    color: COLORS.textLight,
-    marginTop: 2,
-    fontWeight: '500',
-  },
-  tabLabelActive: {
-    color: COLORS.pinkDark,
-    fontWeight: '700',
-  },
-  addButtonWrapper: {
+  iconWrapActive: { backgroundColor: 'rgba(255,102,179,0.15)' },
+  label: { fontSize: 10, color: COLORS.textLight, marginTop: 2, fontWeight: '500' },
+  labelActive: { color: COLORS.pinkDark, fontWeight: '700' },
+  addWrapper: {
     alignItems: 'center',
     paddingBottom: 2,
-    marginTop: -20,
-    width: 70,
+    marginTop: -22,
+    width: 72,
   },
-  addButton: {
-    width: 60,
+  addBg: {
     height: 60,
+    width: 60,
     borderRadius: 30,
-    alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOWS.addBtn,
+    alignItems: 'center',
+    shadowColor: '#ff66b3',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 10,
   },
   addLabel: {
     fontSize: 10,

@@ -1,6 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import { LinearGradient } from 'expo-linear-gradient';
 import { TodoContext } from '../../ctx/TodoContext';
 import { ETATS } from '../../config/constants';
 import { COLORS, STATUS_COLORS, RADIUS } from '../../theme';
@@ -16,14 +17,13 @@ export default function TasksItem({ task, onFilterByFolder }) {
   });
   const [addFolderValue, setAddFolderValue] = useState('');
 
-  const taskRelations = relations.filter((r) => r.taskId === task.id);
-  const allFolders = taskRelations.map((r) => folders.find((f) => f.id === r.folderId)).filter(Boolean);
+  const taskRelations  = relations.filter((r) => r.taskId === task.id);
+  const allFolders     = taskRelations.map((r) => folders.find((f) => f.id === r.folderId)).filter(Boolean);
   const displayFolders = isExpanded ? allFolders : allFolders.slice(0, 2);
-  const availableFolders = folders.filter((f) => !taskRelations.some((r) => r.folderId === f.id));
+  const availFolders   = folders.filter((f) => !taskRelations.some((r) => r.folderId === f.id));
 
   const set = (key, value) => setEditData((prev) => ({ ...prev, [key]: value }));
-
-  const handleSave = () => { updateTask(task.id, editData); setIsEditing(false); };
+  const handleSave   = () => { updateTask(task.id, editData); setIsEditing(false); };
   const handleCancel = () => {
     setEditData({ title: task.title, description: task.description, dueDate: task.dueDate, status: task.status });
     setIsEditing(false);
@@ -38,11 +38,11 @@ export default function TasksItem({ task, onFilterByFolder }) {
 
   return (
     <GlassCard style={styles.card}>
-      {/* Barre de statut colorée */}
+      {/* Barre de statut */}
       <View style={[styles.statusBar, { backgroundColor: statusColor }]} />
 
       <View style={styles.inner}>
-        {/* Header titre + toggle */}
+        {/* Header */}
         <View style={styles.header}>
           {isEditing ? (
             <TextInput style={styles.editTitle} value={editData.title} onChangeText={(v) => set('title', v)} />
@@ -54,7 +54,7 @@ export default function TasksItem({ task, onFilterByFolder }) {
           </TouchableOpacity>
         </View>
 
-        {/* Tags dossiers */}
+        {/* Tags dossiers — style .task-category */}
         {displayFolders.length > 0 && (
           <View style={styles.chips}>
             {displayFolders.map((f) => (
@@ -69,13 +69,13 @@ export default function TasksItem({ task, onFilterByFolder }) {
         {!isEditing && (
           <View style={styles.meta}>
             {task.dueDate ? <Text style={styles.dueDate}>📅 {task.dueDate}</Text> : null}
-            <View style={[styles.statusBadge, { backgroundColor: statusColor + '55' }]}>
+            <View style={styles.statusBadge}>
               <Text style={styles.statusBadgeText}>{task.status}</Text>
             </View>
           </View>
         )}
 
-        {/* Section étendue */}
+        {/* Contenu étendu */}
         {isExpanded && (
           <View style={styles.expanded}>
             {isEditing ? (
@@ -101,16 +101,22 @@ export default function TasksItem({ task, onFilterByFolder }) {
             )}
 
             {task.members?.length > 0 && !isEditing && (
-              <Text style={styles.members}>👥 {task.members.map((m) => m.name).join(', ')}</Text>
+              <View style={styles.members}>
+                {task.members.map((m) => (
+                  <View key={m.name} style={styles.memberChip}>
+                    <Text style={styles.memberText}>{m.name}</Text>
+                  </View>
+                ))}
+              </View>
             )}
 
-            {!isEditing && availableFolders.length > 0 && (
+            {!isEditing && availFolders.length > 0 && (
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Ajouter à un dossier</Text>
                 <View style={styles.pickerWrap}>
                   <Picker selectedValue={addFolderValue} onValueChange={(v) => { setAddFolderValue(v); handleAddFolder(v); }} style={styles.picker}>
                     <Picker.Item label="Choisir..." value="" />
-                    {availableFolders.map((f) => <Picker.Item key={f.id} label={f.title} value={f.id.toString()} />)}
+                    {availFolders.map((f) => <Picker.Item key={f.id} label={f.title} value={f.id.toString()} />)}
                   </Picker>
                 </View>
               </View>
@@ -119,13 +125,25 @@ export default function TasksItem({ task, onFilterByFolder }) {
             <View style={styles.actions}>
               {isEditing ? (
                 <>
-                  <TouchableOpacity style={styles.btnPrimary} onPress={handleSave}><Text style={styles.btnPrimaryText}>Enregistrer</Text></TouchableOpacity>
-                  <TouchableOpacity style={styles.btnSecondary} onPress={handleCancel}><Text style={styles.btnSecondaryText}>Annuler</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={handleSave} style={styles.actionBtn}>
+                    <LinearGradient colors={[COLORS.pinkDark, COLORS.red]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.btnInner}>
+                      <Text style={styles.btnPrimaryText}>Enregistrer</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.actionBtn, styles.btnSecondary]} onPress={handleCancel}>
+                    <Text style={styles.btnSecondaryText}>Annuler</Text>
+                  </TouchableOpacity>
                 </>
               ) : (
                 <>
-                  <TouchableOpacity style={styles.btnSecondary} onPress={() => setIsEditing(true)}><Text style={styles.btnSecondaryText}>Modifier</Text></TouchableOpacity>
-                  <TouchableOpacity style={styles.btnDanger} onPress={() => deleteTask(task.id)}><Text style={styles.btnDangerText}>Supprimer</Text></TouchableOpacity>
+                  <TouchableOpacity style={[styles.actionBtn, styles.btnSecondary]} onPress={() => setIsEditing(true)}>
+                    <Text style={styles.btnSecondaryText}>Modifier</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => deleteTask(task.id)} style={styles.actionBtn}>
+                    <LinearGradient colors={[COLORS.red, COLORS.redDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.btnInner}>
+                      <Text style={styles.btnPrimaryText}>Supprimer</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
                 </>
               )}
             </View>
@@ -137,34 +155,92 @@ export default function TasksItem({ task, onFilterByFolder }) {
 }
 
 const styles = StyleSheet.create({
-  card: { flexDirection: 'row', marginBottom: 10 },
+  card: { flexDirection: 'row', marginBottom: 12, borderRadius: 14 },
   statusBar: { width: 5 },
-  inner: { flex: 1, padding: 16 },
+  inner: { flex: 1, padding: 14 },
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   title: { flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.text, marginRight: 8 },
-  editTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.text, borderBottomWidth: 1.5, borderBottomColor: COLORS.pinkDark, paddingBottom: 2, marginRight: 8 },
+  editTitle: {
+    flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.text,
+    borderBottomWidth: 1.5, borderBottomColor: COLORS.pinkDark, paddingBottom: 2, marginRight: 8,
+  },
   toggleBtn: { padding: 2 },
-  toggleText: { fontSize: 12, color: COLORS.textMuted },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 6 },
-  chip: { backgroundColor: 'rgba(255,102,179,0.15)', borderRadius: RADIUS.full, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: 'rgba(255,102,179,0.3)' },
-  chipText: { fontSize: 11, color: COLORS.pinkDark, fontWeight: '600' },
+  toggleText: { fontSize: 14, color: COLORS.pinkDark, fontWeight: '900' },
+  /* folder chips — .task-category */
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
+  chip: {
+    backgroundColor: 'rgba(255,255,255,0.4)',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 3,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,102,179,0.3)',
+  },
+  chipText: { fontSize: 12, color: COLORS.pinkDark, fontWeight: '800' },
+  /* meta */
   meta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
-  dueDate: { fontSize: 12, color: COLORS.textLight },
-  statusBadge: { borderRadius: RADIUS.full, paddingHorizontal: 8, paddingVertical: 3 },
-  statusBadgeText: { fontSize: 11, fontWeight: '600', color: COLORS.text },
-  expanded: { marginTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)', paddingTop: 10 },
-  desc: { fontSize: 13, color: COLORS.textLight, lineHeight: 20, marginBottom: 8 },
-  members: { fontSize: 12, color: COLORS.textMuted, marginBottom: 8 },
-  formGroup: { marginBottom: 12 },
-  label: { fontSize: 12, fontWeight: '600', color: COLORS.textLight, marginBottom: 4 },
-  textarea: { backgroundColor: 'rgba(255,255,255,0.5)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.7)', borderRadius: RADIUS.sm, padding: 8, fontSize: 13, color: COLORS.text, minHeight: 70 },
-  pickerWrap: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.7)', borderRadius: RADIUS.sm, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.5)' },
+  dueDate: { fontSize: 13, color: COLORS.text, fontWeight: '700', opacity: 0.8 },
+  statusBadge: {
+    backgroundColor: COLORS.pinkLight,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  statusBadgeText: { fontSize: 11, fontWeight: '700', color: COLORS.pinkDark },
+  /* expanded */
+  expanded: { marginTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)', paddingTop: 10, gap: 8 },
+  desc: { fontSize: 13, color: COLORS.textLight, lineHeight: 20 },
+  members: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginBottom: 4 },
+  memberChip: {
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
+  },
+  memberText: { fontSize: 12, color: COLORS.text, fontWeight: '700' },
+  formGroup: { marginBottom: 8 },
+  label: { fontSize: 12, fontWeight: '700', color: COLORS.text, marginBottom: 4 },
+  textarea: {
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)',
+    borderRadius: 10,
+    padding: 10,
+    fontSize: 13,
+    color: COLORS.text,
+    minHeight: 70,
+  },
+  pickerWrap: {
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
   picker: { height: 44, color: COLORS.text },
   actions: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  btnPrimary: { flex: 1, backgroundColor: COLORS.pinkDark, borderRadius: RADIUS.full, paddingVertical: 9, alignItems: 'center' },
+  actionBtn: { flex: 1 },
+  btnInner: {
+    borderRadius: 50,
+    paddingVertical: 9,
+    alignItems: 'center',
+    shadowColor: '#ff66b3',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
   btnPrimaryText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  btnSecondary: { flex: 1, backgroundColor: 'rgba(255,255,255,0.4)', borderRadius: RADIUS.full, paddingVertical: 9, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.7)' },
-  btnSecondaryText: { color: COLORS.pinkDark, fontWeight: '600', fontSize: 13 },
-  btnDanger: { flex: 1, backgroundColor: 'rgba(231,76,60,0.12)', borderRadius: RADIUS.full, paddingVertical: 9, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(231,76,60,0.3)' },
-  btnDangerText: { color: COLORS.danger, fontWeight: '700', fontSize: 13 },
+  btnSecondary: {
+    backgroundColor: 'rgba(255,255,255,0.4)',
+    borderRadius: 50,
+    paddingVertical: 9,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
+    justifyContent: 'center',
+  },
+  btnSecondaryText: { color: COLORS.pinkDark, fontWeight: '700', fontSize: 13 },
 });

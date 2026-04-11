@@ -1,48 +1,40 @@
 import { ETATS } from './config/constants';
 
 export const COLORS = {
-  pinkLight: '#ffd5df',
-  pinkDark: '#ff66b3',
-  pinkMid: '#ffb3d9',
-  statusNew: '#9ac1ff',
-  statusProgress: '#ffc87b',
-  statusDone: '#aaffaa',
-  statusWaiting: '#ffa2f4',
+  pinkLight:       '#ffd5df',
+  pinkMid:         '#ffb3d9',
+  pinkDark:        '#ff66b3',
+  red:             '#ff5c5c',
+  redDark:         '#e60000',
+  statusNew:       '#9ac1ff',
+  statusProgress:  '#ffc87b',
+  statusDone:      '#aaffaa',
+  statusWaiting:   '#ffa2f4',
   statusCancelled: '#b64747',
-  glassBg: 'rgba(255, 255, 255, 0.55)',
-  glassBorder: 'rgba(255, 255, 255, 0.65)',
-  text: '#333',
-  textLight: '#555',
-  textMuted: '#888',
-  white: '#fff',
-  danger: '#e74c3c',
-  gradientStart: '#ffd5df',
-  gradientEnd: '#ffb3d9',
-  chipActive: '#ff66b3',
-  chipActiveBorder: '#ff3399',
+  glassBg:         'rgba(255, 255, 255, 0.5)',
+  glassBorder:     'rgba(255, 255, 255, 0.6)',
+  text:            '#262626',
+  textLight:       '#555',
+  textMuted:       '#888',
+  white:           '#ffffff',
+  danger:          '#e74c3c',
 };
 
 export const STATUS_COLORS = {
-  [ETATS.NOUVEAU]: COLORS.statusNew,
-  [ETATS.EN_COURS]: COLORS.statusProgress,
-  [ETATS.REUSSI]: COLORS.statusDone,
+  [ETATS.NOUVEAU]:    COLORS.statusNew,
+  [ETATS.EN_COURS]:   COLORS.statusProgress,
+  [ETATS.REUSSI]:     COLORS.statusDone,
   [ETATS.EN_ATTENTE]: COLORS.statusWaiting,
-  [ETATS.ABANDONNE]: COLORS.statusCancelled,
+  [ETATS.ABANDONNE]:  COLORS.statusCancelled,
 };
 
+// Ombre glassmorphism identique au web : 0 16px 48px 0 rgba(255,102,179,0.25)
 export const SHADOWS = {
-  card: {
+  glass: {
     shadowColor: '#ff66b3',
     shadowOffset: { width: 0, height: 16 },
     shadowOpacity: 0.25,
     shadowRadius: 48,
-    elevation: 6,
-  },
-  header: {
-    shadowColor: '#ff66b3',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 24,
     elevation: 8,
   },
   addBtn: {
@@ -59,13 +51,13 @@ export const GLASS = {
   borderWidth: 1.5,
   borderColor: COLORS.glassBorder,
   borderRadius: 16,
-  ...SHADOWS.card,
+  ...SHADOWS.glass,
 };
 
 export const RADIUS = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
+  sm:   8,
+  md:   12,
+  lg:   16,
+  xl:   24,
   full: 999,
 };
