@@ -1,0 +1,27 @@
+# Dépendances
+node_modules/
+
+# Build Expo web
+dist/
+web-build/
+
+# Icônes générées (recréées au build via generate-icons.js)
+assets/*.png
+
+# Expo
+.expo/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

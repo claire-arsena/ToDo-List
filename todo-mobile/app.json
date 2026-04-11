@@ -24,7 +24,7 @@
       "package": "com.claire.todolist"
     },
     "web": {
-      "bundler": "webpack",
+      "bundler": "metro",
       "favicon": "./assets/favicon.png",
       "name": "Ma Liste",
       "shortName": "Ma Liste",

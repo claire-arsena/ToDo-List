@@ -8,7 +8,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "generate-icons": "node scripts/generate-icons.js",
-    "build:web": "node scripts/generate-icons.js && npx expo export --platform web"
+    "build:web": "node scripts/generate-icons.js && npx expo export --platform web && node scripts/post-build.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",
@@ -33,7 +33,6 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.0",
-    "@expo/webpack-config": "^19.0.0",
     "pngjs": "^7.0.0"
   },
   "private": true
