@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: ma-liste
+    env: static
+    # Render clones le repo à la racine ; on se place dans todo-mobile
+    buildCommand: cd todo-mobile && npm install && node scripts/generate-icons.js && npx expo export --platform web
+    staticPublishPath: todo-mobile/dist
+    # Redirige tout vers index.html (SPA / PWA)
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    # Headers de cache recommandés pour une PWA
+    headers:
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /static/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /*.js
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /*.css
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
