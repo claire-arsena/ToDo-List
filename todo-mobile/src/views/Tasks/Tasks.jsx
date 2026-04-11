@@ -141,7 +141,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 6, borderRadius: RADIUS.full,
     backgroundColor: 'rgba(255,255,255,0.5)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.7)',
   },
-  chipActive: { backgroundColor: COLORS.pinkDark, borderColor: '#ff3399' },
+  chipActive: {
+    backgroundColor: COLORS.pinkDark, borderColor: '#ff3399',
+    shadowColor: '#ff66b3', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,
+  },
   chipText: { fontSize: 12, fontWeight: '600', color: COLORS.textLight },
   chipTextActive: { color: '#fff' },
   taskList: {},

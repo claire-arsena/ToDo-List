@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { TodoContext } from '../ctx/TodoContext';
 import { ModalContext } from '../ctx/ModalContext';
 import GlassCard from '../components/GlassCard';
@@ -11,8 +12,10 @@ export default function Folders() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <TouchableOpacity style={styles.newFolderBtn} onPress={() => openModal('folder')} activeOpacity={0.8}>
-        <Text style={styles.newFolderText}>+ Nouveau dossier</Text>
+      <TouchableOpacity onPress={() => openModal('folder')} activeOpacity={0.8}>
+        <LinearGradient colors={[COLORS.pinkDark, '#ff5c5c']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.newFolderBtn}>
+          <Text style={styles.newFolderText}>+ Nouveau dossier</Text>
+        </LinearGradient>
       </TouchableOpacity>
 
       {folders.length === 0 ? (
@@ -45,8 +48,8 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 32 },
   newFolderBtn: {
-    backgroundColor: COLORS.pinkDark, borderRadius: RADIUS.full,
-    paddingVertical: 13, alignItems: 'center', marginBottom: 16, ...SHADOWS.card,
+    borderRadius: RADIUS.full,
+    paddingVertical: 13, alignItems: 'center', marginBottom: 16, ...SHADOWS.addBtn,
   },
   newFolderText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   emptyState: { alignItems: 'center', paddingVertical: 40 },
@@ -57,7 +60,7 @@ const styles = StyleSheet.create({
   folderDesc: { fontSize: 13, color: COLORS.textLight, marginTop: 4 },
   cardActions: { flexDirection: 'row', gap: 8 },
   btnSecondary: { flex: 1, backgroundColor: 'rgba(255,255,255,0.4)', borderRadius: RADIUS.full, paddingVertical: 8, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.7)' },
-  btnSecondaryText: { color: COLORS.text, fontWeight: '600', fontSize: 13 },
+  btnSecondaryText: { color: COLORS.pinkDark, fontWeight: '600', fontSize: 13 },
   btnDanger: { flex: 1, backgroundColor: 'rgba(231,76,60,0.12)', borderRadius: RADIUS.full, paddingVertical: 8, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(231,76,60,0.3)' },
   btnDangerText: { color: COLORS.danger, fontWeight: '700', fontSize: 13 },
 });

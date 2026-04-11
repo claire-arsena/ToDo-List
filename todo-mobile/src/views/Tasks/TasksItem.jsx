@@ -139,7 +139,7 @@ export default function TasksItem({ task, onFilterByFolder }) {
 const styles = StyleSheet.create({
   card: { flexDirection: 'row', marginBottom: 10 },
   statusBar: { width: 5 },
-  inner: { flex: 1, padding: 12 },
+  inner: { flex: 1, padding: 16 },
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   title: { flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.text, marginRight: 8 },
   editTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.text, borderBottomWidth: 1.5, borderBottomColor: COLORS.pinkDark, paddingBottom: 2, marginRight: 8 },
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   btnPrimary: { flex: 1, backgroundColor: COLORS.pinkDark, borderRadius: RADIUS.full, paddingVertical: 9, alignItems: 'center' },
   btnPrimaryText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   btnSecondary: { flex: 1, backgroundColor: 'rgba(255,255,255,0.4)', borderRadius: RADIUS.full, paddingVertical: 9, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.7)' },
-  btnSecondaryText: { color: COLORS.text, fontWeight: '600', fontSize: 13 },
+  btnSecondaryText: { color: COLORS.pinkDark, fontWeight: '600', fontSize: 13 },
   btnDanger: { flex: 1, backgroundColor: 'rgba(231,76,60,0.12)', borderRadius: RADIUS.full, paddingVertical: 9, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(231,76,60,0.3)' },
   btnDangerText: { color: COLORS.danger, fontWeight: '700', fontSize: 13 },
 });

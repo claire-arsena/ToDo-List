@@ -26,7 +26,7 @@ export default function GlassCard({ children, style, intensity = 55 }) {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: RADIUS.lg,
+    borderRadius: 20,
     borderWidth: 1.5,
     borderColor: COLORS.glassBorder,
     overflow: 'hidden',          // obligatoire pour que le borderRadius s'applique

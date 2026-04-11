@@ -32,18 +32,25 @@ export const STATUS_COLORS = {
 
 export const SHADOWS = {
   card: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowColor: '#ff66b3',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.25,
+    shadowRadius: 48,
+    elevation: 6,
   },
   header: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowColor: '#ff66b3',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  addBtn: {
+    shadowColor: '#ff66b3',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 10,
   },
 };
 
