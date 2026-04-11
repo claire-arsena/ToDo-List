@@ -18,8 +18,7 @@ export default function GlassCard({ children, style, intensity = 55 }) {
 const styles = StyleSheet.create({
   card: {
     borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: COLORS.glassBorder,
+    borderWidth: 0,
     overflow: 'hidden',
     ...SHADOWS.glass,
   },

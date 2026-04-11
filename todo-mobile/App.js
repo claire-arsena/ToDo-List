@@ -25,6 +25,7 @@ function AppNavigator() {
         tabBar={(props) => <CustomTabBar {...props} />}
         screenOptions={{
           header: ({ route }) => <AppHeader routeName={route.name} />,
+          tabBarStyle: { backgroundColor: 'transparent' },
         }}
         initialRouteName="Tasks"
       >

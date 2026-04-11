@@ -68,7 +68,7 @@ export default function TasksItem({ task, onFilterByFolder }) {
         {/* Méta : date + statut */}
         {!isEditing && (
           <View style={styles.meta}>
-            {task.dueDate ? <Text style={styles.dueDate}>📅 {task.dueDate}</Text> : null}
+            {task.dueDate ? <Text style={styles.dueDate}>{task.dueDate}</Text> : null}
             <View style={styles.statusBadge}>
               <Text style={styles.statusBadgeText}>{task.status}</Text>
             </View>

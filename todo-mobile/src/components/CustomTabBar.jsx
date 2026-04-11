@@ -7,110 +7,77 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ModalContext } from '../ctx/ModalContext';
 import { COLORS, SHADOWS } from '../theme';
 
-const TAB_CONFIG = [
-  { routeName: 'Agenda',    icon: 'calendar-outline',  iconActive: 'calendar',   label: 'Agenda' },
-  { routeName: 'Folders',   icon: 'folder-outline',    iconActive: 'folder',     label: 'Dossiers' },
-  { type: 'add' },
-  { routeName: 'Tasks',     icon: 'list-outline',      iconActive: 'list',       label: 'Tâches' },
-  { routeName: 'Dashboard', icon: 'pie-chart-outline', iconActive: 'pie-chart',  label: 'Stats' },
+const LEFT_TABS  = [
+  { routeName: 'Agenda',  icon: 'calendar-outline', iconActive: 'calendar', label: 'Agenda' },
+  { routeName: 'Folders', icon: 'folder-outline',   iconActive: 'folder',   label: 'Dossiers' },
+];
+const RIGHT_TABS = [
+  { routeName: 'Tasks',     icon: 'list-outline',      iconActive: 'list',      label: 'Tâches' },
+  { routeName: 'Dashboard', icon: 'pie-chart-outline', iconActive: 'pie-chart', label: 'Stats' },
 ];
 
 export default function CustomTabBar({ state, navigation }) {
   const insets = useSafeAreaInsets();
   const { openModal } = useContext(ModalContext);
-  const currentRouteName = state.routes[state.index].name;
-  const navigateTo = (routeName) => navigation.navigate(routeName);
+  const currentRoute = state.routes[state.index].name;
+  const go = (name) => navigation.navigate(name);
+
+  const TabItem = ({ routeName, icon, iconActive, label }) => {
+    const active = currentRoute === routeName;
+    return (
+      <TouchableOpacity style={styles.tabItem} onPress={() => go(routeName)} activeOpacity={0.7}>
+        <View style={[styles.iconWrap, active && styles.iconWrapActive]}>
+          <Ionicons name={active ? iconActive : icon} size={22} color={active ? COLORS.pinkDark : COLORS.textLight} />
+        </View>
+        <Text style={[styles.label, active && styles.labelActive]}>{label}</Text>
+      </TouchableOpacity>
+    );
+  };
 
   return (
-    <View style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, 15) }]}>
-      <BlurView intensity={70} tint="light" style={styles.pill}>
-        <View style={styles.row}>
-          {TAB_CONFIG.map((tab) => {
-            if (tab.type === 'add') {
-              return (
-                <TouchableOpacity
-                  key="add"
-                  style={styles.addWrapper}
-                  onPress={() => openModal('task')}
-                  activeOpacity={0.85}
-                >
-                  <LinearGradient
-                    colors={[COLORS.pinkDark, '#ff5c5c']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.addBg}
-                  >
-                    <Ionicons name="add" size={30} color="#fff" />
-                  </LinearGradient>
-                  <Text style={styles.addLabel}>Ajouter</Text>
-                </TouchableOpacity>
-              );
-            }
+    <View style={[styles.outer, { paddingBottom: Math.max(insets.bottom, 14) }]}>
+      {/* Bouton + flottant AU-DESSUS de la pilule — hors du overflow:hidden */}
+      <View style={styles.addPositioner}>
+        <TouchableOpacity onPress={() => openModal('task')} activeOpacity={0.85}>
+          <LinearGradient
+            colors={[COLORS.pinkDark, '#ff5c5c']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            style={styles.addBg}
+          >
+            <Ionicons name="add" size={32} color="#fff" />
+          </LinearGradient>
+        </TouchableOpacity>
+        <Text style={styles.addLabel}>Ajouter</Text>
+      </View>
 
-            const isActive = currentRouteName === tab.routeName;
-            return (
-              <TouchableOpacity
-                key={tab.routeName}
-                style={styles.tabItem}
-                onPress={() => navigateTo(tab.routeName)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.iconWrap, isActive && styles.iconWrapActive]}>
-                  <Ionicons
-                    name={isActive ? tab.iconActive : tab.icon}
-                    size={22}
-                    color={isActive ? COLORS.pinkDark : COLORS.textLight}
-                  />
-                </View>
-                <Text style={[styles.label, isActive && styles.labelActive]}>
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </BlurView>
+      {/* Pilule avec clip correct */}
+      <View style={styles.pillClip}>
+        <BlurView intensity={70} tint="light" style={styles.pillBlur}>
+          <View style={styles.row}>
+            {LEFT_TABS.map((t) => <TabItem key={t.routeName} {...t} />)}
+            {/* Espace central pour le bouton + */}
+            <View style={styles.centerGap} />
+            {RIGHT_TABS.map((t) => <TabItem key={t.routeName} {...t} />)}
+          </View>
+        </BlurView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
+  outer: {
     paddingHorizontal: 15,
-    paddingTop: 6,
+    paddingTop: 0,
     backgroundColor: 'transparent',
   },
-  pill: {
-    borderRadius: 60,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.6)',
-    overflow: 'hidden',
-    ...SHADOWS.glass,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-evenly',
-    paddingTop: 8,
-    paddingBottom: 10,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-  },
-  tabItem: { flex: 1, alignItems: 'center', paddingBottom: 2 },
-  iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  /* Bouton + positionné absolument au-dessus */
+  addPositioner: {
+    position: 'absolute',
+    alignSelf: 'center',
+    top: -28,          // sort au-dessus de la pilule
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconWrapActive: { backgroundColor: 'rgba(255,102,179,0.15)' },
-  label: { fontSize: 10, color: COLORS.textLight, marginTop: 2, fontWeight: '500' },
-  labelActive: { color: COLORS.pinkDark, fontWeight: '700' },
-  addWrapper: {
-    alignItems: 'center',
-    paddingBottom: 2,
-    marginTop: -22,
-    width: 72,
+    zIndex: 10,
   },
   addBg: {
     height: 60,
@@ -118,16 +85,38 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#ff66b3',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 10,
+    ...SHADOWS.addBtn,
   },
   addLabel: {
     fontSize: 10,
     color: COLORS.pinkDark,
-    marginTop: 4,
+    marginTop: 3,
     fontWeight: '700',
   },
+  /* Pilule avec overflow:hidden pour clipper le blur */
+  pillClip: {
+    borderRadius: 60,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.6)',
+    ...SHADOWS.glass,
+  },
+  pillBlur: { borderRadius: 60 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    backgroundColor: 'rgba(255,255,255,0.45)',
+  },
+  centerGap: { width: 68 },          // réserve l'espace du bouton +
+  tabItem: { flex: 1, alignItems: 'center' },
+  iconWrap: {
+    width: 40, height: 40, borderRadius: 20,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  iconWrapActive: { backgroundColor: 'rgba(255,102,179,0.15)' },
+  label: { fontSize: 10, color: COLORS.textLight, marginTop: 2, fontWeight: '500' },
+  labelActive: { color: COLORS.pinkDark, fontWeight: '700' },
 });
