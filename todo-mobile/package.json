@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.0",
+    "@expo/webpack-config": "^19.0.0",
     "pngjs": "^7.0.0"
   },
   "private": true
