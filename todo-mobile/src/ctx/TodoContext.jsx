@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import backupData from '../config/data.json';
 import { ETAT_TERMINE, ETATS } from '../config/constants';
@@ -79,22 +79,23 @@ export function TodoContextProvider({ children }) {
   };
 
   const resetData = () => {
-    Alert.alert(
-      'Réinitialiser',
-      'Êtes-vous sûr(e) ? Cette action supprimera toutes les tâches.',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Supprimer',
-          style: 'destructive',
-          onPress: () => {
-            setTasks([]);
-            setFolders([]);
-            setRelations([]);
-          },
-        },
-      ]
-    );
+    const doReset = () => {
+      setTasks([]);
+      setFolders([]);
+      setRelations([]);
+    };
+    if (Platform.OS === 'web') {
+      if (window.confirm('Êtes-vous sûr(e) ? Cette action supprimera toutes les tâches.')) doReset();
+    } else {
+      Alert.alert(
+        'Réinitialiser',
+        'Êtes-vous sûr(e) ? Cette action supprimera toutes les tâches.',
+        [
+          { text: 'Annuler', style: 'cancel' },
+          { text: 'Supprimer', style: 'destructive', onPress: doReset },
+        ]
+      );
+    }
   };
 
   const addTask = (task, folderId = null) => {
@@ -128,17 +129,18 @@ export function TodoContextProvider({ children }) {
   };
 
   const deleteTask = (id) => {
-    Alert.alert('Supprimer', 'Supprimer cette tâche ?', [
-      { text: 'Annuler', style: 'cancel' },
-      {
-        text: 'Supprimer',
-        style: 'destructive',
-        onPress: () => {
-          setTasks((prev) => prev.filter((t) => t.id !== id));
-          setRelations((prev) => prev.filter((r) => r.taskId !== id));
-        },
-      },
-    ]);
+    const doDelete = () => {
+      setTasks((prev) => prev.filter((t) => t.id !== id));
+      setRelations((prev) => prev.filter((r) => r.taskId !== id));
+    };
+    if (Platform.OS === 'web') {
+      if (window.confirm('Supprimer cette tâche ?')) doDelete();
+    } else {
+      Alert.alert('Supprimer', 'Supprimer cette tâche ?', [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Supprimer', style: 'destructive', onPress: doDelete },
+      ]);
+    }
   };
 
   const addFolder = (folder) => {
@@ -157,21 +159,22 @@ export function TodoContextProvider({ children }) {
   };
 
   const deleteFolder = (id) => {
-    Alert.alert(
-      'Supprimer le dossier',
-      'Supprimer ce dossier ? Les tâches associées resteront mais ne seront plus classées.',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Supprimer',
-          style: 'destructive',
-          onPress: () => {
-            setFolders((prev) => prev.filter((f) => f.id !== id));
-            setRelations((prev) => prev.filter((r) => r.folderId !== id));
-          },
-        },
-      ]
-    );
+    const doDelete = () => {
+      setFolders((prev) => prev.filter((f) => f.id !== id));
+      setRelations((prev) => prev.filter((r) => r.folderId !== id));
+    };
+    if (Platform.OS === 'web') {
+      if (window.confirm('Supprimer ce dossier ? Les tâches associées resteront mais ne seront plus classées.')) doDelete();
+    } else {
+      Alert.alert(
+        'Supprimer le dossier',
+        'Supprimer ce dossier ? Les tâches associées resteront mais ne seront plus classées.',
+        [
+          { text: 'Annuler', style: 'cancel' },
+          { text: 'Supprimer', style: 'destructive', onPress: doDelete },
+        ]
+      );
+    }
   };
 
   const addRelation = (taskId, folderId) => {

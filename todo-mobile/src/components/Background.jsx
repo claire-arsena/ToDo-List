@@ -12,11 +12,8 @@ export default function Background({ children }) {
       end={{ x: 1, y: 1 }}
       style={styles.gradient}
     >
-      {/* blob pink — top left */}
       <View style={styles.blobPink} />
-      {/* blob purple — bottom right */}
       <View style={styles.blobPurple} />
-      {/* blob hotpink — centre */}
       <View style={styles.blobHotpink} />
       <View style={styles.container}>{children}</View>
     </LinearGradient>
@@ -28,32 +25,26 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   blobPink: {
     position: 'absolute',
-    width: width * 0.7,
-    height: width * 0.7,
+    width: width * 0.7, height: width * 0.7,
     borderRadius: width * 0.35,
-    backgroundColor: 'rgba(255, 102, 179, 0.8)',
-    top: -width * 0.2,
-    left: -width * 0.2,
-    opacity: 0.35,
+    backgroundColor: 'rgba(255, 102, 179, 0.5)',
+    top: -width * 0.2, left: -width * 0.2,
+    opacity: 0.3,
   },
   blobPurple: {
     position: 'absolute',
-    width: width * 0.6,
-    height: width * 0.6,
+    width: width * 0.6, height: width * 0.6,
     borderRadius: width * 0.3,
     backgroundColor: 'rgba(224, 195, 252, 0.8)',
-    bottom: -height * 0.15,
-    right: -width * 0.1,
-    opacity: 0.45,
+    top: height * 0.25, right: -width * 0.25,  // milieu écran, pas en bas
+    opacity: 0.35,
   },
   blobHotpink: {
     position: 'absolute',
-    width: width * 0.55,
-    height: width * 0.55,
-    borderRadius: width * 0.275,
-    backgroundColor: 'rgba(255, 20, 147, 0.6)',
-    top: height * 0.25,
-    left: width * 0.35,
-    opacity: 0.2,
+    width: width * 0.5, height: width * 0.5,
+    borderRadius: width * 0.25,
+    backgroundColor: 'rgba(255, 20, 147, 0.4)',
+    top: height * 0.1, left: width * 0.3,
+    opacity: 0.15,
   },
 });

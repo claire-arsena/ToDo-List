@@ -38,9 +38,6 @@ export default function TasksItem({ task, onFilterByFolder }) {
 
   return (
     <GlassCard style={styles.card}>
-      {/* Barre de statut */}
-      <View style={[styles.statusBar, { backgroundColor: statusColor }]} />
-
       <View style={styles.inner}>
         {/* Header */}
         <View style={styles.header}>
@@ -155,8 +152,7 @@ export default function TasksItem({ task, onFilterByFolder }) {
 }
 
 const styles = StyleSheet.create({
-  card: { flexDirection: 'row', marginBottom: 12, borderRadius: 14 },
-  statusBar: { width: 5 },
+  card: { marginBottom: 12, borderRadius: 14 },
   inner: { flex: 1, padding: 14 },
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   title: { flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.text, marginRight: 8 },

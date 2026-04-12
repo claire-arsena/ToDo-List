@@ -35,32 +35,38 @@ export default function CustomTabBar({ state, navigation }) {
   };
 
   return (
-    <View style={[styles.outer, { paddingBottom: Math.max(insets.bottom, 14) }]}>
-      {/* Bouton + flottant AU-DESSUS de la pilule — hors du overflow:hidden */}
-      <View style={styles.addPositioner}>
-        <TouchableOpacity onPress={() => openModal('task')} activeOpacity={0.85}>
-          <LinearGradient
-            colors={[COLORS.pinkDark, '#ff5c5c']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-            style={styles.addBg}
-          >
-            <Ionicons name="add" size={32} color="#fff" />
-          </LinearGradient>
-        </TouchableOpacity>
-        <Text style={styles.addLabel}>Ajouter</Text>
+    <View>
+      <View style={styles.outer}>
+        {/* Pilule pleine largeur — rendue en premier dans le DOM */}
+        <View style={styles.pillClip}>
+          <BlurView intensity={70} tint="light" style={styles.pillBlur}>
+            <View style={styles.row}>
+              {LEFT_TABS.map((t) => <TabItem key={t.routeName} {...t} />)}
+              <View style={styles.centerGap} />
+              {RIGHT_TABS.map((t) => <TabItem key={t.routeName} {...t} />)}
+            </View>
+          </BlurView>
+        </View>
+
+        {/* Bouton + rendu APRÈS la pilule = au-dessus sur web (DOM order) + position absolue centrée */}
+        <View style={styles.addWrap}>
+          <TouchableOpacity onPress={() => openModal('task')} activeOpacity={0.85}>
+            <LinearGradient
+              colors={[COLORS.pinkDark, '#ff5c5c']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={styles.addBg}
+            >
+              <Ionicons name="add" size={30} color="#fff" />
+            </LinearGradient>
+          </TouchableOpacity>
+          <Text style={styles.addLabel}>Ajouter</Text>
+        </View>
       </View>
 
-      {/* Pilule avec clip correct */}
-      <View style={styles.pillClip}>
-        <BlurView intensity={70} tint="light" style={styles.pillBlur}>
-          <View style={styles.row}>
-            {LEFT_TABS.map((t) => <TabItem key={t.routeName} {...t} />)}
-            {/* Espace central pour le bouton + */}
-            <View style={styles.centerGap} />
-            {RIGHT_TABS.map((t) => <TabItem key={t.routeName} {...t} />)}
-          </View>
-        </BlurView>
-      </View>
+      {/* Remplissage safe area bas — évite le panel rose transparent */}
+      {insets.bottom > 0 && (
+        <View style={[styles.bottomFill, { height: insets.bottom }]} />
+      )}
     </View>
   );
 }
@@ -68,38 +74,39 @@ export default function CustomTabBar({ state, navigation }) {
 const styles = StyleSheet.create({
   outer: {
     paddingHorizontal: 15,
-    paddingTop: 0,
+    paddingTop: 76,    // espace pour le bouton + label (56+3+13=72 + 4 margin)
     backgroundColor: 'transparent',
   },
-  /* Bouton + positionné absolument au-dessus */
-  addPositioner: {
+  /* Bouton + positionné en absolu dans l'espace paddingTop, au-dessus de la pilule */
+  addWrap: {
     position: 'absolute',
-    alignSelf: 'center',
-    top: -28,          // sort au-dessus de la pilule
+    top: 0,
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    zIndex: 10,
+    zIndex: 20,
+    elevation: 20,
   },
   addBg: {
-    height: 60,
-    width: 60,
-    borderRadius: 30,
+    height: 56,
+    width: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
     ...SHADOWS.addBtn,
   },
   addLabel: {
-    fontSize: 10,
-    color: COLORS.pinkDark,
-    marginTop: 3,
-    fontWeight: '700',
+    fontSize: 10, color: COLORS.pinkDark,
+    marginTop: 3, fontWeight: '700',
   },
-  /* Pilule avec overflow:hidden pour clipper le blur */
   pillClip: {
     borderRadius: 60,
     overflow: 'hidden',
     borderWidth: 1.5,
     borderColor: 'rgba(255,255,255,0.6)',
+    width: '100%',
     ...SHADOWS.glass,
+    zIndex: 0,
   },
   pillBlur: { borderRadius: 60 },
   row: {
@@ -110,7 +117,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     backgroundColor: 'rgba(255,255,255,0.45)',
   },
-  centerGap: { width: 68 },          // réserve l'espace du bouton +
+  centerGap: { width: 64 },
   tabItem: { flex: 1, alignItems: 'center' },
   iconWrap: {
     width: 40, height: 40, borderRadius: 20,
@@ -119,4 +126,9 @@ const styles = StyleSheet.create({
   iconWrapActive: { backgroundColor: 'rgba(255,102,179,0.15)' },
   label: { fontSize: 10, color: COLORS.textLight, marginTop: 2, fontWeight: '500' },
   labelActive: { color: COLORS.pinkDark, fontWeight: '700' },
+  /* Remplissage safe area bas — même teinte glass que la pilule */
+  bottomFill: {
+    backgroundColor: 'rgba(255,255,255,0.45)',
+    borderTopWidth: 0,
+  },
 });
