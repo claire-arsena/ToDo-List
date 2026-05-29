@@ -1,4 +1,4 @@
-# ToDo List — Claire Arsena
+# ToDo List - Claire Arsena
 
 Application web de gestion de tâches développée en React.
 
