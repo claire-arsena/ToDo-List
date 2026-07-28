@@ -73,29 +73,23 @@ export default function Planning() {
 
   // Timed vs All-day tasks
   const timedTasks = useMemo(() => {
-    return dayTasks.filter((t) => {
-      const isStartDay = t.startDate === dateStr || (!t.startDate && t.dueDate === dateStr);
-      const isEndDay = t.endDate === dateStr;
-      if (isStartDay && t.startTime) return true;
-      if (isEndDay && t.endTime) return true;
-      return false;
-    });
-  }, [dayTasks, dateStr]);
+    return dayTasks.filter((t) => !!t.startTime);
+  }, [dayTasks]);
 
   const allDayTasks = useMemo(() => {
-    return dayTasks.filter((t) => !timedTasks.includes(t));
-  }, [dayTasks, timedTasks]);
+    return dayTasks.filter((t) => !t.startTime);
+  }, [dayTasks]);
 
   const getTaskPosition = (task) => {
     let startH = START_HOUR, startM = 0, endH = END_HOUR, endM = 0;
 
-    if ((task.startDate === dateStr || (!task.startDate && task.dueDate === dateStr)) && task.startTime) {
+    if (task.startTime) {
       const parts = task.startTime.split(':').map(Number);
       startH = parts[0];
       startM = parts[1] || 0;
     }
 
-    if (task.endDate === dateStr && task.endTime) {
+    if (task.endTime) {
       const parts = task.endTime.split(':').map(Number);
       endH = parts[0];
       endM = parts[1] || 0;
@@ -210,13 +204,14 @@ export default function Planning() {
             </View>
           )}
 
-          {/* Evenements */}
+          {/* Événements */}
           <View style={styles.eventsOverlay}>
             {timedTasks.map((t) => {
               const pos = getTaskPosition(t);
               const isDone = t.status === 'Réussi';
               const color = getTaskColor(t);
               const folderName = getFolderName(t);
+              const isMultiDay = t.startDate && t.endDate && t.startDate !== t.endDate;
               return (
                 <TouchableOpacity
                   key={t.id}
@@ -242,12 +237,17 @@ export default function Planning() {
                     )}
                   </View>
 
-                  {pos.height > 40 && (
-                    <Text style={styles.eventTime}>
-                      {t.startTime || ''}
-                      {t.startTime && t.endTime ? ' → ' : ''}
-                      {t.endTime || ''}
-                    </Text>
+                  {pos.height > 38 && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 }}>
+                      <Text style={styles.eventTime}>
+                        ⏰ {t.startTime || ''}
+                        {t.startTime && t.endTime ? ' → ' : ''}
+                        {t.endTime || ''}
+                      </Text>
+                      {isMultiDay && (
+                        <Text style={styles.regularBadgeText}>🔁 Régulier</Text>
+                      )}
+                    </View>
                   )}
                 </TouchableOpacity>
               );
@@ -362,6 +362,7 @@ const styles = StyleSheet.create({
   eventHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   eventTitle: { fontSize: 12, fontWeight: '700', flex: 1 },
   eventTime: { fontSize: 10, color: COLORS.textLight, marginTop: 1 },
+  regularBadgeText: { fontSize: 9, fontWeight: '800', color: COLORS.pinkDark, marginTop: 1 },
   emptyWrap: {
     position: 'absolute',
     top: 80,
