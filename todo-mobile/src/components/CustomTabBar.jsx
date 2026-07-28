@@ -8,12 +8,12 @@ import { ModalContext } from '../ctx/ModalContext';
 import { COLORS, SHADOWS } from '../theme';
 
 const LEFT_TABS  = [
-  { routeName: 'Agenda',  icon: 'calendar-outline', iconActive: 'calendar', label: 'Agenda' },
-  { routeName: 'Folders', icon: 'folder-outline',   iconActive: 'folder',   label: 'Dossiers' },
+  { routeName: 'Tasks',    icon: 'checkbox-outline', iconActive: 'checkbox', label: 'Tâches' },
+  { routeName: 'Planning', icon: 'time-outline',     iconActive: 'time',     label: 'Planning' },
 ];
 const RIGHT_TABS = [
-  { routeName: 'Tasks',     icon: 'list-outline',      iconActive: 'list',      label: 'Tâches' },
-  { routeName: 'Dashboard', icon: 'pie-chart-outline', iconActive: 'pie-chart', label: 'Stats' },
+  { routeName: 'Agenda',    icon: 'calendar-outline', iconActive: 'calendar', label: 'Agenda' },
+  { routeName: 'Dashboard', icon: 'pie-chart-outline',iconActive: 'pie-chart',label: 'Stats' },
 ];
 
 export default function CustomTabBar({ state, navigation }) {

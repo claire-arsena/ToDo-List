@@ -7,8 +7,8 @@ import { COLORS, SHADOWS } from '../theme';
 
 const ROUTE_TITLES = {
   Tasks: 'Tâches',
+  Planning: 'Planning',
   Agenda: 'Agenda',
-  Folders: 'Dossiers',
   Dashboard: 'Tableau de bord',
 };
 
