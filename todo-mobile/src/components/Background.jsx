@@ -1,50 +1,66 @@
 import React from 'react';
-import { StyleSheet, View, Dimensions } from 'react-native';
+import { StyleSheet, View, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-
-const { width, height } = Dimensions.get('window');
 
 export default function Background({ children }) {
   return (
-    <LinearGradient
-      colors={['#ffd5df', '#ffb3d9']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.gradient}
-    >
-      <View style={styles.blobPink} />
-      <View style={styles.blobPurple} />
-      <View style={styles.blobHotpink} />
-      <View style={styles.container}>{children}</View>
-    </LinearGradient>
+    <View style={styles.outerWrapper}>
+      <LinearGradient
+        colors={['#fff0f5', '#ffe4ec', '#f3e5f5']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.appFrame}
+      >
+        {/* Soft background ambient blobs */}
+        <View style={styles.blobPink} />
+        <View style={styles.blobPurple} />
+
+        <View style={styles.container}>{children}</View>
+      </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gradient: { flex: 1 },
-  container: { flex: 1 },
+  outerWrapper: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#eef0f4',
+  },
+  appFrame: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 500,
+    position: 'relative',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  container: { flex: 1, position: 'relative', zIndex: 2 },
   blobPink: {
     position: 'absolute',
-    width: width * 0.7, height: width * 0.7,
-    borderRadius: width * 0.35,
-    backgroundColor: 'rgba(255, 102, 179, 0.5)',
-    top: -width * 0.2, left: -width * 0.2,
-    opacity: 0.3,
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    backgroundColor: 'rgba(255, 102, 179, 0.22)',
+    top: -60,
+    left: -60,
+    zIndex: 1,
   },
   blobPurple: {
     position: 'absolute',
-    width: width * 0.6, height: width * 0.6,
-    borderRadius: width * 0.3,
-    backgroundColor: 'rgba(224, 195, 252, 0.8)',
-    top: height * 0.25, right: -width * 0.25,  // milieu écran, pas en bas
-    opacity: 0.35,
-  },
-  blobHotpink: {
-    position: 'absolute',
-    width: width * 0.5, height: width * 0.5,
-    borderRadius: width * 0.25,
-    backgroundColor: 'rgba(255, 20, 147, 0.4)',
-    top: height * 0.1, left: width * 0.3,
-    opacity: 0.15,
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: 'rgba(224, 195, 252, 0.35)',
+    bottom: 80,
+    right: -50,
+    zIndex: 1,
   },
 });

@@ -199,10 +199,13 @@ export default function TaskFormModal() {
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
+    width: '100%',
+    maxWidth: 500,
+    alignSelf: 'center',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.6)',
+    borderColor: 'rgba(255,255,255,0.7)',
     maxHeight: '90%',
     overflow: 'hidden',
     ...SHADOWS.glass,
