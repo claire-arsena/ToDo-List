@@ -7,13 +7,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ModalContext } from '../ctx/ModalContext';
 import { COLORS, SHADOWS } from '../theme';
 
-const LEFT_TABS  = [
-  { routeName: 'Tasks',    icon: 'checkbox-outline', iconActive: 'checkbox', label: 'Tâches' },
-  { routeName: 'Planning', icon: 'time-outline',     iconActive: 'time',     label: 'Planning' },
+const LEFT_TABS = [
+  { routeName: 'Tasks', icon: 'checkbox-outline', iconActive: 'checkbox', label: 'Tâches' },
+  { routeName: 'Planning', icon: 'time-outline', iconActive: 'time', label: 'Planning' },
 ];
 const RIGHT_TABS = [
-  { routeName: 'Agenda',    icon: 'calendar-outline', iconActive: 'calendar', label: 'Agenda' },
-  { routeName: 'Dashboard', icon: 'pie-chart-outline',iconActive: 'pie-chart',label: 'Stats' },
+  { routeName: 'Agenda', icon: 'calendar-outline', iconActive: 'calendar', label: 'Agenda' },
+  { routeName: 'Dashboard', icon: 'pie-chart-outline', iconActive: 'pie-chart', label: 'Stats' },
 ];
 
 export default function CustomTabBar({ state, navigation }) {
@@ -35,11 +35,10 @@ export default function CustomTabBar({ state, navigation }) {
   };
 
   return (
-    <View>
-      <View style={styles.outer}>
-        {/* Pilule pleine largeur — rendue en premier dans le DOM */}
+    <View style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
+      <View style={styles.container}>
         <View style={styles.pillClip}>
-          <BlurView intensity={70} tint="light" style={styles.pillBlur}>
+          <BlurView intensity={80} tint="light" style={styles.pillBlur}>
             <View style={styles.row}>
               {LEFT_TABS.map((t) => <TabItem key={t.routeName} {...t} />)}
               <View style={styles.centerGap} />
@@ -48,87 +47,83 @@ export default function CustomTabBar({ state, navigation }) {
           </BlurView>
         </View>
 
-        {/* Bouton + rendu APRÈS la pilule = au-dessus sur web (DOM order) + position absolue centrée */}
-        <View style={styles.addWrap}>
-          <TouchableOpacity onPress={() => openModal('task')} activeOpacity={0.85}>
-            <LinearGradient
-              colors={[COLORS.pinkDark, '#ff5c5c']}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={styles.addBg}
-            >
-              <Ionicons name="add" size={30} color="#fff" />
-            </LinearGradient>
-          </TouchableOpacity>
-          <Text style={styles.addLabel}>Ajouter</Text>
-        </View>
+        {/* Bouton + flottant propre centré sur le haut de la pilule */}
+        <TouchableOpacity
+          style={styles.addWrap}
+          onPress={() => openModal('task')}
+          activeOpacity={0.85}
+        >
+          <LinearGradient
+            colors={[COLORS.pinkDark, '#ff477e']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            style={styles.addBg}
+          >
+            <Ionicons name="add" size={32} color="#fff" />
+          </LinearGradient>
+        </TouchableOpacity>
       </View>
-
-      {/* Remplissage safe area bas — évite le panel rose transparent */}
-      {insets.bottom > 0 && (
-        <View style={[styles.bottomFill, { height: insets.bottom }]} />
-      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  outer: {
-    paddingHorizontal: 15,
-    paddingTop: 76,    // espace pour le bouton + label (56+3+13=72 + 4 margin)
+  wrapper: {
     backgroundColor: 'transparent',
-  },
-  /* Bouton + positionné en absolu dans l'espace paddingTop, au-dessus de la pilule */
-  addWrap: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     alignItems: 'center',
-    zIndex: 20,
-    elevation: 20,
   },
-  addBg: {
-    height: 56,
-    width: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...SHADOWS.addBtn,
-  },
-  addLabel: {
-    fontSize: 10, color: COLORS.pinkDark,
-    marginTop: 3, fontWeight: '700',
+  container: {
+    width: '100%',
+    maxWidth: 500,
+    position: 'relative',
   },
   pillClip: {
-    borderRadius: 60,
+    borderRadius: 36,
     overflow: 'hidden',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.6)',
-    width: '100%',
+    borderColor: 'rgba(255,255,255,0.75)',
     ...SHADOWS.glass,
-    zIndex: 0,
   },
-  pillBlur: { borderRadius: 60 },
+  pillBlur: { borderRadius: 36 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-evenly',
+    justifyContent: 'space-around',
     paddingVertical: 10,
     paddingHorizontal: 8,
-    backgroundColor: 'rgba(255,255,255,0.45)',
+    backgroundColor: 'rgba(255,255,255,0.75)',
   },
-  centerGap: { width: 64 },
-  tabItem: { flex: 1, alignItems: 'center' },
+  centerGap: { width: 52 },
+  tabItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   iconWrap: {
-    width: 40, height: 40, borderRadius: 20,
-    alignItems: 'center', justifyContent: 'center',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  iconWrapActive: { backgroundColor: 'rgba(255,102,179,0.15)' },
-  label: { fontSize: 10, color: COLORS.textLight, marginTop: 2, fontWeight: '500' },
-  labelActive: { color: COLORS.pinkDark, fontWeight: '700' },
-  /* Remplissage safe area bas — même teinte glass que la pilule */
-  bottomFill: {
-    backgroundColor: 'rgba(255,255,255,0.45)',
-    borderTopWidth: 0,
+  iconWrapActive: { backgroundColor: 'rgba(255,102,179,0.18)' },
+  label: { fontSize: 10, color: COLORS.textLight, marginTop: 2, fontWeight: '600' },
+  labelActive: { color: COLORS.pinkDark, fontWeight: '800' },
+  addWrap: {
+    position: 'absolute',
+    top: -20,
+    left: '50%',
+    marginLeft: -26,
+    zIndex: 30,
+    elevation: 10,
+  },
+  addBg: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#ff66b3',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    elevation: 8,
   },
 });
