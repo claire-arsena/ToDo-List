@@ -1,8 +1,9 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, useRef } from 'react';
 import {
   Modal, View, Text, TextInput, TouchableOpacity,
   ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Picker } from '@react-native-picker/picker';
@@ -31,6 +32,9 @@ const FOLDER_COLORS = [
   '#fdcb6e', // Or Doux
 ];
 
+const HEIGHT_STORAGE_KEY = '@todo_modal_sheet_height';
+const DEFAULT_HEIGHT = 540;
+
 const getToday = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -52,12 +56,34 @@ export default function TaskFormModal() {
   const { addTask, updateTask, folders, addFolder, deleteFolder } = useContext(TodoContext);
   const { isModalOpen, modalType, modalData, closeModal } = useContext(ModalContext);
   const [form, setForm] = useState(EMPTY);
-  const [isFullScreen, setIsFullScreen] = useState(false);
+
+  // Hauteur personnalisable et persistante en LocalStorage
+  const [sheetHeight, setSheetHeight] = useState(DEFAULT_HEIGHT);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartY = useRef(0);
+  const dragStartHeight = useRef(DEFAULT_HEIGHT);
 
   // Quick Folder creation form
   const [showNewFolderForm, setShowNewFolderForm] = useState(false);
   const [newFolderTitle, setNewFolderTitle] = useState('');
   const [newFolderColor, setNewFolderColor] = useState(FOLDER_COLORS[0]);
+
+  // Charger la hauteur sauvegardee dans AsyncStorage/localStorage
+  useEffect(() => {
+    (async () => {
+      try {
+        const saved = await AsyncStorage.getItem(HEIGHT_STORAGE_KEY);
+        if (saved) {
+          const parsed = parseInt(saved, 10);
+          if (parsed >= 200 && parsed <= 1200) {
+            setSheetHeight(parsed);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     if (isModalOpen && modalType === 'task') {
@@ -78,8 +104,59 @@ export default function TaskFormModal() {
       }
     }
     setShowNewFolderForm(false);
-    setIsFullScreen(false);
   }, [modalData, modalType, isModalOpen]);
+
+  // Gestion du Dragging fluide au doigt / curseur
+  const handleDragStart = (clientY) => {
+    setIsDragging(true);
+    dragStartY.current = clientY;
+    dragStartHeight.current = sheetHeight;
+  };
+
+  const handleDragMove = (clientY) => {
+    if (!dragStartY.current) return;
+    const deltaY = clientY - dragStartY.current;
+    const newH = dragStartHeight.current - deltaY;
+    const clampedH = Math.max(100, Math.min(newH, (Platform.OS === 'web' && window.innerHeight ? window.innerHeight * 0.95 : 900)));
+    setSheetHeight(clampedH);
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    dragStartY.current = 0;
+
+    // Si tire vers le bas en-dessous de 180px -> fermer la modale !
+    if (sheetHeight < 180) {
+      closeModal();
+      setSheetHeight(DEFAULT_HEIGHT);
+    } else {
+      // Sauvegarder la hauteur choisie en LocalStorage
+      AsyncStorage.setItem(HEIGHT_STORAGE_KEY, String(Math.round(sheetHeight)));
+    }
+  };
+
+  // Listeners Web globaux pour un suivi 60fps ultra fluide hors de la poignee
+  useEffect(() => {
+    if (Platform.OS === 'web' && isDragging) {
+      const onMove = (e) => {
+        const y = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+        if (y) handleDragMove(y);
+      };
+      const onUp = () => handleDragEnd();
+
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+      window.addEventListener('touchmove', onMove);
+      window.addEventListener('touchend', onUp);
+
+      return () => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('touchmove', onMove);
+        window.removeEventListener('touchend', onUp);
+      };
+    }
+  }, [isDragging, sheetHeight]);
 
   const set = (key, val) => setForm((prev) => ({ ...prev, [key]: val }));
 
@@ -145,27 +222,36 @@ export default function TaskFormModal() {
         <BlurView
           intensity={90}
           tint="light"
-          style={[styles.iosSheet, isFullScreen ? styles.iosSheetFull : styles.iosSheetNormal]}
+          style={[
+            styles.iosSheet,
+            { height: sheetHeight, maxHeight: '95%' },
+            isDragging && { transition: 'none' },
+          ]}
         >
           <View style={styles.sheetInner}>
-            {/* iOS Sheet Interactive Drag & Height Handle Bar */}
-            <TouchableOpacity
+            {/* Poignée tactile de drag interactive */}
+            <View
               style={styles.handleTouchArea}
-              onPress={() => setIsFullScreen(!isFullScreen)}
-              activeOpacity={0.7}
+              onPointerDown={(e) => {
+                if (e.target.setPointerCapture) e.target.setPointerCapture(e.pointerId);
+                handleDragStart(e.clientY);
+              }}
+              onPointerUp={(e) => {
+                if (e.target.releasePointerCapture) e.target.releasePointerCapture(e.pointerId);
+                handleDragEnd();
+              }}
+              onResponderGrant={(evt) => handleDragStart(evt.nativeEvent.pageY)}
+              onResponderMove={(evt) => handleDragMove(evt.nativeEvent.pageY)}
+              onResponderRelease={() => handleDragEnd()}
             >
-              <View style={styles.iosHandle} />
+              <View style={[styles.iosHandle, isDragging && styles.iosHandleActive]} />
               <View style={styles.handleHintRow}>
-                <Ionicons
-                  name={isFullScreen ? 'chevron-down' : 'chevron-up'}
-                  size={13}
-                  color={COLORS.textMuted}
-                />
+                <Ionicons name="swap-vertical" size={13} color={COLORS.pinkDark} />
                 <Text style={styles.handleHintText}>
-                  {isFullScreen ? 'Réduire' : 'Plein écran'}
+                  {isDragging ? 'Ajustement...' : 'Glisser au doigt pour ajuster / fermer'}
                 </Text>
               </View>
-            </TouchableOpacity>
+            </View>
 
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
@@ -426,13 +512,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...SHADOWS.glass,
   },
-  iosSheetNormal: {
-    maxHeight: '82%',
-  },
-  iosSheetFull: {
-    height: '96%',
-    maxHeight: '96%',
-  },
   sheetInner: {
     backgroundColor: '#ffffff',
     maxHeight: '100%',
@@ -441,33 +520,38 @@ const styles = StyleSheet.create({
   handleTouchArea: {
     alignItems: 'center',
     paddingTop: 10,
-    paddingBottom: 6,
-    cursor: 'pointer',
+    paddingBottom: 8,
+    cursor: 'grab',
+    touchAction: 'none',
   },
   iosHandle: {
-    width: 40,
+    width: 44,
     height: 5,
     borderRadius: 2.5,
     backgroundColor: 'rgba(60, 60, 67, 0.3)',
     marginBottom: 4,
   },
+  iosHandleActive: {
+    backgroundColor: COLORS.pinkDark,
+    width: 56,
+  },
   handleHintRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    gap: 4,
   },
   handleHintText: {
     fontSize: 10,
-    fontWeight: '700',
-    color: COLORS.textMuted,
+    fontWeight: '800',
+    color: COLORS.pinkDark,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 4,
-    paddingBottom: 12,
+    paddingTop: 2,
+    paddingBottom: 10,
     borderBottomWidth: 0.5,
     borderBottomColor: 'rgba(0, 0, 0, 0.08)',
   },
