@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import {
   Modal, View, Text, TextInput, TouchableOpacity,
-  ScrollView, StyleSheet, KeyboardAvoidingView, Platform,
+  ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,7 +13,22 @@ import { ETATS } from '../../config/constants';
 import DatePickerInput from '../DatePickerInput';
 import { COLORS, SHADOWS } from '../../theme';
 
-const FOLDER_COLORS = ['#3498db', '#2ecc71', '#9b59b6', '#e67e22', '#e74c3c', '#ff66b3'];
+const FOLDER_COLORS = [
+  '#3498db', // Bleu Océan
+  '#2ecc71', // Vert Émeraude
+  '#9b59b6', // Violet Néon
+  '#e67e22', // Orange Corail
+  '#e74c3c', // Rouge Rubis
+  '#ff66b3', // Rose Bonbon
+  '#1abc9c', // Turquoise
+  '#f1c40f', // Jaune Soleil
+  '#e84393', // Magenta
+  '#00cec9', // Cyan Menthe
+  '#6c5ce7', // Indigo
+  '#fd79a8', // Rose Pastel
+  '#00b894', // Vert Menthe
+  '#fdcb6e', // Or Doux
+];
 
 const getToday = () => {
   const d = new Date();
@@ -32,7 +47,7 @@ const EMPTY = {
 };
 
 export default function TaskFormModal() {
-  const { addTask, updateTask, folders, addFolder } = useContext(TodoContext);
+  const { addTask, updateTask, folders, addFolder, deleteFolder } = useContext(TodoContext);
   const { isModalOpen, modalType, modalData, closeModal } = useContext(ModalContext);
   const [form, setForm] = useState(EMPTY);
 
@@ -67,6 +82,28 @@ export default function TaskFormModal() {
     set('folderId', created.id);
     setNewFolderTitle('');
     setShowNewFolderForm(false);
+  };
+
+  const handleDeleteFolder = (folderId, folderTitle) => {
+    const doDelete = () => {
+      deleteFolder(folderId);
+      if (form.folderId === folderId) set('folderId', null);
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Supprimer le dossier "${folderTitle}" ? Les tâches associées n'auront plus de dossier.`)) {
+        doDelete();
+      }
+    } else {
+      Alert.alert(
+        'Supprimer le dossier',
+        `Supprimer le dossier "${folderTitle}" ? Les tâches associées n'auront plus de dossier.`,
+        [
+          { text: 'Annuler', style: 'cancel' },
+          { text: 'Supprimer', style: 'destructive', onPress: doDelete },
+        ]
+      );
+    }
   };
 
   const handleSubmit = () => {
@@ -122,7 +159,7 @@ export default function TaskFormModal() {
                 />
               </View>
 
-              {/* Choix du Dossier avec couleur */}
+              {/* Choix du Dossier avec couleur et suppression */}
               <View style={styles.formGroup}>
                 <View style={styles.labelRow}>
                   <Text style={styles.label}>Dossier (Optionnel)</Text>
@@ -139,20 +176,31 @@ export default function TaskFormModal() {
                       style={styles.input}
                       value={newFolderTitle}
                       onChangeText={setNewFolderTitle}
-                      placeholder="Nom du dossier..."
+                      placeholder="Nom du dossier (ex: Marketing, Sport...)"
                       placeholderTextColor={COLORS.textMuted}
                     />
                     <Text style={[styles.label, { marginTop: 8 }]}>Couleur du dossier :</Text>
-                    <View style={styles.colorPickerRow}>
-                      {FOLDER_COLORS.map((c) => (
-                        <TouchableOpacity
-                          key={c}
-                          style={[styles.colorDot, { backgroundColor: c }, newFolderColor === c && styles.colorDotActive]}
-                          onPress={() => setNewFolderColor(c)}
-                        />
-                      ))}
-                    </View>
-                    <TouchableOpacity style={styles.createFolderSubmit} onPress={handleCreateFolder}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                      <View style={styles.colorPickerRow}>
+                        {FOLDER_COLORS.map((c) => (
+                          <TouchableOpacity
+                            key={c}
+                            style={[
+                              styles.colorDot,
+                              { backgroundColor: c },
+                              newFolderColor === c && styles.colorDotActive,
+                            ]}
+                            onPress={() => setNewFolderColor(c)}
+                          />
+                        ))}
+                      </View>
+                    </ScrollView>
+
+                    <TouchableOpacity
+                      style={[styles.createFolderSubmit, !newFolderTitle.trim() && { opacity: 0.5 }]}
+                      onPress={handleCreateFolder}
+                      disabled={!newFolderTitle.trim()}
+                    >
                       <Text style={styles.createFolderSubmitText}>Créer le dossier</Text>
                     </TouchableOpacity>
                   </View>
@@ -171,20 +219,37 @@ export default function TaskFormModal() {
                       {folders.map((f) => {
                         const isSelected = form.folderId === f.id;
                         return (
-                          <TouchableOpacity
+                          <View
                             key={f.id}
                             style={[
                               styles.folderChip,
                               { borderColor: f.color },
                               isSelected && { backgroundColor: f.color },
                             ]}
-                            onPress={() => set('folderId', f.id)}
                           >
-                            <View style={[styles.smallDot, { backgroundColor: isSelected ? '#fff' : f.color }]} />
-                            <Text style={[styles.folderChipText, isSelected && { color: '#fff', fontWeight: '800' }]}>
-                              {f.title}
-                            </Text>
-                          </TouchableOpacity>
+                            <TouchableOpacity
+                              style={styles.folderChipSelectArea}
+                              onPress={() => set('folderId', f.id)}
+                            >
+                              <View style={[styles.smallDot, { backgroundColor: isSelected ? '#fff' : f.color }]} />
+                              <Text style={[styles.folderChipText, isSelected && { color: '#fff', fontWeight: '800' }]}>
+                                {f.title}
+                              </Text>
+                            </TouchableOpacity>
+
+                            {/* Bouton de suppression du dossier */}
+                            <TouchableOpacity
+                              style={styles.deleteFolderIcon}
+                              onPress={() => handleDeleteFolder(f.id, f.title)}
+                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            >
+                              <Ionicons
+                                name="trash-outline"
+                                size={13}
+                                color={isSelected ? '#fff' : COLORS.textMuted}
+                              />
+                            </TouchableOpacity>
+                          </View>
                         );
                       })}
                     </View>
@@ -336,18 +401,19 @@ const styles = StyleSheet.create({
   folderChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 20,
     backgroundColor: 'rgba(255,255,255,0.4)',
     borderWidth: 1.5,
     borderColor: 'rgba(0,0,0,0.1)',
   },
+  folderChipSelectArea: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   folderChipActive: { backgroundColor: COLORS.pinkDark, borderColor: COLORS.pinkDark },
   folderChipText: { fontSize: 12, fontWeight: '700', color: COLORS.text },
   folderChipTextActive: { color: '#fff' },
   smallDot: { width: 8, height: 8, borderRadius: 4 },
+  deleteFolderIcon: { marginLeft: 6, padding: 2 },
 
   newFolderCard: {
     padding: 12,
@@ -356,13 +422,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.7)',
   },
-  colorPickerRow: { flexDirection: 'row', gap: 10, marginTop: 6 },
+  colorPickerRow: { flexDirection: 'row', gap: 8, paddingVertical: 6 },
   colorDot: { width: 28, height: 28, borderRadius: 14 },
   colorDotActive: { borderWidth: 3, borderColor: '#fff', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 4 },
   createFolderSubmit: {
     marginTop: 10,
     backgroundColor: COLORS.pinkDark,
-    paddingVertical: 8,
+    paddingVertical: 9,
     borderRadius: 12,
     alignItems: 'center',
   },
