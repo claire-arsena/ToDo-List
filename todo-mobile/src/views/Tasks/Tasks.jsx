@@ -8,7 +8,7 @@ import { COLORS } from '../../theme';
 
 export default function Tasks() {
   const { tasks, folders, deleteFolder } = useContext(TodoContext);
-  const [filterTab, setFilterTab] = useState('active'); // 'all', 'active', 'completed'
+  const [filterTab, setFilterTab] = useState('active'); // 'all', 'active', 'completed', 'overdue'
   const [selectedFolderId, setSelectedFolderId] = useState(null); // null = all folders
 
   const handleDeleteFolder = (folderId, folderTitle) => {
@@ -38,12 +38,28 @@ export default function Tasks() {
     return tasks.filter((t) => t.folderId === selectedFolderId);
   }, [tasks, selectedFolderId]);
 
+  const overdueCount = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return folderTasks.filter((t) => {
+      const isDone = t.status === 'Réussi' || t.status === 'Abandonné';
+      const endDate = t.endDate || t.dueDate || t.startDate;
+      return !isDone && endDate && endDate < today;
+    }).length;
+  }, [folderTasks]);
+
   const filtered = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
     let r = [...folderTasks];
     if (filterTab === 'active') {
       r = r.filter((t) => t.status !== 'Réussi' && t.status !== 'Abandonné');
     } else if (filterTab === 'completed') {
       r = r.filter((t) => t.status === 'Réussi' || t.status === 'Abandonné');
+    } else if (filterTab === 'overdue') {
+      r = r.filter((t) => {
+        const isDone = t.status === 'Réussi' || t.status === 'Abandonné';
+        const endDate = t.endDate || t.dueDate || t.startDate;
+        return !isDone && endDate && endDate < today;
+      });
     }
 
     // Sort by earliest date
@@ -62,7 +78,7 @@ export default function Tasks() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      {/* Filters: Tout / En cours / Terminés */}
+      {/* Filters: En cours / Toutes / Terminées / En retard */}
       <GlassCard style={styles.filterCard}>
         <View style={styles.tabRow}>
           <TouchableOpacity
@@ -91,6 +107,27 @@ export default function Tasks() {
               Terminées ({folderTasks.filter((t) => t.status === 'Réussi' || t.status === 'Abandonné').length})
             </Text>
           </TouchableOpacity>
+
+          {overdueCount > 0 && (
+            <TouchableOpacity
+              style={[
+                styles.tabBtn,
+                styles.tabBtnOverdue,
+                filterTab === 'overdue' && styles.tabBtnOverdueActive,
+              ]}
+              onPress={() => setFilterTab('overdue')}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  styles.tabTextOverdueText,
+                  filterTab === 'overdue' && styles.tabTextActive,
+                ]}
+              >
+                ⚠ En retard ({overdueCount})
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Filtre par Dossier */}
@@ -163,7 +200,11 @@ export default function Tasks() {
           <View style={styles.empty}>
             <Text style={styles.emptyIcon}>✨</Text>
             <Text style={styles.emptyTitle}>
-              {filterTab === 'completed' ? 'Aucune tâche terminée' : 'Aucune tâche dans ce filtre'}
+              {filterTab === 'completed'
+                ? 'Aucune tâche terminée'
+                : filterTab === 'overdue'
+                ? 'Aucune tâche en retard 🎉'
+                : 'Aucune tâche dans ce filtre'}
             </Text>
             <Text style={styles.emptySub}>
               {filterTab === 'active' ? 'Appuyez sur + pour ajouter votre première tâche !' : ''}
@@ -179,9 +220,9 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 100 },
   filterCard: { padding: 8, marginBottom: 16 },
-  tabRow: { flexDirection: 'row', gap: 6 },
+  tabRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   tabBtn: {
-    flex: 1,
+    paddingHorizontal: 12,
     paddingVertical: 8,
     alignItems: 'center',
     borderRadius: 20,
@@ -190,7 +231,17 @@ const styles = StyleSheet.create({
   tabBtnActive: {
     backgroundColor: COLORS.pinkDark,
   },
+  tabBtnOverdue: {
+    backgroundColor: 'rgba(231,76,60,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(231,76,60,0.3)',
+  },
+  tabBtnOverdueActive: {
+    backgroundColor: '#e74c3c',
+    borderColor: '#e74c3c',
+  },
   tabText: { fontSize: 12, fontWeight: '700', color: COLORS.textLight },
+  tabTextOverdueText: { color: '#e74c3c', fontWeight: '800' },
   tabTextActive: { color: '#fff' },
 
   folderFilterRow: { flexDirection: 'row', gap: 6, paddingVertical: 2 },
