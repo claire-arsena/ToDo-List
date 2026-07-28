@@ -78,7 +78,7 @@ export default function Tasks() {
         <GlassCard style={styles.alertBannerCard}>
           <View style={styles.alertBannerInner}>
             <View style={styles.alertBannerTextRow}>
-              <Ionicons name="warning" size={20} color="#e74c3c" />
+              <Ionicons name="warning" size={20} color="#ff3b30" />
               <View style={{ flex: 1 }}>
                 <Text style={styles.alertBannerTitle}>
                   {overdueTasks.length} tâche{overdueTasks.length > 1 ? 's' : ''} en retard !
@@ -108,32 +108,32 @@ export default function Tasks() {
         </GlassCard>
       )}
 
-      {/* Filters: En cours / Toutes / Terminées / En retard */}
-      <GlassCard style={styles.filterCard}>
-        <View style={styles.tabRow}>
+      {/* iOS Segmented Control */}
+      <GlassCard style={styles.segmentedCard}>
+        <View style={styles.iosSegmentedTrack}>
           <TouchableOpacity
-            style={[styles.tabBtn, filterTab === 'active' && styles.tabBtnActive]}
+            style={[styles.iosSegmentBtn, filterTab === 'active' && styles.iosSegmentBtnActive]}
             onPress={() => setFilterTab('active')}
           >
-            <Text style={[styles.tabText, filterTab === 'active' && styles.tabTextActive]}>
+            <Text style={[styles.iosSegmentText, filterTab === 'active' && styles.iosSegmentTextActive]}>
               En cours ({folderTasks.filter((t) => t.status !== 'Réussi' && t.status !== 'Abandonné').length})
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.tabBtn, filterTab === 'all' && styles.tabBtnActive]}
+            style={[styles.iosSegmentBtn, filterTab === 'all' && styles.iosSegmentBtnActive]}
             onPress={() => setFilterTab('all')}
           >
-            <Text style={[styles.tabText, filterTab === 'all' && styles.tabTextActive]}>
+            <Text style={[styles.iosSegmentText, filterTab === 'all' && styles.iosSegmentTextActive]}>
               Toutes ({folderTasks.length})
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.tabBtn, filterTab === 'completed' && styles.tabBtnActive]}
+            style={[styles.iosSegmentBtn, filterTab === 'completed' && styles.iosSegmentBtnActive]}
             onPress={() => setFilterTab('completed')}
           >
-            <Text style={[styles.tabText, filterTab === 'completed' && styles.tabTextActive]}>
+            <Text style={[styles.iosSegmentText, filterTab === 'completed' && styles.iosSegmentTextActive]}>
               Terminées ({folderTasks.filter((t) => t.status === 'Réussi' || t.status === 'Abandonné').length})
             </Text>
           </TouchableOpacity>
@@ -141,17 +141,17 @@ export default function Tasks() {
           {overdueTasks.length > 0 && (
             <TouchableOpacity
               style={[
-                styles.tabBtn,
-                styles.tabBtnOverdue,
-                filterTab === 'overdue' && styles.tabBtnOverdueActive,
+                styles.iosSegmentBtn,
+                styles.iosSegmentBtnOverdue,
+                filterTab === 'overdue' && styles.iosSegmentBtnOverdueActive,
               ]}
               onPress={() => setFilterTab('overdue')}
             >
               <Text
                 style={[
-                  styles.tabText,
-                  styles.tabTextOverdueText,
-                  filterTab === 'overdue' && styles.tabTextActive,
+                  styles.iosSegmentText,
+                  styles.iosSegmentTextOverdue,
+                  filterTab === 'overdue' && styles.iosSegmentTextActive,
                 ]}
               >
                 ⚠ En retard ({overdueTasks.length})
@@ -160,9 +160,9 @@ export default function Tasks() {
           )}
         </View>
 
-        {/* Filtre par Dossier */}
+        {/* Filtre par Dossier (iOS Chips style) */}
         {folders.length > 0 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
             <View style={styles.folderFilterRow}>
               <TouchableOpacity
                 style={[
@@ -177,7 +177,7 @@ export default function Tasks() {
                     selectedFolderId === null && styles.folderFilterTextActive,
                   ]}
                 >
-                  Tous dossiers
+                  Tous les dossiers
                 </Text>
               </TouchableOpacity>
 
@@ -197,12 +197,11 @@ export default function Tasks() {
                       onPress={() => setSelectedFolderId(active ? null : f.id)}
                     >
                       <View style={[styles.dot, { backgroundColor: active ? '#fff' : f.color }]} />
-                      <Text style={[styles.folderFilterText, active && { color: '#fff', fontWeight: '800' }]}>
+                      <Text style={[styles.folderFilterText, active && { color: '#fff', fontWeight: '700' }]}>
                         {f.title}
                       </Text>
                     </TouchableOpacity>
 
-                    {/* Trash icon to delete folder */}
                     <TouchableOpacity
                       style={styles.deleteFolderBtn}
                       onPress={() => handleDeleteFolder(f.id, f.title)}
@@ -222,7 +221,7 @@ export default function Tasks() {
         )}
       </GlassCard>
 
-      {/* Task List */}
+      {/* List of Task Items */}
       <View style={styles.list}>
         {filtered.length > 0 ? (
           filtered.map((task) => <TasksItem key={task.id} task={task} />)
@@ -252,24 +251,25 @@ const styles = StyleSheet.create({
 
   alertBannerCard: {
     marginBottom: 14,
-    borderColor: '#e74c3c',
-    borderWidth: 1.5,
-    backgroundColor: 'rgba(231,76,60,0.08)',
+    borderColor: '#ff3b30',
+    borderWidth: 1,
+    backgroundColor: 'rgba(255,59,48,0.06)',
+    borderRadius: 20,
   },
-  alertBannerInner: { padding: 12 },
+  alertBannerInner: { padding: 14 },
   alertBannerTextRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  alertBannerTitle: { fontSize: 14, fontWeight: '800', color: '#e74c3c' },
+  alertBannerTitle: { fontSize: 14, fontWeight: '800', color: '#ff3b30' },
   alertBannerSub: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
   alertBannerBtnRow: { flexDirection: 'row', gap: 8 },
   alertBannerBtnFilter: {
-    backgroundColor: 'rgba(231,76,60,0.15)',
+    backgroundColor: 'rgba(255,59,48,0.12)',
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(231,76,60,0.3)',
+    borderColor: 'rgba(255,59,48,0.25)',
   },
-  alertBannerBtnFilterText: { fontSize: 11, fontWeight: '800', color: '#e74c3c' },
+  alertBannerBtnFilterText: { fontSize: 11, fontWeight: '800', color: '#ff3b30' },
   alertBannerBtnReschedule: {
     backgroundColor: COLORS.pinkDark,
     paddingHorizontal: 12,
@@ -278,46 +278,54 @@ const styles = StyleSheet.create({
   },
   alertBannerBtnRescheduleText: { fontSize: 11, fontWeight: '800', color: '#fff' },
 
-  filterCard: { padding: 8, marginBottom: 16 },
-  tabRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  tabBtn: {
-    paddingHorizontal: 12,
+  segmentedCard: { padding: 10, marginBottom: 16, borderRadius: 20 },
+  iosSegmentedTrack: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(120, 120, 128, 0.12)',
+    borderRadius: 12,
+    padding: 3,
+    gap: 3,
+  },
+  iosSegmentBtn: {
+    flex: 1,
     paddingVertical: 8,
     alignItems: 'center',
-    borderRadius: 20,
-    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    borderRadius: 9,
   },
-  tabBtnActive: {
-    backgroundColor: COLORS.pinkDark,
+  iosSegmentBtnActive: {
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  tabBtnOverdue: {
-    backgroundColor: 'rgba(231,76,60,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(231,76,60,0.3)',
+  iosSegmentBtnOverdue: {
+    backgroundColor: 'rgba(255,59,48,0.15)',
   },
-  tabBtnOverdueActive: {
-    backgroundColor: '#e74c3c',
-    borderColor: '#e74c3c',
+  iosSegmentBtnOverdueActive: {
+    backgroundColor: '#ff3b30',
   },
-  tabText: { fontSize: 12, fontWeight: '700', color: COLORS.textLight },
-  tabTextOverdueText: { color: '#e74c3c', fontWeight: '800' },
-  tabTextActive: { color: '#fff' },
+  iosSegmentText: { fontSize: 11, fontWeight: '600', color: COLORS.textMuted },
+  iosSegmentTextActive: { color: COLORS.pinkDark, fontWeight: '800' },
+  iosSegmentTextOverdue: { color: '#ff3b30', fontWeight: '700' },
 
   folderFilterRow: { flexDirection: 'row', gap: 6, paddingVertical: 2 },
   folderFilterChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.4)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(0,0,0,0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
   },
   folderFilterSelectArea: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   folderFilterChipActive: { backgroundColor: COLORS.pinkDark, borderColor: COLORS.pinkDark },
-  folderFilterText: { fontSize: 11, fontWeight: '700', color: COLORS.text },
-  folderFilterTextActive: { color: '#fff' },
+  folderFilterText: { fontSize: 12, fontWeight: '600', color: COLORS.text },
+  folderFilterTextActive: { color: '#fff', fontWeight: '800' },
   dot: { width: 6, height: 6, borderRadius: 3 },
   deleteFolderBtn: { marginLeft: 6, padding: 2 },
 

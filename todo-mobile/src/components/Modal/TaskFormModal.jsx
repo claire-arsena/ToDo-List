@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import {
-  Modal, View, Text, TextInput, TouchableOpacity, Switch,
+  Modal, View, Text, TextInput, TouchableOpacity,
   ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
@@ -14,17 +14,17 @@ import DatePickerInput from '../DatePickerInput';
 import { COLORS, SHADOWS } from '../../theme';
 
 const FOLDER_COLORS = [
-  '#3498db', // Bleu Océan
-  '#2ecc71', // Vert Émeraude
-  '#9b59b6', // Violet Néon
-  '#e67e22', // Orange Corail
-  '#e74c3c', // Rouge Rubis
+  '#d81b60', // iOS Deep Pink
+  '#34c759', // iOS Green
+  '#af52de', // iOS Purple
+  '#ff9500', // iOS Orange
+  '#ff3b30', // iOS Red
   '#ff66b3', // Rose Bonbon
-  '#1abc9c', // Turquoise
-  '#f1c40f', // Jaune Soleil
+  '#00c7be', // iOS Teal
+  '#ffcc00', // iOS Yellow
   '#e84393', // Magenta
-  '#00cec9', // Cyan Menthe
-  '#6c5ce7', // Indigo
+  '#30b0c7', // Cyan iOS
+  '#5856d6', // Indigo iOS
   '#fd79a8', // Rose Pastel
   '#00b894', // Vert Menthe
   '#fdcb6e', // Or Doux
@@ -118,7 +118,7 @@ export default function TaskFormModal() {
       startTime: form.startTime,
       endTime: form.endTime,
       dueDate: form.endDate || form.startDate,
-      status: modalData ? form.status : ETATS.NOUVEAU, // Toujours "Nouveau" a la creation
+      status: modalData ? form.status : ETATS.NOUVEAU,
       folderId: form.folderId,
       isRegular: form.isRegular,
     };
@@ -133,14 +133,17 @@ export default function TaskFormModal() {
   return (
     <Modal visible transparent animationType="slide" onRequestClose={closeModal}>
       <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+        <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={closeModal} />
 
-        <BlurView intensity={60} tint="light" style={styles.sheet}>
+        <BlurView intensity={90} tint="light" style={styles.iosSheet}>
           <View style={styles.sheetInner}>
+            {/* iOS Sheet Drag Indicator Handle */}
+            <View style={styles.iosHandle} />
+
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {modalData ? 'Modifier la tâche' : 'Créer une tâche'}
+                {modalData ? 'Modifier la tâche' : 'Nouvelle tâche'}
               </Text>
               <TouchableOpacity onPress={closeModal} style={styles.closeBtn}>
                 <Text style={styles.closeText}>✕</Text>
@@ -156,7 +159,7 @@ export default function TaskFormModal() {
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Titre *</Text>
                 <TextInput
-                  style={styles.input}
+                  style={styles.iosInput}
                   value={form.title}
                   onChangeText={(v) => set('title', v)}
                   placeholder="Ex : Rédaction du rapport, Cours de sport..."
@@ -164,7 +167,7 @@ export default function TaskFormModal() {
                 />
               </View>
 
-              {/* Choix du Dossier avec couleur et suppression */}
+              {/* Choix du Dossier */}
               <View style={styles.formGroup}>
                 <View style={styles.labelRow}>
                   <Text style={styles.label}>Dossier (Optionnel)</Text>
@@ -178,7 +181,7 @@ export default function TaskFormModal() {
                 {showNewFolderForm ? (
                   <View style={styles.newFolderCard}>
                     <TextInput
-                      style={styles.input}
+                      style={styles.iosInput}
                       value={newFolderTitle}
                       onChangeText={setNewFolderTitle}
                       placeholder="Nom du dossier (ex: Marketing, Sport...)"
@@ -264,7 +267,7 @@ export default function TaskFormModal() {
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Description</Text>
                 <TextInput
-                  style={[styles.input, styles.textarea]}
+                  style={[styles.iosInput, styles.textarea]}
                   value={form.description}
                   onChangeText={(v) => set('description', v)}
                   placeholder="Détails optionnels..."
@@ -275,7 +278,7 @@ export default function TaskFormModal() {
                 />
               </View>
 
-              {/* Dates de début et fin */}
+              {/* Dates */}
               <View style={styles.row}>
                 <View style={[styles.formGroup, { flex: 1 }]}>
                   <DatePickerInput
@@ -293,12 +296,12 @@ export default function TaskFormModal() {
                 </View>
               </View>
 
-              {/* Heures de début et fin */}
+              {/* Heures */}
               <View style={styles.row}>
                 <View style={[styles.formGroup, { flex: 1 }]}>
                   <Text style={styles.label}>Heure début</Text>
                   <TextInput
-                    style={styles.input}
+                    style={styles.iosInput}
                     value={form.startTime}
                     onChangeText={(v) => set('startTime', v)}
                     placeholder="09:00"
@@ -308,7 +311,7 @@ export default function TaskFormModal() {
                 <View style={[styles.formGroup, { flex: 1 }]}>
                   <Text style={styles.label}>Heure fin</Text>
                   <TextInput
-                    style={styles.input}
+                    style={styles.iosInput}
                     value={form.endTime}
                     onChangeText={(v) => set('endTime', v)}
                     placeholder="10:00"
@@ -317,7 +320,7 @@ export default function TaskFormModal() {
                 </View>
               </View>
 
-              {/* Option Tâche Régulière (Répéter sur chaque jour du créneau) */}
+              {/* Option Tâche Régulière */}
               <View style={styles.regularCard}>
                 <View style={styles.regularTextRow}>
                   <Ionicons name="repeat-outline" size={20} color={COLORS.pinkDark} />
@@ -371,7 +374,7 @@ export default function TaskFormModal() {
                   disabled={!form.title.trim()}
                 >
                   <LinearGradient
-                    colors={[COLORS.pinkDark, COLORS.red]}
+                    colors={[COLORS.pinkDark, COLORS.pinkDeep]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.btnPrimary}
@@ -390,60 +393,69 @@ export default function TaskFormModal() {
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
-  sheet: {
+  iosSheet: {
     width: '100%',
     maxWidth: 500,
     alignSelf: 'center',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.7)',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.9)',
     maxHeight: '90%',
     overflow: 'hidden',
     ...SHADOWS.glass,
   },
   sheetInner: {
-    backgroundColor: 'rgba(255,255,255,0.5)',
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
     maxHeight: '100%',
+  },
+  iosHandle: {
+    width: 38,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: 'rgba(60, 60, 67, 0.25)',
+    alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 4,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.5)',
+    paddingTop: 10,
+    paddingBottom: 14,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
   },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: COLORS.pinkDark },
+  modalTitle: { fontSize: 19, fontWeight: '800', color: COLORS.pinkDark, letterSpacing: -0.3 },
   closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.5)',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(120, 120, 128, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  closeText: { fontSize: 14, color: COLORS.text, fontWeight: '700' },
+  closeText: { fontSize: 13, color: COLORS.textLight, fontWeight: '700' },
   scroll: { flex: 1 },
   scrollContent: { padding: 20, paddingBottom: 40 },
   formGroup: { marginBottom: 14 },
   row: { flexDirection: 'row', gap: 10 },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  label: { fontSize: 13, fontWeight: '700', color: COLORS.text },
+  label: { fontSize: 13, fontWeight: '700', color: '#000', letterSpacing: -0.1 },
   addFolderBtnText: { fontSize: 12, fontWeight: '800', color: COLORS.pinkDark },
 
   folderChipRow: { flexDirection: 'row', gap: 8, paddingVertical: 4 },
   folderChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.4)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(0,0,0,0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.08)',
   },
   folderChipSelectArea: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   folderChipActive: { backgroundColor: COLORS.pinkDark, borderColor: COLORS.pinkDark },
@@ -454,10 +466,10 @@ const styles = StyleSheet.create({
 
   newFolderCard: {
     padding: 12,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.5)',
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.7)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.7)',
+    borderColor: 'rgba(255,255,255,0.9)',
   },
   colorPickerRow: { flexDirection: 'row', gap: 8, paddingVertical: 6 },
   colorDot: { width: 28, height: 28, borderRadius: 14 },
@@ -465,33 +477,31 @@ const styles = StyleSheet.create({
   createFolderSubmit: {
     marginTop: 10,
     backgroundColor: COLORS.pinkDark,
-    paddingVertical: 9,
+    paddingVertical: 10,
     borderRadius: 12,
     alignItems: 'center',
   },
   createFolderSubmitText: { color: '#fff', fontWeight: '700', fontSize: 12 },
 
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
+  iosInput: {
+    backgroundColor: 'rgba(118, 118, 128, 0.08)',
     borderRadius: 14,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 11,
     fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.text,
+    fontWeight: '600',
+    color: '#000',
     minHeight: 44,
   },
-  textarea: { minHeight: 70, paddingTop: 10 },
+  textarea: { minHeight: 74, paddingTop: 10 },
 
   regularCard: {
     marginBottom: 14,
     padding: 12,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,102,179,0.08)',
+    borderRadius: 16,
+    backgroundColor: 'rgba(216, 27, 96, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(255,102,179,0.25)',
+    borderColor: 'rgba(216, 27, 96, 0.2)',
   },
   regularTextRow: { flexDirection: 'row', alignItems: 'center' },
   regularTitle: { fontSize: 13, fontWeight: '800', color: COLORS.pinkDark },
@@ -508,7 +518,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.pinkDark,
   },
   customToggleTrackInactive: {
-    backgroundColor: 'rgba(0,0,0,0.15)',
+    backgroundColor: 'rgba(120, 120, 128, 0.2)',
   },
   customToggleThumb: {
     width: 22,
@@ -517,7 +527,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.2,
     shadowRadius: 3,
     elevation: 3,
   },
@@ -529,31 +539,27 @@ const styles = StyleSheet.create({
   },
 
   pickerWrap: {
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
     borderRadius: 14,
     overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'rgba(118, 118, 128, 0.08)',
   },
   picker: { height: Platform.OS === 'ios' ? 150 : 50, color: COLORS.text },
   buttons: { flexDirection: 'row', gap: 10, marginTop: 12 },
   submitBtn: { flex: 1 },
   btnPrimary: {
-    borderRadius: 50,
-    paddingVertical: 13,
+    borderRadius: 100,
+    paddingVertical: 14,
     alignItems: 'center',
-    elevation: 6,
+    elevation: 4,
   },
   btnPrimaryText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   btnDisabled: { opacity: 0.5 },
   btnSecondary: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.4)',
-    borderRadius: 50,
-    paddingVertical: 13,
+    backgroundColor: 'rgba(120, 120, 128, 0.12)',
+    borderRadius: 100,
+    paddingVertical: 14,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
   },
   btnSecondaryText: { color: COLORS.pinkDark, fontWeight: '700', fontSize: 15 },
 });

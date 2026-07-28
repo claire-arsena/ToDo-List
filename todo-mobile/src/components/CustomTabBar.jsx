@@ -27,7 +27,7 @@ export default function CustomTabBar({ state, navigation }) {
     return (
       <TouchableOpacity style={styles.tabItem} onPress={() => go(routeName)} activeOpacity={0.7}>
         <View style={[styles.iconWrap, active && styles.iconWrapActive]}>
-          <Ionicons name={active ? iconActive : icon} size={22} color={active ? COLORS.pinkDark : COLORS.textLight} />
+          <Ionicons name={active ? iconActive : icon} size={22} color={active ? COLORS.pinkDark : COLORS.textMuted} />
         </View>
         <Text style={[styles.label, active && styles.labelActive]}>{label}</Text>
       </TouchableOpacity>
@@ -38,22 +38,22 @@ export default function CustomTabBar({ state, navigation }) {
     <View style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
       <View style={styles.container}>
         <View style={styles.pillClip}>
-          <BlurView intensity={80} tint="light" style={styles.pillBlur}>
+          <BlurView intensity={90} tint="light" style={styles.pillBlur}>
             <View style={styles.row}>
               {LEFT_TABS.map((t) => <TabItem key={t.routeName} {...t} />)}
 
-              {/* Bouton + imbriqué directement au même niveau dans la barre */}
+              {/* iOS Deep Pink Central + Action Button */}
               <TouchableOpacity
                 style={styles.addTabItem}
                 onPress={() => openModal('task')}
                 activeOpacity={0.8}
               >
                 <LinearGradient
-                  colors={[COLORS.pinkDark, '#ff477e']}
+                  colors={[COLORS.pinkDark, '#c2185b']}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                   style={styles.addBtnCircle}
                 >
-                  <Ionicons name="add" size={24} color="#fff" />
+                  <Ionicons name="add" size={24} color="#ffffff" />
                 </LinearGradient>
                 <Text style={styles.addLabel}>Ajouter</Text>
               </TouchableOpacity>
@@ -81,8 +81,8 @@ const styles = StyleSheet.create({
   pillClip: {
     borderRadius: 36,
     overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.75)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.9)',
     ...SHADOWS.glass,
   },
   pillBlur: { borderRadius: 36 },
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     paddingVertical: 8,
     paddingHorizontal: 8,
-    backgroundColor: 'rgba(255,255,255,0.85)',
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
   },
   tabItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   iconWrap: {
@@ -102,8 +102,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconWrapActive: { backgroundColor: 'rgba(255,102,179,0.18)' },
-  label: { fontSize: 10, color: COLORS.textLight, marginTop: 2, fontWeight: '600' },
+  iconWrapActive: { backgroundColor: 'rgba(216, 27, 96, 0.12)' },
+  label: { fontSize: 10, color: COLORS.textMuted, marginTop: 2, fontWeight: '600' },
   labelActive: { color: COLORS.pinkDark, fontWeight: '800' },
 
   addTabItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#ff66b3',
+    shadowColor: COLORS.pinkDark,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 6,

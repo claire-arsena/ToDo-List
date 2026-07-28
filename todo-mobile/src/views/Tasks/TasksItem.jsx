@@ -46,24 +46,28 @@ export default function TasksItem({ task }) {
   const statusColor = folder?.color || STATUS_COLORS[task.status] || COLORS.pinkDark;
 
   return (
-    <GlassCard style={[styles.card, isDone && styles.cardDone, overdue && styles.cardOverdue]}>
+    <GlassCard style={[styles.iosCard, isDone && styles.cardDone, overdue && styles.cardOverdue]}>
       <View style={styles.inner}>
-        {/* Ligne principale */}
+        {/* Main Row */}
         <View style={styles.mainRow}>
-          {/* Checkbox rapide */}
+          {/* iOS Circular Checkbox */}
           <TouchableOpacity
-            style={styles.checkbox}
+            style={styles.checkboxTouch}
             onPress={() => toggleTaskDone(task.id)}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons
-              name={isDone ? 'checkbox' : 'square-outline'}
-              size={22}
-              color={isDone ? '#2ecc71' : overdue ? '#e74c3c' : statusColor}
-            />
+            <View
+              style={[
+                styles.iosCheckboxRing,
+                isDone && styles.iosCheckboxRingDone,
+                overdue && !isDone && styles.iosCheckboxRingOverdue,
+              ]}
+            >
+              {isDone && <Ionicons name="checkmark" size={14} color="#ffffff" />}
+            </View>
           </TouchableOpacity>
 
-          {/* Titre & Méta */}
+          {/* Title & Metadata */}
           <TouchableOpacity
             style={styles.contentWrap}
             onPress={() => setIsExpanded(!isExpanded)}
@@ -80,7 +84,7 @@ export default function TasksItem({ task }) {
                 </View>
               )}
 
-              <View style={[styles.statusBadge, { backgroundColor: statusColor + '20', borderColor: statusColor }]}>
+              <View style={[styles.statusBadge, { backgroundColor: statusColor + '15', borderColor: statusColor + '40' }]}>
                 <Text style={[styles.statusBadgeText, { color: statusColor }]}>{task.status}</Text>
               </View>
             </View>
@@ -105,7 +109,7 @@ export default function TasksItem({ task }) {
             </View>
           </TouchableOpacity>
 
-          {/* Flèche d'extension */}
+          {/* Expand Arrow */}
           <TouchableOpacity
             style={styles.toggleBtn}
             onPress={() => setIsExpanded(!isExpanded)}
@@ -119,11 +123,11 @@ export default function TasksItem({ task }) {
           </TouchableOpacity>
         </View>
 
-        {/* Banner interactif de décision si tâche en retard */}
+        {/* iOS Overdue Decision Banner */}
         {overdue && (
           <View style={styles.overdueDecisionCard}>
             <View style={styles.overdueHeaderRow}>
-              <Ionicons name="alert-circle" size={16} color="#e74c3c" />
+              <Ionicons name="alert-circle" size={16} color="#ff3b30" />
               <Text style={styles.overdueTitle}>Tâche en retard ! Quelle décision prendre ?</Text>
             </View>
 
@@ -156,14 +160,14 @@ export default function TasksItem({ task }) {
                 style={styles.overdueBtnDanger}
                 onPress={() => cancelTask(task.id)}
               >
-                <Ionicons name="close-circle" size={14} color="#e74c3c" />
+                <Ionicons name="close-circle" size={14} color="#ff3b30" />
                 <Text style={styles.overdueBtnDangerText}>Abandonner</Text>
               </TouchableOpacity>
             </View>
           </View>
         )}
 
-        {/* Détails étendu */}
+        {/* Expanded details */}
         {isExpanded && (
           <View style={styles.expanded}>
             {task.description ? (
@@ -185,7 +189,7 @@ export default function TasksItem({ task }) {
                 style={styles.btnDelete}
                 onPress={() => deleteTask(task.id)}
               >
-                <Ionicons name="trash-outline" size={16} color="#e74c3c" />
+                <Ionicons name="trash-outline" size={16} color="#ff3b30" />
                 <Text style={styles.btnDeleteText}>Supprimer</Text>
               </TouchableOpacity>
             </View>
@@ -197,59 +201,85 @@ export default function TasksItem({ task }) {
 }
 
 const styles = StyleSheet.create({
-  card: { marginBottom: 10, borderRadius: 14 },
-  cardDone: { opacity: 0.75 },
-  cardOverdue: { borderColor: '#e74c3c', borderWidth: 2 },
-  inner: { padding: 12 },
+  iosCard: {
+    marginBottom: 10,
+    borderRadius: 20,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0, 0, 0, 0.06)',
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
+  },
+  cardDone: { opacity: 0.7 },
+  cardOverdue: { borderColor: '#ff3b30', borderWidth: 1.5 },
+  inner: { padding: 14 },
   mainRow: { flexDirection: 'row', alignItems: 'center' },
-  checkbox: { marginRight: 10 },
+  checkboxTouch: { marginRight: 12 },
+
+  // iOS Checkbox Circular Ring
+  iosCheckboxRing: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'rgba(60, 60, 67, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
+  iosCheckboxRingDone: {
+    backgroundColor: COLORS.pinkDark, // Deep Pink checked fill
+    borderColor: COLORS.pinkDark,
+  },
+  iosCheckboxRingOverdue: {
+    borderColor: '#ff3b30',
+  },
+
   contentWrap: { flex: 1, marginRight: 6 },
   titleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
-  title: { flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.text },
+  title: { flex: 1, fontSize: 15, fontWeight: '700', color: '#000000', letterSpacing: -0.2 },
   titleDone: { textDecorationLine: 'line-through', color: COLORS.textMuted },
   folderBadge: {
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    paddingVertical: 3,
+    borderRadius: 100,
   },
   folderBadgeText: { fontSize: 10, fontWeight: '800', color: '#fff' },
   statusBadge: {
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
+    paddingVertical: 3,
+    borderRadius: 100,
     borderWidth: 1,
   },
   statusBadgeText: { fontSize: 10, fontWeight: '800' },
-  metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 5 },
   dateText: { fontSize: 12, fontWeight: '600', color: COLORS.textLight },
-  overdueText: { color: '#e74c3c', fontWeight: '800' },
+  overdueText: { color: '#ff3b30', fontWeight: '800' },
   timeText: { fontSize: 11, color: COLORS.textMuted, fontWeight: '600' },
   durationBadge: {
-    backgroundColor: 'rgba(255,102,179,0.15)',
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 8,
+    backgroundColor: 'rgba(216, 27, 96, 0.1)',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 100,
   },
   durationText: { fontSize: 10, fontWeight: '800', color: COLORS.pinkDark },
   toggleBtn: { padding: 4 },
 
   overdueDecisionCard: {
-    marginTop: 10,
-    padding: 10,
-    borderRadius: 12,
-    backgroundColor: 'rgba(231,76,60,0.1)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(231,76,60,0.4)',
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,59,48,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,59,48,0.25)',
   },
   overdueHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
-  overdueTitle: { fontSize: 12, fontWeight: '800', color: '#e74c3c' },
+  overdueTitle: { fontSize: 12, fontWeight: '800', color: '#ff3b30' },
   overdueActionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   overdueBtnSuccess: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#2ecc71',
-    paddingHorizontal: 10,
+    backgroundColor: '#34c759',
+    paddingHorizontal: 11,
     paddingVertical: 6,
     borderRadius: 12,
   },
@@ -258,7 +288,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     backgroundColor: COLORS.pinkDark,
-    paddingHorizontal: 10,
+    paddingHorizontal: 11,
     paddingVertical: 6,
     borderRadius: 12,
   },
@@ -266,10 +296,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(255,102,179,0.15)',
+    backgroundColor: 'rgba(216,27,96,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(255,102,179,0.3)',
-    paddingHorizontal: 10,
+    borderColor: 'rgba(216,27,96,0.25)',
+    paddingHorizontal: 11,
     paddingVertical: 6,
     borderRadius: 12,
   },
@@ -277,18 +307,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(231,76,60,0.12)',
+    backgroundColor: 'rgba(255,59,48,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(231,76,60,0.3)',
-    paddingHorizontal: 10,
+    borderColor: 'rgba(255,59,48,0.25)',
+    paddingHorizontal: 11,
     paddingVertical: 6,
     borderRadius: 12,
   },
   overdueBtnText: { fontSize: 11, fontWeight: '800', color: '#fff' },
   overdueBtnSecondaryText: { fontSize: 11, fontWeight: '800', color: COLORS.pinkDark },
-  overdueBtnDangerText: { fontSize: 11, fontWeight: '800', color: '#e74c3c' },
+  overdueBtnDangerText: { fontSize: 11, fontWeight: '800', color: '#ff3b30' },
 
-  expanded: { marginTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)', paddingTop: 8 },
+  expanded: { marginTop: 12, borderTopWidth: 0.5, borderTopColor: 'rgba(0,0,0,0.08)', paddingTop: 10 },
   desc: { fontSize: 13, color: COLORS.text, lineHeight: 18 },
   noDesc: { fontSize: 12, color: COLORS.textMuted, fontStyle: 'italic' },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 10 },
@@ -296,20 +326,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,102,179,0.12)',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 100,
+    backgroundColor: 'rgba(216,27,96,0.12)',
   },
   btnEditText: { fontSize: 12, fontWeight: '700', color: COLORS.pinkDark },
   btnDelete: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: 'rgba(231,76,60,0.12)',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255,59,48,0.12)',
   },
-  btnDeleteText: { fontSize: 12, fontWeight: '700', color: '#e74c3c' },
+  btnDeleteText: { fontSize: 12, fontWeight: '700', color: '#ff3b30' },
 });
