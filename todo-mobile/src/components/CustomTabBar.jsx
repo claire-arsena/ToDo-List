@@ -41,26 +41,27 @@ export default function CustomTabBar({ state, navigation }) {
           <BlurView intensity={80} tint="light" style={styles.pillBlur}>
             <View style={styles.row}>
               {LEFT_TABS.map((t) => <TabItem key={t.routeName} {...t} />)}
-              <View style={styles.centerGap} />
+
+              {/* Bouton + imbriqué directement au même niveau dans la barre */}
+              <TouchableOpacity
+                style={styles.addTabItem}
+                onPress={() => openModal('task')}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={[COLORS.pinkDark, '#ff477e']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                  style={styles.addBtnCircle}
+                >
+                  <Ionicons name="add" size={24} color="#fff" />
+                </LinearGradient>
+                <Text style={styles.addLabel}>Ajouter</Text>
+              </TouchableOpacity>
+
               {RIGHT_TABS.map((t) => <TabItem key={t.routeName} {...t} />)}
             </View>
           </BlurView>
         </View>
-
-        {/* Bouton + flottant propre centré sur le haut de la pilule */}
-        <TouchableOpacity
-          style={styles.addWrap}
-          onPress={() => openModal('task')}
-          activeOpacity={0.85}
-        >
-          <LinearGradient
-            colors={[COLORS.pinkDark, '#ff477e']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-            style={styles.addBg}
-          >
-            <Ionicons name="add" size={32} color="#fff" />
-          </LinearGradient>
-        </TouchableOpacity>
       </View>
     </View>
   );
@@ -70,13 +71,12 @@ const styles = StyleSheet.create({
   wrapper: {
     backgroundColor: 'transparent',
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 8,
     alignItems: 'center',
   },
   container: {
     width: '100%',
     maxWidth: 500,
-    position: 'relative',
   },
   pillClip: {
     borderRadius: 36,
@@ -90,11 +90,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingHorizontal: 8,
-    backgroundColor: 'rgba(255,255,255,0.75)',
+    backgroundColor: 'rgba(255,255,255,0.85)',
   },
-  centerGap: { width: 52 },
   tabItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   iconWrap: {
     width: 38,
@@ -106,24 +105,19 @@ const styles = StyleSheet.create({
   iconWrapActive: { backgroundColor: 'rgba(255,102,179,0.18)' },
   label: { fontSize: 10, color: COLORS.textLight, marginTop: 2, fontWeight: '600' },
   labelActive: { color: COLORS.pinkDark, fontWeight: '800' },
-  addWrap: {
-    position: 'absolute',
-    top: -20,
-    left: '50%',
-    marginLeft: -26,
-    zIndex: 30,
-    elevation: 10,
-  },
-  addBg: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    justifyContent: 'center',
+
+  addTabItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  addBtnCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: '#ff66b3',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 4,
   },
+  addLabel: { fontSize: 10, color: COLORS.pinkDark, marginTop: 2, fontWeight: '800' },
 });
