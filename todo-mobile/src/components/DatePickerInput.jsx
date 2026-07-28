@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, Platform, StyleSheet } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { COLORS, RADIUS } from '../theme';
+import { COLORS } from '../theme';
 
 const formatLocalYMD = (selectedDate) => {
   if (!selectedDate) return '';
@@ -14,7 +14,6 @@ const formatLocalYMD = (selectedDate) => {
 export default function DatePickerInput({ value, onChange, label, placeholder = 'Choisir une date...' }) {
   const [show, setShow] = useState(false);
 
-  // Évite les erreurs de timezone en fixant midi local
   const date = value ? new Date(value + 'T12:00:00') : new Date();
 
   const handleChange = (event, selectedDate) => {
@@ -61,7 +60,7 @@ export default function DatePickerInput({ value, onChange, label, placeholder = 
                     }
                   }}
                   style={{
-                    fontSize: '18px',
+                    fontSize: '16px',
                     fontWeight: '700',
                     color: COLORS.pinkDark,
                     backgroundColor: 'rgba(216, 27, 96, 0.08)',
@@ -69,7 +68,7 @@ export default function DatePickerInput({ value, onChange, label, placeholder = 
                     borderRadius: '14px',
                     padding: '12px 18px',
                     textAlign: 'center',
-                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif',
                     outline: 'none',
                     cursor: 'pointer',
                   }}
@@ -118,6 +117,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#000',
     marginBottom: 6,
+    letterSpacing: -0.1,
   },
   input: {
     flexDirection: 'row',
@@ -130,12 +130,12 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   valueText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
     color: '#000',
   },
   placeholder: {
-    fontSize: 14,
+    fontSize: 16,
     color: COLORS.textMuted,
   },
   icon: {
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   iosOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
   iosSheet: {
     backgroundColor: '#fff',

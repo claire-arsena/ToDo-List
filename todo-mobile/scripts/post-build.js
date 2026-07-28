@@ -2,7 +2,7 @@
 /**
  * Post-build : après `expo export --platform web`
  * 1. Copie les icônes PNG dans dist/assets/
- * 2. Injecte les balises apple-touch-icon dans dist/index.html
+ * 2. Injecte les balises apple-touch-icon et les règles anti-zoom dans dist/index.html
  */
 
 const fs = require('fs');
@@ -25,7 +25,6 @@ icons.forEach(file => {
   );
 });
 
-// Copie aussi apple-touch-icon.png à la racine (Safari le cherche automatiquement)
 const icon180 = path.join(ASSETS, 'apple-touch-icon-180x180.png');
 if (fs.existsSync(icon180)) {
   fs.copyFileSync(icon180, path.join(DIST, 'apple-touch-icon.png'));
@@ -38,6 +37,12 @@ console.log(`✅  ${icons.length} icônes copiées dans dist/assets/`);
 
 const indexPath = path.join(DIST, 'index.html');
 let html = fs.readFileSync(indexPath, 'utf8');
+
+// Forcer le viewport anti-zoom
+html = html.replace(
+  /<meta name="viewport" content="[^"]*"/,
+  '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no"'
+);
 
 const appleTags = `
     <!-- iOS home screen icons -->
@@ -58,15 +63,20 @@ const appleTags = `
     <!-- iOS PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Ma Liste" />`;
+    <meta name="apple-mobile-web-app-title" content="Ma Liste" />
+    <!-- Styling anti-zoom et harmonisation de la police -->
+    <style>
+      input, textarea, select, button {
+        font-size: 16px !important;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif !important;
+        touch-action: manipulation;
+      }
+    </style>`;
 
-// Injecter juste avant </head>
 if (!html.includes('apple-touch-icon')) {
   html = html.replace('</head>', appleTags + '\n  </head>');
-  fs.writeFileSync(indexPath, html);
-  console.log('✅  dist/index.html patché (balises apple-touch-icon injectées)');
-} else {
-  console.log('⏭  dist/index.html déjà patché, ignoré');
 }
 
+fs.writeFileSync(indexPath, html);
+console.log('✅  dist/index.html patché (balises anti-zoom et icônes injectées)');
 console.log('\n🚀 Post-build terminé !');
