@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconWrapActive: { backgroundColor: 'rgba(216, 27, 96, 0.12)' },
+  iconWrapActive: {},
   label: { fontSize: 10, color: COLORS.textMuted, marginTop: 2, fontWeight: '600' },
   labelActive: { color: COLORS.pinkDark, fontWeight: '800' },
 
