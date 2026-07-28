@@ -329,12 +329,21 @@ export default function TaskFormModal() {
                         : `Appliquer le créneau horaire chaque jour en cas de sélection sur plusieurs jours`}
                     </Text>
                   </View>
-                  <Switch
-                    value={form.isRegular}
-                    onValueChange={(val) => set('isRegular', val)}
-                    trackColor={{ false: '#ddd', true: COLORS.pinkDark }}
-                    thumbColor="#fff"
-                  />
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => set('isRegular', !form.isRegular)}
+                    style={[
+                      styles.customToggleTrack,
+                      form.isRegular ? styles.customToggleTrackActive : styles.customToggleTrackInactive,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.customToggleThumb,
+                        form.isRegular ? styles.customToggleThumbActive : styles.customToggleThumbInactive,
+                      ]}
+                    />
+                  </TouchableOpacity>
                 </View>
               </View>
 
@@ -487,6 +496,37 @@ const styles = StyleSheet.create({
   regularTextRow: { flexDirection: 'row', alignItems: 'center' },
   regularTitle: { fontSize: 13, fontWeight: '800', color: COLORS.pinkDark },
   regularSub: { fontSize: 11, color: COLORS.textLight, marginTop: 2 },
+
+  customToggleTrack: {
+    width: 48,
+    height: 26,
+    borderRadius: 13,
+    padding: 2,
+    justifyContent: 'center',
+  },
+  customToggleTrackActive: {
+    backgroundColor: COLORS.pinkDark,
+  },
+  customToggleTrackInactive: {
+    backgroundColor: 'rgba(0,0,0,0.15)',
+  },
+  customToggleThumb: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  customToggleThumbActive: {
+    alignSelf: 'flex-end',
+  },
+  customToggleThumbInactive: {
+    alignSelf: 'flex-start',
+  },
 
   pickerWrap: {
     borderWidth: 1,
