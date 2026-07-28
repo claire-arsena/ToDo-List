@@ -31,7 +31,7 @@ function AppNavigator() {
       >
         <Tab.Screen name="Tasks" component={Tasks} options={{ title: 'Tâches' }} />
         <Tab.Screen name="Planning" component={Planning} options={{ title: 'Planning' }} />
-        <Tab.Screen name="Agenda" component={Agenda} options={{ title: 'Agenda' }} />
+        <Tab.Screen name="Agenda" component={Agenda} options={{ title: 'Calendrier' }} />
         <Tab.Screen name="Dashboard" component={Dashboard} options={{ title: 'Tableau de bord' }} />
       </Tab.Navigator>
     </NavigationContainer>

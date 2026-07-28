@@ -12,7 +12,7 @@ const LEFT_TABS = [
   { routeName: 'Planning', icon: 'time-outline', iconActive: 'time', label: 'Planning' },
 ];
 const RIGHT_TABS = [
-  { routeName: 'Agenda', icon: 'calendar-outline', iconActive: 'calendar', label: 'Agenda' },
+  { routeName: 'Agenda', icon: 'calendar-outline', iconActive: 'calendar', label: 'Calendrier' },
   { routeName: 'Dashboard', icon: 'pie-chart-outline', iconActive: 'pie-chart', label: 'Stats' },
 ];
 
