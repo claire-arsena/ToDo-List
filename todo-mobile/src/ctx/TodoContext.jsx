@@ -7,83 +7,62 @@ export const TodoContext = createContext();
 const STORAGE_KEY = '@todo_tasks_v2';
 const FOLDERS_KEY = '@todo_folders_v2';
 
-const INITIAL_TASKS = [
-  {
-    id: '1',
-    title: 'Finaliser la maquette mobile iOS',
-    description: 'Ajuster les couleurs Rose Foncé et le mode glassmorphism',
-    startDate: getTodayStr(),
-    endDate: getTodayStr(),
-    startTime: '09:00',
-    endTime: '11:00',
-    dueDate: getTodayStr(),
-    status: ETATS.EN_COURS,
-    folderId: '1',
-    isRegular: true,
-  },
-  {
-    id: '2',
-    title: 'Réunion d’équipe',
-    description: 'Point hebdomadaire sur le projet',
-    startDate: getTodayStr(),
-    endDate: getTodayStr(),
-    startTime: '14:00',
-    endTime: '15:00',
-    dueDate: getTodayStr(),
-    status: ETATS.NOUVEAU,
-    folderId: '1',
-    isRegular: true,
-  },
-];
-
-const INITIAL_FOLDERS = [
-  { id: '1', title: 'Travail', color: '#d81b60' },
-  { id: '2', title: 'Perso', color: '#af52de' },
-];
-
 export function TodoContextProvider({ children }) {
   const [tasks, setTasks] = useState([]);
   const [folders, setFolders] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Charger le stockage
+  // Charger le stockage avec récupération de TOUTES les clés précédentes (Migration)
   useEffect(() => {
     (async () => {
       try {
-        const storedTasks = await AsyncStorage.getItem(STORAGE_KEY);
-        const storedFolders = await AsyncStorage.getItem(FOLDERS_KEY);
+        let rawTasks = await AsyncStorage.getItem('@todo_tasks_v2');
+        if (!rawTasks) rawTasks = await AsyncStorage.getItem('@todo_tasks');
+        if (!rawTasks) rawTasks = await AsyncStorage.getItem('@todo_data');
+        if (!rawTasks) rawTasks = await AsyncStorage.getItem('tasks');
 
-        if (storedTasks) {
-          setTasks(JSON.parse(storedTasks));
+        let rawFolders = await AsyncStorage.getItem('@todo_folders_v2');
+        if (!rawFolders) rawFolders = await AsyncStorage.getItem('@todo_folders');
+        if (!rawFolders) rawFolders = await AsyncStorage.getItem('folders');
+
+        if (rawTasks) {
+          const parsed = JSON.parse(rawTasks);
+          const taskArray = Array.isArray(parsed) ? parsed : (parsed.tasks || []);
+          setTasks(taskArray);
         } else {
-          setTasks(INITIAL_TASKS);
+          // AUCUNE tâche factice / mock par défaut !
+          setTasks([]);
         }
 
-        if (storedFolders) {
-          setFolders(JSON.parse(storedFolders));
+        if (rawFolders) {
+          const parsed = JSON.parse(rawFolders);
+          const folderArray = Array.isArray(parsed) ? parsed : (parsed.folders || []);
+          setFolders(folderArray);
         } else {
-          setFolders(INITIAL_FOLDERS);
+          setFolders([]);
         }
       } catch (e) {
         console.error('Erreur chargement AsyncStorage', e);
-        setTasks(INITIAL_TASKS);
-        setFolders(INITIAL_FOLDERS);
+        setTasks([]);
+        setFolders([]);
       } finally {
         setIsLoaded(true);
       }
     })();
   }, []);
 
-  // Sauvegarder dans AsyncStorage
+  // Sauvegarder dans AsyncStorage de façon PERMANENTE
   useEffect(() => {
     if (isLoaded) {
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      AsyncStorage.setItem('@todo_tasks', JSON.stringify(tasks)); // Clé miroir de sécurité
     }
   }, [tasks, isLoaded]);
 
   useEffect(() => {
     if (isLoaded) {
       AsyncStorage.setItem(FOLDERS_KEY, JSON.stringify(folders));
+      AsyncStorage.setItem('@todo_folders', JSON.stringify(folders));
     }
   }, [folders, isLoaded]);
 
