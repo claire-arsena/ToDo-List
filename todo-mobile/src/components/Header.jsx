@@ -41,16 +41,16 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   iosBar: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f8f9fc',
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderColor: 'rgba(0, 0, 0, 0.07)',
     overflow: 'hidden',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.14,
+    shadowRadius: 20,
+    elevation: 6,
   },
   inner: {
     flexDirection: 'row',
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#000000',
+    color: '#1c1c1e',
     letterSpacing: -0.5,
   },
   iosPillBadge: {
