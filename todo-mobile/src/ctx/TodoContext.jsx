@@ -1,128 +1,120 @@
-import React, { createContext, useState, useEffect, useRef } from 'react';
-import { Alert, Platform } from 'react-native';
+import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ETAT_TERMINE, ETATS } from '../config/constants';
+import { ETATS, ETAT_TERMINE, getTodayStr } from '../config/constants';
 
 export const TodoContext = createContext();
 
-const STORAGE_KEY = '@todoMobile_data_v2';
+const STORAGE_KEY = '@todo_tasks_v2';
+const FOLDERS_KEY = '@todo_folders_v2';
 
-const DEFAULT_FOLDERS = [
-  { id: 1, title: 'Travail', color: '#3498db' },
-  { id: 2, title: 'Personnel', color: '#e67e22' },
-  { id: 3, title: 'Études', color: '#9b59b6' },
-  { id: 4, title: 'Urgent', color: '#e74c3c' },
+const INITIAL_TASKS = [
+  {
+    id: '1',
+    title: 'Finaliser la maquette mobile iOS',
+    description: 'Ajuster les couleurs Rose Foncé et le mode glassmorphism',
+    startDate: getTodayStr(),
+    endDate: getTodayStr(),
+    startTime: '09:00',
+    endTime: '11:00',
+    dueDate: getTodayStr(),
+    status: ETATS.EN_COURS,
+    folderId: '1',
+    isRegular: true,
+  },
+  {
+    id: '2',
+    title: 'Réunion d’équipe',
+    description: 'Point hebdomadaire sur le projet',
+    startDate: getTodayStr(),
+    endDate: getTodayStr(),
+    startTime: '14:00',
+    endTime: '15:00',
+    dueDate: getTodayStr(),
+    status: ETATS.NOUVEAU,
+    folderId: '1',
+    isRegular: true,
+  },
+];
+
+const INITIAL_FOLDERS = [
+  { id: '1', title: 'Travail', color: '#d81b60' },
+  { id: '2', title: 'Perso', color: '#af52de' },
 ];
 
 export function TodoContextProvider({ children }) {
   const [tasks, setTasks] = useState([]);
-  const [folders, setFolders] = useState(DEFAULT_FOLDERS);
-  const hasLoaded = useRef(false);
+  const [folders, setFolders] = useState([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
+  // Charger le stockage
   useEffect(() => {
-    const load = async () => {
+    (async () => {
       try {
-        const stored = await AsyncStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const data = JSON.parse(stored);
-          setTasks(data.tasks || []);
-          setFolders(data.folders && data.folders.length > 0 ? data.folders : DEFAULT_FOLDERS);
+        const storedTasks = await AsyncStorage.getItem(STORAGE_KEY);
+        const storedFolders = await AsyncStorage.getItem(FOLDERS_KEY);
+
+        if (storedTasks) {
+          setTasks(JSON.parse(storedTasks));
         } else {
-          setTasks([]);
-          setFolders(DEFAULT_FOLDERS);
+          setTasks(INITIAL_TASKS);
         }
-      } catch {
-        setTasks([]);
-        setFolders(DEFAULT_FOLDERS);
+
+        if (storedFolders) {
+          setFolders(JSON.parse(storedFolders));
+        } else {
+          setFolders(INITIAL_FOLDERS);
+        }
+      } catch (e) {
+        console.error('Erreur chargement AsyncStorage', e);
+        setTasks(INITIAL_TASKS);
+        setFolders(INITIAL_FOLDERS);
       } finally {
-        hasLoaded.current = true;
+        setIsLoaded(true);
       }
-    };
-    load();
+    })();
   }, []);
 
+  // Sauvegarder dans AsyncStorage
   useEffect(() => {
-    if (!hasLoaded.current) return;
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, folders })).catch(() => {});
-  }, [tasks, folders]);
-
-  const resetData = () => {
-    const doReset = () => {
-      setTasks([]);
-      setFolders(DEFAULT_FOLDERS);
-    };
-    if (Platform.OS === 'web') {
-      if (window.confirm('Êtes-vous sûr(e) ? Cette action supprimera toutes les tâches.')) doReset();
-    } else {
-      Alert.alert('Réinitialiser', 'Êtes-vous sûr(e) ? Cette action supprimera toutes les tâches.', [
-        { text: 'Annuler', style: 'cancel' },
-        { text: 'Supprimer', style: 'destructive', onPress: doReset },
-      ]);
+    if (isLoaded) {
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
     }
-  };
+  }, [tasks, isLoaded]);
 
-  const addTask = (task) => {
-    const maxId = tasks.length > 0 ? Math.max(...tasks.map((t) => t.id)) : 100;
+  useEffect(() => {
+    if (isLoaded) {
+      AsyncStorage.setItem(FOLDERS_KEY, JSON.stringify(folders));
+    }
+  }, [folders, isLoaded]);
+
+  const addTask = (taskData) => {
+    const today = getTodayStr();
     const newTask = {
-      id: maxId + 1,
-      title: task.title,
-      description: task.description || '',
-      startDate: task.startDate || '',
-      endDate: task.endDate || '',
-      startTime: task.startTime || '',
-      endTime: task.endTime || '',
-      creationDate: new Date().toISOString().split('T')[0],
-      dueDate: task.endDate || task.startDate || task.dueDate || '',
-      status: ETATS.NOUVEAU, // Toujours "Nouveau" a la creation
-      folderId: task.folderId ? parseInt(task.folderId) : null,
-      isRegular: task.isRegular !== undefined ? task.isRegular : true, // Tâche régulière par défaut
+      id: Date.now().toString(),
+      title: taskData.title || 'Nouvelle tâche',
+      description: taskData.description || '',
+      startDate: taskData.startDate || today,
+      endDate: taskData.endDate || taskData.startDate || today,
+      startTime: taskData.startTime || '',
+      endTime: taskData.endTime || '',
+      dueDate: taskData.endDate || taskData.startDate || today,
+      status: ETATS.NOUVEAU,
+      folderId: taskData.folderId || null,
+      isRegular: taskData.isRegular !== undefined ? taskData.isRegular : true,
+      creationDate: today,
     };
-    setTasks((prev) => [...prev, newTask]);
+    setTasks((prev) => [newTask, ...prev]);
     return newTask;
   };
 
-  const updateTask = (id, updatedTask) => {
+  const updateTask = (id, fields) => {
     setTasks((prev) =>
-      prev.map((t) =>
-        t.id === id
-          ? {
-              ...t,
-              ...updatedTask,
-              folderId: updatedTask.folderId !== undefined ? (updatedTask.folderId ? parseInt(updatedTask.folderId) : null) : t.folderId,
-            }
-          : t
-      )
+      prev.map((t) => (t.id === id ? { ...t, ...fields } : t))
     );
   };
 
   const deleteTask = (id) => {
-    const doDelete = () => {
-      setTasks((prev) => prev.filter((t) => t.id !== id));
-    };
-    if (Platform.OS === 'web') {
-      if (window.confirm('Supprimer cette tâche ?')) doDelete();
-    } else {
-      Alert.alert('Supprimer', 'Supprimer cette tâche ?', [
-        { text: 'Annuler', style: 'cancel' },
-        { text: 'Supprimer', style: 'destructive', onPress: doDelete },
-      ]);
-    }
-  };
-
-  const addFolder = (folder) => {
-    const maxId = folders.length > 0 ? Math.max(...folders.map((d) => d.id)) : 0;
-    const newFolder = {
-      id: maxId + 1,
-      title: folder.title,
-      color: folder.color || '#ff66b3',
-    };
-    setFolders((prev) => [...prev, newFolder]);
-    return newFolder;
-  };
-
-  const deleteFolder = (id) => {
-    setFolders((prev) => prev.filter((f) => f.id !== id));
-    setTasks((prev) => prev.map((t) => (t.folderId === id ? { ...t, folderId: null } : t)));
+    setTasks((prev) => prev.filter((t) => t.id !== id));
   };
 
   const toggleTaskDone = (id) => {
@@ -138,7 +130,7 @@ export function TodoContextProvider({ children }) {
   };
 
   const rescheduleToToday = (id) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayStr();
     setTasks((prev) =>
       prev.map((t) =>
         t.id === id
@@ -157,11 +149,17 @@ export function TodoContextProvider({ children }) {
     setTasks((prev) =>
       prev.map((t) => {
         if (t.id !== id) return t;
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = getTodayStr();
         const baseDateStr = t.endDate && t.endDate >= todayStr ? t.endDate : todayStr;
-        const dateObj = new Date(baseDateStr + 'T12:00:00');
+        const [y, m, d] = baseDateStr.split('-').map(Number);
+        const dateObj = new Date(y, m - 1, d);
         dateObj.setDate(dateObj.getDate() + daysToAdd);
-        const newDate = dateObj.toISOString().split('T')[0];
+
+        const newY = dateObj.getFullYear();
+        const newM = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const newD = String(dateObj.getDate()).padStart(2, '0');
+        const newDate = `${newY}-${newM}-${newD}`;
+
         return {
           ...t,
           startDate: newDate,
@@ -178,23 +176,49 @@ export function TodoContextProvider({ children }) {
     );
   };
 
-  const getActiveTasks = () => tasks.filter((task) => !ETAT_TERMINE.includes(task.status));
-
-  const value = {
-    tasks,
-    folders,
-    addTask,
-    updateTask,
-    deleteTask,
-    addFolder,
-    deleteFolder,
-    toggleTaskDone,
-    rescheduleToToday,
-    rescheduleByDays,
-    cancelTask,
-    resetData,
-    getActiveTasks,
+  const addFolder = (folderData) => {
+    const newFolder = {
+      id: Date.now().toString(),
+      title: folderData.title || 'Nouveau dossier',
+      color: folderData.color || '#d81b60',
+    };
+    setFolders((prev) => [...prev, newFolder]);
+    return newFolder;
   };
 
-  return <TodoContext.Provider value={value}>{children}</TodoContext.Provider>;
+  const deleteFolder = (folderId) => {
+    setFolders((prev) => prev.filter((f) => f.id !== folderId));
+    setTasks((prev) =>
+      prev.map((t) => (t.folderId === folderId ? { ...t, folderId: null } : t))
+    );
+  };
+
+  const getActiveTasks = () =>
+    tasks.filter((t) => !ETAT_TERMINE.includes(t.status));
+
+  const getCompletedTasks = () =>
+    tasks.filter((t) => ETAT_TERMINE.includes(t.status));
+
+  return (
+    <TodoContext.Provider
+      value={{
+        tasks,
+        folders,
+        isLoaded,
+        addTask,
+        updateTask,
+        deleteTask,
+        toggleTaskDone,
+        rescheduleToToday,
+        rescheduleByDays,
+        cancelTask,
+        addFolder,
+        deleteFolder,
+        getActiveTasks,
+        getCompletedTasks,
+      }}
+    >
+      {children}
+    </TodoContext.Provider>
+  );
 }

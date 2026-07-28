@@ -1,23 +1,31 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, Platform, StyleSheet } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { COLORS, GLASS, RADIUS } from '../theme';
+import { COLORS, RADIUS } from '../theme';
+
+const formatLocalYMD = (selectedDate) => {
+  if (!selectedDate) return '';
+  const y = selectedDate.getFullYear();
+  const m = String(selectedDate.getMonth() + 1).padStart(2, '0');
+  const d = String(selectedDate.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
 
 export default function DatePickerInput({ value, onChange, label, placeholder = 'Choisir une date...' }) {
   const [show, setShow] = useState(false);
 
-  // Évite les erreurs de timezone en fixant midi
+  // Évite les erreurs de timezone en fixant midi local
   const date = value ? new Date(value + 'T12:00:00') : new Date();
 
   const handleChange = (event, selectedDate) => {
     if (Platform.OS === 'android') {
       setShow(false);
       if (event.type !== 'dismissed' && selectedDate) {
-        onChange(selectedDate.toISOString().split('T')[0]);
+        onChange(formatLocalYMD(selectedDate));
       }
     } else {
       if (selectedDate) {
-        onChange(selectedDate.toISOString().split('T')[0]);
+        onChange(formatLocalYMD(selectedDate));
       }
     }
   };
@@ -32,7 +40,45 @@ export default function DatePickerInput({ value, onChange, label, placeholder = 
         <Text style={styles.icon}>📅</Text>
       </TouchableOpacity>
 
-      {Platform.OS === 'ios' ? (
+      {Platform.OS === 'web' ? (
+        <Modal transparent animationType="fade" visible={show} onRequestClose={() => setShow(false)}>
+          <TouchableOpacity style={styles.iosOverlay} activeOpacity={1} onPress={() => setShow(false)}>
+            <View style={styles.iosSheet} onStartShouldSetResponder={() => true}>
+              <View style={styles.iosHeader}>
+                <Text style={styles.modalTitle}>Date</Text>
+                <TouchableOpacity onPress={() => setShow(false)}>
+                  <Text style={styles.iosDone}>Terminé</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <input
+                  type="date"
+                  value={value || ''}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      onChange(e.target.value);
+                    }
+                  }}
+                  style={{
+                    fontSize: '18px',
+                    fontWeight: '700',
+                    color: COLORS.pinkDark,
+                    backgroundColor: 'rgba(216, 27, 96, 0.08)',
+                    border: '1.5px solid rgba(216, 27, 96, 0.3)',
+                    borderRadius: '14px',
+                    padding: '12px 18px',
+                    textAlign: 'center',
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    outline: 'none',
+                    cursor: 'pointer',
+                  }}
+                />
+              </View>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      ) : Platform.OS === 'ios' ? (
         <Modal transparent animationType="slide" visible={show}>
           <View style={styles.iosOverlay}>
             <View style={styles.iosSheet}>
@@ -68,26 +114,25 @@ export default function DatePickerInput({ value, onChange, label, placeholder = 
 
 const styles = StyleSheet.create({
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#000',
     marginBottom: 6,
   },
   input: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    borderWidth: 1,
-    borderColor: COLORS.glassBorder,
-    borderRadius: RADIUS.md,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    backgroundColor: 'rgba(118, 118, 128, 0.08)',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
     minHeight: 44,
   },
   valueText: {
     fontSize: 14,
-    color: COLORS.text,
+    fontWeight: '700',
+    color: '#000',
   },
   placeholder: {
     fontSize: 14,
@@ -96,7 +141,6 @@ const styles = StyleSheet.create({
   icon: {
     fontSize: 16,
   },
-  // iOS Modal
   iosOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -104,19 +148,21 @@ const styles = StyleSheet.create({
   },
   iosSheet: {
     backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     paddingBottom: 30,
   },
   iosHeader: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
   },
+  modalTitle: { fontSize: 16, fontWeight: '800', color: COLORS.pinkDark },
   iosDone: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: COLORS.pinkDark,
   },
