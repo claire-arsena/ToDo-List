@@ -1,148 +1,138 @@
 import React, { useContext, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { TodoContext } from '../../ctx/TodoContext';
-import { ETATS } from '../../config/constants';
-import { COLORS, STATUS_COLORS, RADIUS } from '../../theme';
-import DatePickerInput from '../../components/DatePickerInput';
+import { ModalContext } from '../../ctx/ModalContext';
+import { COLORS, STATUS_COLORS } from '../../theme';
 import GlassCard from '../../components/GlassCard';
 
-export default function TasksItem({ task, onFilterByFolder }) {
-  const { folders, relations, updateTask, deleteTask, addRelation } = useContext(TodoContext);
+const getToday = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+export default function TasksItem({ task }) {
+  const { toggleTaskDone, deleteTask } = useContext(TodoContext);
+  const { openModal } = useContext(ModalContext);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({
-    title: task.title, description: task.description, dueDate: task.dueDate, status: task.status,
-  });
-  const [addFolderValue, setAddFolderValue] = useState('');
 
-  const taskRelations  = relations.filter((r) => r.taskId === task.id);
-  const allFolders     = taskRelations.map((r) => folders.find((f) => f.id === r.folderId)).filter(Boolean);
-  const displayFolders = isExpanded ? allFolders : allFolders.slice(0, 2);
-  const availFolders   = folders.filter((f) => !taskRelations.some((r) => r.folderId === f.id));
+  const isDone = task.status === 'Réussi';
+  const endDate = task.endDate || task.dueDate || task.startDate;
+  const isOverdue = !isDone && endDate && endDate < getToday();
 
-  const set = (key, value) => setEditData((prev) => ({ ...prev, [key]: value }));
-  const handleSave   = () => { updateTask(task.id, editData); setIsEditing(false); };
-  const handleCancel = () => {
-    setEditData({ title: task.title, description: task.description, dueDate: task.dueDate, status: task.status });
-    setIsEditing(false);
-  };
-  const handleAddFolder = (folderId) => {
-    if (!folderId) return;
-    addRelation(task.id, parseInt(folderId));
-    setAddFolderValue('');
+  const formatDateRange = () => {
+    const start = task.startDate || task.dueDate;
+    const end = task.endDate || task.dueDate;
+    if (!start && !end) return null;
+    const parts = [];
+    if (start) parts.push(start.slice(5).replace('-', '/'));
+    if (end && end !== start) parts.push(end.slice(5).replace('-', '/'));
+    return parts.join(' → ');
   };
 
-  const statusColor = STATUS_COLORS[task.status] || COLORS.pinkLight;
+  const durationLabel = () => {
+    if (!task.startDate || !task.endDate || task.startDate === task.endDate) return null;
+    const s = new Date(task.startDate);
+    const e = new Date(task.endDate);
+    const days = Math.round((e - s) / (1000 * 60 * 60 * 24)) + 1;
+    if (days <= 0) return null;
+    return `${days} jour${days > 1 ? 's' : ''}`;
+  };
+
+  const statusColor = STATUS_COLORS[task.status] || COLORS.pinkDark;
 
   return (
-    <GlassCard style={styles.card}>
+    <GlassCard style={[styles.card, isDone && styles.cardDone, isOverdue && styles.cardOverdue]}>
       <View style={styles.inner}>
-        {/* Header */}
-        <View style={styles.header}>
-          {isEditing ? (
-            <TextInput style={styles.editTitle} value={editData.title} onChangeText={(v) => set('title', v)} />
-          ) : (
-            <Text style={styles.title} numberOfLines={isExpanded ? undefined : 2}>{task.title}</Text>
-          )}
-          <TouchableOpacity style={styles.toggleBtn} onPress={() => setIsExpanded((v) => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Text style={styles.toggleText}>{isExpanded ? '▼' : '▶'}</Text>
+        {/* Ligne principale */}
+        <View style={styles.mainRow}>
+          {/* Checkbox rapide */}
+          <TouchableOpacity
+            style={styles.checkbox}
+            onPress={() => toggleTaskDone(task.id)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons
+              name={isDone ? 'checkbox' : 'square-outline'}
+              size={22}
+              color={isDone ? '#2ecc71' : isOverdue ? '#e74c3c' : COLORS.pinkDark}
+            />
+          </TouchableOpacity>
+
+          {/* Titre & Méta */}
+          <TouchableOpacity
+            style={styles.contentWrap}
+            onPress={() => setIsExpanded(!isExpanded)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.titleRow}>
+              <Text style={[styles.title, isDone && styles.titleDone]} numberOfLines={isExpanded ? undefined : 2}>
+                {task.title}
+              </Text>
+              <View style={[styles.statusBadge, { backgroundColor: statusColor + '20', borderColor: statusColor }]}>
+                <Text style={[styles.statusBadgeText, { color: statusColor }]}>{task.status}</Text>
+              </View>
+            </View>
+
+            <View style={styles.metaRow}>
+              {formatDateRange() && (
+                <Text style={[styles.dateText, isOverdue && styles.overdueText]}>
+                  {isOverdue ? '⚠ Expiré : ' : '📅 '}
+                  {formatDateRange()}
+                </Text>
+              )}
+              {task.startTime && (
+                <Text style={styles.timeText}>
+                  ⏰ {task.startTime}{task.endTime ? ` - ${task.endTime}` : ''}
+                </Text>
+              )}
+              {durationLabel() && (
+                <View style={styles.durationBadge}>
+                  <Text style={styles.durationText}>{durationLabel()}</Text>
+                </View>
+              )}
+            </View>
+          </TouchableOpacity>
+
+          {/* Flèche d'extension */}
+          <TouchableOpacity
+            style={styles.toggleBtn}
+            onPress={() => setIsExpanded(!isExpanded)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons
+              name={isExpanded ? 'chevron-up' : 'chevron-down'}
+              size={18}
+              color={COLORS.textMuted}
+            />
           </TouchableOpacity>
         </View>
 
-        {/* Tags dossiers — style .task-category */}
-        {displayFolders.length > 0 && (
-          <View style={styles.chips}>
-            {displayFolders.map((f) => (
-              <TouchableOpacity key={f.id} style={styles.chip} onPress={() => onFilterByFolder && onFilterByFolder(f.id)}>
-                <Text style={styles.chipText}>{f.title}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {/* Méta : date + statut */}
-        {!isEditing && (
-          <View style={styles.meta}>
-            {task.dueDate ? <Text style={styles.dueDate}>{task.dueDate}</Text> : null}
-            <View style={styles.statusBadge}>
-              <Text style={styles.statusBadgeText}>{task.status}</Text>
-            </View>
-          </View>
-        )}
-
-        {/* Contenu étendu */}
+        {/* Détails étendu */}
         {isExpanded && (
           <View style={styles.expanded}>
-            {isEditing ? (
-              <>
-                <View style={styles.formGroup}>
-                  <Text style={styles.label}>Description</Text>
-                  <TextInput style={styles.textarea} value={editData.description} onChangeText={(v) => set('description', v)} multiline numberOfLines={3} textAlignVertical="top" />
-                </View>
-                <View style={styles.formGroup}>
-                  <DatePickerInput label="Date d'échéance" value={editData.dueDate} onChange={(v) => set('dueDate', v)} />
-                </View>
-                <View style={styles.formGroup}>
-                  <Text style={styles.label}>Statut</Text>
-                  <View style={styles.pickerWrap}>
-                    <Picker selectedValue={editData.status} onValueChange={(v) => set('status', v)} style={styles.picker}>
-                      {Object.values(ETATS).map((s) => <Picker.Item key={s} label={s} value={s} />)}
-                    </Picker>
-                  </View>
-                </View>
-              </>
+            {task.description ? (
+              <Text style={styles.desc}>{task.description}</Text>
             ) : (
-              task.description ? <Text style={styles.desc}>{task.description}</Text> : null
-            )}
-
-            {task.members?.length > 0 && !isEditing && (
-              <View style={styles.members}>
-                {task.members.map((m) => (
-                  <View key={m.name} style={styles.memberChip}>
-                    <Text style={styles.memberText}>{m.name}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            {!isEditing && availFolders.length > 0 && (
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Ajouter à un dossier</Text>
-                <View style={styles.pickerWrap}>
-                  <Picker selectedValue={addFolderValue} onValueChange={(v) => { setAddFolderValue(v); handleAddFolder(v); }} style={styles.picker}>
-                    <Picker.Item label="Choisir..." value="" />
-                    {availFolders.map((f) => <Picker.Item key={f.id} label={f.title} value={f.id.toString()} />)}
-                  </Picker>
-                </View>
-              </View>
+              <Text style={styles.noDesc}>Aucune description</Text>
             )}
 
             <View style={styles.actions}>
-              {isEditing ? (
-                <>
-                  <TouchableOpacity onPress={handleSave} style={styles.actionBtn}>
-                    <LinearGradient colors={[COLORS.pinkDark, COLORS.red]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.btnInner}>
-                      <Text style={styles.btnPrimaryText}>Enregistrer</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[styles.actionBtn, styles.btnSecondary]} onPress={handleCancel}>
-                    <Text style={styles.btnSecondaryText}>Annuler</Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <>
-                  <TouchableOpacity style={[styles.actionBtn, styles.btnSecondary]} onPress={() => setIsEditing(true)}>
-                    <Text style={styles.btnSecondaryText}>Modifier</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => deleteTask(task.id)} style={styles.actionBtn}>
-                    <LinearGradient colors={[COLORS.red, COLORS.redDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.btnInner}>
-                      <Text style={styles.btnPrimaryText}>Supprimer</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                </>
-              )}
+              <TouchableOpacity
+                style={styles.btnEdit}
+                onPress={() => openModal('task', task)}
+              >
+                <Ionicons name="create-outline" size={16} color={COLORS.pinkDark} />
+                <Text style={styles.btnEditText}>Modifier</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.btnDelete}
+                onPress={() => deleteTask(task.id)}
+              >
+                <Ionicons name="trash-outline" size={16} color="#e74c3c" />
+                <Text style={styles.btnDeleteText}>Supprimer</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -152,91 +142,57 @@ export default function TasksItem({ task, onFilterByFolder }) {
 }
 
 const styles = StyleSheet.create({
-  card: { marginBottom: 12, borderRadius: 14 },
-  inner: { flex: 1, padding: 14 },
-  header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  title: { flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.text, marginRight: 8 },
-  editTitle: {
-    flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.text,
-    borderBottomWidth: 1.5, borderBottomColor: COLORS.pinkDark, paddingBottom: 2, marginRight: 8,
-  },
-  toggleBtn: { padding: 2 },
-  toggleText: { fontSize: 14, color: COLORS.pinkDark, fontWeight: '900' },
-  /* folder chips — .task-category */
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
-  chip: {
-    backgroundColor: 'rgba(255,255,255,0.4)',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 3,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,102,179,0.3)',
-  },
-  chipText: { fontSize: 12, color: COLORS.pinkDark, fontWeight: '800' },
-  /* meta */
-  meta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
-  dueDate: { fontSize: 13, color: COLORS.text, fontWeight: '700', opacity: 0.8 },
+  card: { marginBottom: 10, borderRadius: 14 },
+  cardDone: { opacity: 0.75 },
+  cardOverdue: { borderColor: 'rgba(231,76,60,0.4)', borderWidth: 1.5 },
+  inner: { padding: 12 },
+  mainRow: { flexDirection: 'row', alignItems: 'center' },
+  checkbox: { marginRight: 10 },
+  contentWrap: { flex: 1, marginRight: 6 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
+  title: { flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.text },
+  titleDone: { textDecorationLine: 'line-through', color: COLORS.textMuted },
   statusBadge: {
-    backgroundColor: COLORS.pinkLight,
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 4,
-  },
-  statusBadgeText: { fontSize: 11, fontWeight: '700', color: COLORS.pinkDark },
-  /* expanded */
-  expanded: { marginTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)', paddingTop: 10, gap: 8 },
-  desc: { fontSize: 13, color: COLORS.textLight, lineHeight: 20 },
-  members: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginBottom: 4 },
-  memberChip: {
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
   },
-  memberText: { fontSize: 12, color: COLORS.text, fontWeight: '700' },
-  formGroup: { marginBottom: 8 },
-  label: { fontSize: 12, fontWeight: '700', color: COLORS.text, marginBottom: 4 },
-  textarea: {
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
-    borderRadius: 10,
-    padding: 10,
-    fontSize: 13,
-    color: COLORS.text,
-    minHeight: 70,
+  statusBadgeText: { fontSize: 10, fontWeight: '800' },
+  metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  dateText: { fontSize: 12, fontWeight: '600', color: COLORS.textLight },
+  overdueText: { color: '#e74c3c', fontWeight: '800' },
+  timeText: { fontSize: 11, color: COLORS.textMuted, fontWeight: '600' },
+  durationBadge: {
+    backgroundColor: 'rgba(255,102,179,0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 8,
   },
-  pickerWrap: {
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
-    borderRadius: 10,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.3)',
-  },
-  picker: { height: 44, color: COLORS.text },
-  actions: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  actionBtn: { flex: 1 },
-  btnInner: {
-    borderRadius: 50,
-    paddingVertical: 9,
+  durationText: { fontSize: 10, fontWeight: '800', color: COLORS.pinkDark },
+  toggleBtn: { padding: 4 },
+  expanded: { marginTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)', paddingTop: 8 },
+  desc: { fontSize: 13, color: COLORS.text, lineHeight: 18 },
+  noDesc: { fontSize: 12, color: COLORS.textMuted, fontStyle: 'italic' },
+  actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 10 },
+  btnEdit: {
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#ff66b3',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,102,179,0.12)',
   },
-  btnPrimaryText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  btnSecondary: {
-    backgroundColor: 'rgba(255,255,255,0.4)',
-    borderRadius: 50,
-    paddingVertical: 9,
+  btnEditText: { fontSize: 12, fontWeight: '700', color: COLORS.pinkDark },
+  btnDelete: {
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
-    justifyContent: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: 'rgba(231,76,60,0.12)',
   },
-  btnSecondaryText: { color: COLORS.pinkDark, fontWeight: '700', fontSize: 13 },
+  btnDeleteText: { fontSize: 12, fontWeight: '700', color: '#e74c3c' },
 });

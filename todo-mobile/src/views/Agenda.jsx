@@ -18,9 +18,18 @@ export default function Agenda() {
   const tasksByDate = useMemo(() => {
     const map = new Map();
     tasks.forEach((t) => {
-      if (!t.dueDate) return;
-      if (!map.has(t.dueDate)) map.set(t.dueDate, []);
-      map.get(t.dueDate).push(t);
+      const start = t.startDate || t.dueDate;
+      const end = t.endDate || t.dueDate || start;
+      if (!start) return;
+      // Multi-day date iteration
+      let cur = new Date(start + 'T00:00:00');
+      const last = new Date(end + 'T00:00:00');
+      while (cur <= last) {
+        const dStr = cur.toISOString().split('T')[0];
+        if (!map.has(dStr)) map.set(dStr, []);
+        map.get(dStr).push(t);
+        cur.setDate(cur.getDate() + 1);
+      }
     });
     return map;
   }, [tasks]);

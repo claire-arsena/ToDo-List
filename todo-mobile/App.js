@@ -10,10 +10,9 @@ import Background from './src/components/Background';
 import CustomTabBar from './src/components/CustomTabBar';
 import AppHeader from './src/components/Header';
 import TaskFormModal from './src/components/Modal/TaskFormModal';
-import FolderFormModal from './src/components/Modal/FolderFormModal';
 import Tasks from './src/views/Tasks/Tasks';
+import Planning from './src/views/Planning';
 import Agenda from './src/views/Agenda';
-import Folders from './src/views/Folders';
 import Dashboard from './src/views/Dashboard';
 
 const Tab = createBottomTabNavigator();
@@ -31,8 +30,8 @@ function AppNavigator() {
         initialRouteName="Tasks"
       >
         <Tab.Screen name="Tasks" component={Tasks} options={{ title: 'Tâches' }} />
+        <Tab.Screen name="Planning" component={Planning} options={{ title: 'Planning' }} />
         <Tab.Screen name="Agenda" component={Agenda} options={{ title: 'Agenda' }} />
-        <Tab.Screen name="Folders" component={Folders} options={{ title: 'Dossiers' }} />
         <Tab.Screen name="Dashboard" component={Dashboard} options={{ title: 'Tableau de bord' }} />
       </Tab.Navigator>
     </NavigationContainer>
@@ -43,7 +42,6 @@ function AppModals() {
   return (
     <>
       <TaskFormModal />
-      <FolderFormModal />
     </>
   );
 }
