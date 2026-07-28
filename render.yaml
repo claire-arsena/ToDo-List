@@ -4,17 +4,23 @@ services:
     env: static
     autoDeploy: true
     branch: main
-    # Render clones le repo à la racine ; on se place dans todo-mobile
-    buildCommand: cd todo-mobile && npm install && node scripts/generate-icons.js && npx expo export --platform web
+    # Render clones le repo à la racine ; on se place dans todo-mobile et lance la vraie commande build:web
+    buildCommand: cd todo-mobile && npm install && npm run build:web
     staticPublishPath: todo-mobile/dist
     # Redirige tout vers index.html (SPA / PWA)
     routes:
       - type: rewrite
         source: /*
         destination: /index.html
-    # Headers de cache recommandés pour une PWA
+    # Headers de cache recommandés pour une PWA & iOS Safari
     headers:
       - path: /index.html
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /apple-touch-icon.png
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /favicon.ico
         name: Cache-Control
         value: no-cache, no-store, must-revalidate
       - path: /static/*
