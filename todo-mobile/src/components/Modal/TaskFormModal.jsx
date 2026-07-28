@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import {
-  Modal, View, Text, TextInput, TouchableOpacity,
+  Modal, View, Text, TextInput, TouchableOpacity, Switch,
   ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
@@ -44,6 +44,7 @@ const EMPTY = {
   endTime: '10:00',
   status: ETATS.NOUVEAU,
   folderId: null,
+  isRegular: true,
 };
 
 export default function TaskFormModal() {
@@ -67,9 +68,10 @@ export default function TaskFormModal() {
         endTime: modalData.endTime || '10:00',
         status: modalData.status || ETATS.NOUVEAU,
         folderId: modalData.folderId || null,
+        isRegular: modalData.isRegular !== undefined ? modalData.isRegular : true,
       });
     } else {
-      setForm({ ...EMPTY, startDate: getToday(), endDate: getToday() });
+      setForm({ ...EMPTY, startDate: getToday(), endDate: getToday(), status: ETATS.NOUVEAU });
     }
     setShowNewFolderForm(false);
   }, [modalData, modalType]);
@@ -116,14 +118,17 @@ export default function TaskFormModal() {
       startTime: form.startTime,
       endTime: form.endTime,
       dueDate: form.endDate || form.startDate,
-      status: form.status,
+      status: modalData ? form.status : ETATS.NOUVEAU, // Toujours "Nouveau" a la creation
       folderId: form.folderId,
+      isRegular: form.isRegular,
     };
     modalData ? updateTask(modalData.id, payload) : addTask(payload);
     closeModal();
   };
 
   if (!isModalOpen || modalType !== 'task') return null;
+
+  const isMultiDay = form.startDate && form.endDate && form.startDate !== form.endDate;
 
   return (
     <Modal visible transparent animationType="slide" onRequestClose={closeModal}>
@@ -154,7 +159,7 @@ export default function TaskFormModal() {
                   style={styles.input}
                   value={form.title}
                   onChangeText={(v) => set('title', v)}
-                  placeholder="Ex : Rédaction du rapport, Projet React..."
+                  placeholder="Ex : Rédaction du rapport, Cours de sport..."
                   placeholderTextColor={COLORS.textMuted}
                 />
               </View>
@@ -237,7 +242,6 @@ export default function TaskFormModal() {
                               </Text>
                             </TouchableOpacity>
 
-                            {/* Bouton de suppression du dossier */}
                             <TouchableOpacity
                               style={styles.deleteFolderIcon}
                               onPress={() => handleDeleteFolder(f.id, f.title)}
@@ -307,22 +311,46 @@ export default function TaskFormModal() {
                     style={styles.input}
                     value={form.endTime}
                     onChangeText={(v) => set('endTime', v)}
-                    placeholder="17:00"
+                    placeholder="10:00"
                     placeholderTextColor={COLORS.textMuted}
                   />
                 </View>
               </View>
 
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Statut</Text>
-                <View style={styles.pickerWrap}>
-                  <Picker selectedValue={form.status} onValueChange={(v) => set('status', v)} style={styles.picker}>
-                    {Object.values(ETATS).map((s) => (
-                      <Picker.Item key={s} label={s} value={s} />
-                    ))}
-                  </Picker>
+              {/* Option Tâche Régulière (Répéter sur chaque jour du créneau) */}
+              <View style={styles.regularCard}>
+                <View style={styles.regularTextRow}>
+                  <Ionicons name="repeat-outline" size={20} color={COLORS.pinkDark} />
+                  <View style={{ flex: 1, marginLeft: 8 }}>
+                    <Text style={styles.regularTitle}>Tâche régulière quotidienne</Text>
+                    <Text style={styles.regularSub}>
+                      {isMultiDay
+                        ? `Appliquer le créneau (${form.startTime || '09:00'} → ${form.endTime || '10:00'}) sur chacun des jours`
+                        : `Appliquer le créneau horaire chaque jour en cas de sélection sur plusieurs jours`}
+                    </Text>
+                  </View>
+                  <Switch
+                    value={form.isRegular}
+                    onValueChange={(val) => set('isRegular', val)}
+                    trackColor={{ false: '#ddd', true: COLORS.pinkDark }}
+                    thumbColor="#fff"
+                  />
                 </View>
               </View>
+
+              {/* Statut (Uniquement lors de la modification) */}
+              {modalData && (
+                <View style={styles.formGroup}>
+                  <Text style={styles.label}>Statut</Text>
+                  <View style={styles.pickerWrap}>
+                    <Picker selectedValue={form.status} onValueChange={(v) => set('status', v)} style={styles.picker}>
+                      {Object.values(ETATS).map((s) => (
+                        <Picker.Item key={s} label={s} value={s} />
+                      ))}
+                    </Picker>
+                  </View>
+                </View>
+              )}
 
               <View style={styles.buttons}>
                 <TouchableOpacity style={styles.btnSecondary} onPress={closeModal}>
@@ -447,6 +475,19 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   textarea: { minHeight: 70, paddingTop: 10 },
+
+  regularCard: {
+    marginBottom: 14,
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,102,179,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,102,179,0.25)',
+  },
+  regularTextRow: { flexDirection: 'row', alignItems: 'center' },
+  regularTitle: { fontSize: 13, fontWeight: '800', color: COLORS.pinkDark },
+  regularSub: { fontSize: 11, color: COLORS.textLight, marginTop: 2 },
+
   pickerWrap: {
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.5)',

@@ -56,7 +56,7 @@ export function TodoContextProvider({ children }) {
     } else {
       Alert.alert('Réinitialiser', 'Êtes-vous sûr(e) ? Cette action supprimera toutes les tâches.', [
         { text: 'Annuler', style: 'cancel' },
-        { text: 'Supprimer', style: 'destructive', onPress: doDelete },
+        { text: 'Supprimer', style: 'destructive', onPress: doReset },
       ]);
     }
   };
@@ -73,8 +73,9 @@ export function TodoContextProvider({ children }) {
       endTime: task.endTime || '',
       creationDate: new Date().toISOString().split('T')[0],
       dueDate: task.endDate || task.startDate || task.dueDate || '',
-      status: task.status || ETATS.NOUVEAU,
+      status: ETATS.NOUVEAU, // Toujours "Nouveau" a la creation
       folderId: task.folderId ? parseInt(task.folderId) : null,
+      isRegular: task.isRegular !== undefined ? task.isRegular : true, // Tâche régulière par défaut
     };
     setTasks((prev) => [...prev, newTask]);
     return newTask;
