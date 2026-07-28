@@ -5,15 +5,23 @@ import { TodoContext } from '../ctx/TodoContext';
 import { COLORS, STATUS_COLORS } from '../theme';
 import GlassCard from '../components/GlassCard';
 
-const DAYS   = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
 export default function Agenda() {
-  const { tasks } = useContext(TodoContext);
+  const { tasks, folders } = useContext(TodoContext);
   const [current, setCurrent] = useState(new Date());
-  const year  = current.getFullYear();
+  const year = current.getFullYear();
   const month = current.getMonth();
   const today = new Date().toISOString().split('T')[0];
+
+  const getTaskColor = (t) => {
+    if (t.folderId) {
+      const f = folders.find((folder) => folder.id === t.folderId);
+      if (f?.color) return f.color;
+    }
+    return STATUS_COLORS[t.status] || COLORS.pinkDark;
+  };
 
   const tasksByDate = useMemo(() => {
     const map = new Map();
@@ -21,7 +29,6 @@ export default function Agenda() {
       const start = t.startDate || t.dueDate;
       const end = t.endDate || t.dueDate || start;
       if (!start) return;
-      // Multi-day date iteration
       let cur = new Date(start + 'T00:00:00');
       const last = new Date(end + 'T00:00:00');
       while (cur <= last) {
@@ -35,14 +42,14 @@ export default function Agenda() {
   }, [tasks]);
 
   const days = useMemo(() => {
-    const first    = new Date(year, month, 1).getDay();
-    const start    = first === 0 ? 6 : first - 1;
+    const first = new Date(year, month, 1).getDay();
+    const start = first === 0 ? 6 : first - 1;
     const lastDate = new Date(year, month + 1, 0).getDate();
     const prevLast = new Date(year, month, 0).getDate();
-    const result   = [];
+    const result = [];
     for (let i = start - 1; i >= 0; i--) result.push({ day: prevLast - i, out: true });
     for (let d = 1; d <= lastDate; d++) {
-      const date = `${year}-${String(month + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       result.push({ day: d, out: false, date });
     }
     while (result.length % 7 !== 0) result.push({ day: result.length - start - lastDate + 1, out: true });
@@ -84,18 +91,21 @@ export default function Agenda() {
         {weeks.map((week, wi) => (
           <View key={wi} style={styles.weekRow}>
             {week.map((cell, ci) => {
-              const isToday  = cell.date === today;
+              const isToday = cell.date === today;
               const cellTasks = cell.date ? tasksByDate.get(cell.date) || [] : [];
               return (
                 <View key={ci} style={[styles.cell, cell.out && styles.cellOut, isToday && styles.cellToday]}>
                   <Text style={[styles.cellDay, cell.out && styles.cellDayOut, isToday && styles.cellDayToday]}>
                     {cell.day}
                   </Text>
-                  {cellTasks.slice(0, 2).map((t) => (
-                    <View key={t.id} style={[styles.taskDot, { backgroundColor: STATUS_COLORS[t.status] || COLORS.pinkLight }]}>
-                      <Text style={styles.taskDotText} numberOfLines={1}>{t.title}</Text>
-                    </View>
-                  ))}
+                  {cellTasks.slice(0, 2).map((t) => {
+                    const taskColor = getTaskColor(t);
+                    return (
+                      <View key={t.id} style={[styles.taskDot, { backgroundColor: taskColor }]}>
+                        <Text style={styles.taskDotText} numberOfLines={1}>{t.title}</Text>
+                      </View>
+                    );
+                  })}
                   {cellTasks.length > 2 && <Text style={styles.moreTasks}>+{cellTasks.length - 2}</Text>}
                 </View>
               );
@@ -110,7 +120,6 @@ export default function Agenda() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 32 },
-  /* nav — .agenda-nav */
   nav: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -119,19 +128,21 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   navBtn: {
-    width: 36, height: 36, borderRadius: 18,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: 'rgba(255,255,255,0.5)',
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.7)',
   },
   navBtnText: { fontSize: 14, color: COLORS.text },
   monthTitle: { flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '700', color: COLORS.text },
   todayBtn: { borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
   todayBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  /* grille */
   grid: {},
   weekRow: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.3)' },
-  /* en-têtes — .agenda-grid th */
   dayHeader: {
     flex: 1,
     alignItems: 'center',
@@ -139,7 +150,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,102,179,0.6)',
   },
   dayHeaderText: { fontSize: 11, fontWeight: '700', color: '#fff', textTransform: 'uppercase' },
-  /* cellules — .agenda-grid td */
   cell: {
     flex: 1,
     minHeight: 70,
@@ -149,15 +159,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.15)',
   },
   cellOut: { backgroundColor: 'rgba(0,0,0,0.04)' },
-  /* .agenda-today */
   cellToday: {
     backgroundColor: 'rgba(255,255,255,0.5)',
   },
   cellDay: { fontSize: 11, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
   cellDayOut: { color: '#ddd', fontWeight: '400' },
   cellDayToday: { color: COLORS.pinkDark, fontWeight: '900' },
-  /* tâches dans la cellule — .agenda-grid li */
-  taskDot: { borderRadius: 6, paddingHorizontal: 3, paddingVertical: 1, marginBottom: 1 },
-  taskDotText: { fontSize: 8, color: COLORS.text, fontWeight: '700' },
+  taskDot: { borderRadius: 6, paddingHorizontal: 4, paddingVertical: 2, marginBottom: 2 },
+  taskDotText: { fontSize: 9, color: '#fff', fontWeight: '800' },
   moreTasks: { fontSize: 8, color: COLORS.textMuted, fontWeight: '700' },
 });

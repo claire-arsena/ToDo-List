@@ -33,16 +33,17 @@ export default function Tasks() {
     }
   };
 
+  const folderTasks = useMemo(() => {
+    if (selectedFolderId === null) return tasks;
+    return tasks.filter((t) => t.folderId === selectedFolderId);
+  }, [tasks, selectedFolderId]);
+
   const filtered = useMemo(() => {
-    let r = [...tasks];
+    let r = [...folderTasks];
     if (filterTab === 'active') {
       r = r.filter((t) => t.status !== 'Réussi' && t.status !== 'Abandonné');
     } else if (filterTab === 'completed') {
       r = r.filter((t) => t.status === 'Réussi' || t.status === 'Abandonné');
-    }
-
-    if (selectedFolderId !== null) {
-      r = r.filter((t) => t.folderId === selectedFolderId);
     }
 
     // Sort by earliest date
@@ -53,7 +54,7 @@ export default function Tasks() {
     });
 
     return r;
-  }, [tasks, filterTab, selectedFolderId]);
+  }, [folderTasks, filterTab]);
 
   return (
     <ScrollView
@@ -69,7 +70,7 @@ export default function Tasks() {
             onPress={() => setFilterTab('active')}
           >
             <Text style={[styles.tabText, filterTab === 'active' && styles.tabTextActive]}>
-              En cours ({tasks.filter((t) => t.status !== 'Réussi' && t.status !== 'Abandonné').length})
+              En cours ({folderTasks.filter((t) => t.status !== 'Réussi' && t.status !== 'Abandonné').length})
             </Text>
           </TouchableOpacity>
 
@@ -78,7 +79,7 @@ export default function Tasks() {
             onPress={() => setFilterTab('all')}
           >
             <Text style={[styles.tabText, filterTab === 'all' && styles.tabTextActive]}>
-              Toutes ({tasks.length})
+              Toutes ({folderTasks.length})
             </Text>
           </TouchableOpacity>
 
@@ -87,7 +88,7 @@ export default function Tasks() {
             onPress={() => setFilterTab('completed')}
           >
             <Text style={[styles.tabText, filterTab === 'completed' && styles.tabTextActive]}>
-              Terminées ({tasks.filter((t) => t.status === 'Réussi' || t.status === 'Abandonné').length})
+              Terminées ({folderTasks.filter((t) => t.status === 'Réussi' || t.status === 'Abandonné').length})
             </Text>
           </TouchableOpacity>
         </View>
