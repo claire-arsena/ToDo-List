@@ -609,7 +609,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 11,
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     color: '#000',
     minHeight: 44,

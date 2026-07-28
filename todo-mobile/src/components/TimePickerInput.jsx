@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, Platform, StyleSheet, ScrollView } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { COLORS, RADIUS } from '../theme';
+import { COLORS } from '../theme';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
@@ -69,7 +69,6 @@ export default function TimePickerInput({ value, onChange, label, placeholder = 
 
             {Platform.OS === 'web' ? (
               <View style={styles.webAlarmPicker}>
-                {/* HTML Native Time Input pour intégration système réveil */}
                 <input
                   type="time"
                   value={value || '09:00'}
@@ -77,21 +76,20 @@ export default function TimePickerInput({ value, onChange, label, placeholder = 
                     if (e.target.value) onChange(e.target.value);
                   }}
                   style={{
-                    fontSize: '28px',
+                    fontSize: '24px',
                     fontWeight: '800',
-                    color: '#d81b60',
+                    color: COLORS.pinkDark,
                     backgroundColor: 'rgba(216, 27, 96, 0.08)',
                     border: '1.5px solid rgba(216, 27, 96, 0.3)',
                     borderRadius: '16px',
                     padding: '12px 20px',
                     textAlign: 'center',
-                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif',
                     outline: 'none',
                     cursor: 'pointer',
                   }}
                 />
 
-                {/* Rouleaux de sélection Heure & Minute style réveil */}
                 <View style={styles.pickerGridContainer}>
                   <View style={styles.pickerColumn}>
                     <Text style={styles.columnLabel}>Heure</Text>
@@ -160,6 +158,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#000',
     marginBottom: 6,
+    letterSpacing: -0.1,
   },
   input: {
     flexDirection: 'row',
@@ -172,12 +171,12 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   valueText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
     color: '#000',
   },
   placeholder: {
-    fontSize: 14,
+    fontSize: 16,
     color: COLORS.textMuted,
   },
   icon: {
