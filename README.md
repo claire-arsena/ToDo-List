@@ -43,5 +43,5 @@ L'application s'ouvre sur `http://localhost:3000`.
 - Agenda mensuel avec les tâches placées sur le calendrier
 - Gestion de dossiers pour organiser les tâches
 - Tableau de bord avec graphique de répartition (Chart.js)
-- Données sauvegardées en mémoire + backup JSON intégré
+- Données sauvegardées en local (localStorage / AsyncStorage)
 - Design glassmorphism responsive

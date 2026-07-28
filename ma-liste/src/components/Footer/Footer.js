@@ -1,56 +1,65 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useContext } from 'react';
 import { ModalContext } from '../../ctx/ModalContext';
-import tasks from '../../assets/tasks.svg';
-import dashbaord from '../../assets/dashboard.svg';
-import agenda from '../../assets/agenda.svg';
-import folder from '../../assets/folder.svg';
-import add from '../../assets/add.svg';
-import './Footer.css'; 
-
+import './Footer.css';
 
 function Footer() {
-    const location = useLocation();
-    const { openModal } = useContext(ModalContext);
+  const location = useLocation();
+  const { openModal } = useContext(ModalContext);
 
-    return (
-        <footer className="footer">  
-            <ul>
-                <Link to="/agenda" className={location.pathname === '/agenda' ? 'active' : ''}>
-                        <figure className="footer-figure">
-                            <img src={agenda} className="footer-logo" alt="Icône agenda" />
-                            <figcaption className="footer-text">Agenda</figcaption>
-                        </figure>
-                </Link>
-                <Link to="/folders" className={location.pathname === '/folders' ? 'active' : ''}>
-                    <figure className="footer-figure">
-                        <img src={folder} className="footer-logo" alt="Icône dossiers" />
-                        <figcaption className="footer-text">Dossiers</figcaption>
-                    </figure>
-                </Link>
-                <button className="footer-add-button" onClick={() => openModal('task')} title="Créer une tâche">
-                    <figure className="footer-figure">
-                        <b className="footer-add-bg">
-                            <img src={add} className="footer-logo footer-add-icon" alt="Icône ajouter" />
-                        </b>
-                        <figcaption className="footer-text">Ajouter</figcaption>
-                    </figure>
-                </button>
-                <Link to="/" className={location.pathname === '/' ? 'active' : ''}>
-                    <figure className="footer-figure">
-                        <img src={tasks} className="footer-logo" alt="Icône tasks" />
-                        <figcaption className="footer-text">Tâches</figcaption>
-                    </figure>
-                </Link>
-                <Link to="/dashboard" className={location.pathname === '/dashboard' ? 'active' : ''}>
-                    <figure className="footer-figure">
-                        <img src={dashbaord} className="footer-logo" alt="Icône dashboard" />
-                        <figcaption className="footer-text">Dashboard</figcaption>
-                    </figure>
-                </Link>
-            </ul>
-      </footer>
-    );
+  return (
+    <footer className="footer">
+      <nav>
+        <ul>
+          <li>
+            <Link to="/" className={`footer-link ${location.pathname === '/' ? 'active' : ''}`}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+                <rect x="9" y="3" width="6" height="4" rx="1" />
+                <path d="M9 14l2 2 4-4" />
+              </svg>
+              <span>Tâches</span>
+            </Link>
+          </li>
+          <li>
+            <Link to="/planning" className={`footer-link ${location.pathname === '/planning' ? 'active' : ''}`}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v6l4 2" />
+              </svg>
+              <span>Planning</span>
+            </Link>
+          </li>
+          <li className="footer-add-li">
+            <button className="footer-add-button" onClick={() => openModal()} title="Créer une tâche">
+              <span className="footer-add-bg">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </span>
+            </button>
+          </li>
+          <li>
+            <Link to="/agenda" className={`footer-link ${location.pathname === '/agenda' ? 'active' : ''}`}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <path d="M16 2v4M8 2v4M3 10h18" />
+              </svg>
+              <span>Agenda</span>
+            </Link>
+          </li>
+          <li>
+            <Link to="/dashboard" className={`footer-link ${location.pathname === '/dashboard' ? 'active' : ''}`}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 20V10M12 20V4M6 20v-6" />
+              </svg>
+              <span>Dashboard</span>
+            </Link>
+          </li>
+        </ul>
+      </nav>
+    </footer>
+  );
 }
 
 export default Footer;

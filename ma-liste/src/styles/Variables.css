@@ -13,34 +13,40 @@
 }
 
 :root {
+  /* ── Colors ── */
   --color-pink-light: #ffd5df;
   --color-pink: #ffb3d9;
   --color-pink-dark: #ff66b3;
   --color-white: #ffffff;
-  --color-gray-light: #efefef;
+  --color-gray-light: #f0f0f0;
   --color-gray-medium: #ddd;
   --color-gray-dark: #262626;
   --color-black: #333;
   --color-shadow: rgba(0, 0, 0, 0.15);
-  --color-backdrop: rgba(0, 0, 0, 0.5);
+  --color-backdrop: rgba(0, 0, 0, 0.4);
   --color-red: #ff5c5c;
   --color-red-dark: #e60000;
+
+  /* ── Status colors ── */
   --color-status-new: #9ac1ff;
   --color-status-progress: #ffc87b;
-  --color-status-done: #aaffaa;
-  --color-status-waiting: #ffa2f4;
-  --color-status-cancelled: #b64747;
-  --font-body: 'VendSans', sans-serif;
+  --color-status-done: #a8e6a8;
+  --color-status-waiting: #e0b3ff;
+  --color-status-cancelled: #ff9999;
+
+  /* ── Typography ── */
+  --font-body: 'VendSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-heading: 'Limelight', cursive;
-  /* Intensified Glassmorphism System */
-  --glass-bg: rgba(255, 255, 255, 0.5);
-  --glass-blur: blur(28px);
-  --glass-border: 1.5px solid rgba(255, 255, 255, 0.6);
-  --glass-shadow: 0 16px 48px 0 rgba(255, 102, 179, 0.25);
-  
-  /* Vibrant Pink Background System */
-  --bg-gradient: linear-gradient(135deg, #ffd5df 0%, #ffb3d9 100%);
-  --blob-pink: radial-gradient(circle, rgba(255, 102, 179, 0.8) 0%, transparent 70%);
-  --blob-purple: radial-gradient(circle, rgba(224, 195, 252, 0.8) 0%, transparent 70%);
-  --blob-hotpink: radial-gradient(circle, rgba(255, 20, 147, 0.6) 0%, transparent 70%);
+
+  /* ── Glassmorphism ── */
+  --glass-bg: rgba(255, 255, 255, 0.45);
+  --glass-blur: blur(24px);
+  --glass-border: 1.5px solid rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 8px 32px rgba(255, 102, 179, 0.15);
+
+  /* ── Background blobs ── */
+  --bg-gradient: linear-gradient(135deg, #ffd5df 0%, #ffb3d9 50%, #ffe0f0 100%);
+  --blob-pink: radial-gradient(circle, rgba(255, 102, 179, 0.7) 0%, transparent 70%);
+  --blob-purple: radial-gradient(circle, rgba(200, 170, 255, 0.7) 0%, transparent 70%);
+  --blob-hotpink: radial-gradient(circle, rgba(255, 20, 147, 0.5) 0%, transparent 70%);
 }

@@ -1,7 +1,6 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
 import { Alert, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import backupData from '../config/data.json';
 import { ETAT_TERMINE, ETATS } from '../config/constants';
 
 export const TodoContext = createContext();
@@ -25,10 +24,14 @@ export function TodoContextProvider({ children }) {
           setFolders(data.folders || []);
           setRelations(data.relations || []);
         } else {
-          applyBackup();
+          setTasks([]);
+          setFolders([]);
+          setRelations([]);
         }
       } catch {
-        applyBackup();
+        setTasks([]);
+        setFolders([]);
+        setRelations([]);
       } finally {
         hasLoaded.current = true;
       }
@@ -43,40 +46,6 @@ export function TodoContextProvider({ children }) {
       () => {}
     );
   }, [tasks, folders, relations]);
-
-  const applyBackup = () => {
-    const mappedTasks = (backupData.taches || []).map((t) => ({
-      id: t.id,
-      title: t.title,
-      description: t.description || '',
-      creationDate: t.date_creation || '',
-      dueDate: t.date_echeance || '',
-      status: t.etat || ETATS.NOUVEAU,
-      members: t.equipiers || [],
-    }));
-
-    const mappedFolders = (backupData.dossiers || []).map((d) => ({
-      id: d.id,
-      title: d.title,
-      description: d.description || '',
-      color: d.color,
-      icon: d.icon,
-      type: d.type,
-    }));
-
-    const mappedRelations = (backupData.relations || []).map((r) => ({
-      taskId: r.tache,
-      folderId: r.dossier,
-    }));
-
-    setTasks(mappedTasks);
-    setFolders(mappedFolders);
-    setRelations(mappedRelations);
-  };
-
-  const loadBackup = () => {
-    applyBackup();
-  };
 
   const resetData = () => {
     const doReset = () => {
@@ -205,7 +174,6 @@ export function TodoContextProvider({ children }) {
     addFolder,
     updateFolder,
     deleteFolder,
-    loadBackup,
     resetData,
     getActiveTasks,
     getActiveSortedTasks,

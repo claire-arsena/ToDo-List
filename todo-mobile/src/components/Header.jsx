@@ -14,7 +14,7 @@ const ROUTE_TITLES = {
 
 export default function AppHeader({ routeName }) {
   const insets = useSafeAreaInsets();
-  const { resetData, loadBackup, tasks, getActiveTasks } = useContext(TodoContext);
+  const { resetData, tasks, getActiveTasks } = useContext(TodoContext);
   const title = ROUTE_TITLES[routeName] || 'Ma Liste';
   const totalTasks = tasks.length;
   const activeTasksCount = getActiveTasks().length;
@@ -36,9 +36,6 @@ export default function AppHeader({ routeName }) {
             </View>
           </View>
           <View style={styles.actions}>
-            <TouchableOpacity style={styles.btn} onPress={loadBackup}>
-              <Text style={styles.btnText}>Backup</Text>
-            </TouchableOpacity>
             <TouchableOpacity style={[styles.btn, styles.btnDanger]} onPress={resetData}>
               <Text style={[styles.btnText, styles.btnDangerText]}>Reset</Text>
             </TouchableOpacity>

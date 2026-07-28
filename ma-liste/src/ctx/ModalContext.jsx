@@ -4,11 +4,9 @@ export const ModalContext = createContext();
 
 export function ModalContextProvider({ children }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState('task');
   const [modalData, setModalData] = useState(null);
 
-  const openModal = (type = 'task', data = null) => {
-    setModalType(type);
+  const openModal = (data = null) => {
     setModalData(data);
     setIsModalOpen(true);
   };
@@ -20,7 +18,6 @@ export function ModalContextProvider({ children }) {
 
   const value = {
     isModalOpen,
-    modalType,
     modalData,
     openModal,
     closeModal,

@@ -1,168 +1,141 @@
 import { useContext, useState } from 'react';
 import { TodoContext } from '../../ctx/TodoContext';
+import { ModalContext } from '../../ctx/ModalContext';
+import { ETAT_TERMINE } from '../../config/constants';
 
-function TasksItem({ task, onFilterByFolder }) {
-  const { folders, relations, updateTask, deleteTask, addRelation } = useContext(TodoContext);
+const STATUS_COLORS = {
+  'Nouveau': 'var(--color-status-new)',
+  'En cours': 'var(--color-status-progress)',
+  'Réussi': 'var(--color-status-done)',
+  'En attente': 'var(--color-status-waiting)',
+  'Abandonné': 'var(--color-status-cancelled)',
+};
+
+function TasksItem({ task, index }) {
+  const { toggleTaskDone, deleteTask } = useContext(TodoContext);
+  const { openModal } = useContext(ModalContext);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({
-    title: task.title,
-    description: task.description,
-    dueDate: task.dueDate,
-  });
 
-  const taskRelations = relations.filter(r => r.taskId === task.id);
-  const allFolders = taskRelations
-    .map(r => folders.find(f => f.id === r.folderId))
-    .filter(Boolean);
-  const displayFolders = isExpanded ? allFolders : allFolders.slice(0, 2);
+  const isDone = ETAT_TERMINE.includes(task.status);
 
-  const availableFolders = folders.filter(
-    f => !taskRelations.some(r => r.folderId === f.id)
-  );
-
-  const handleEditChange = (e) => {
-    const { name, value } = e.target;
-    setEditData(prev => ({ ...prev, [name]: value }));
+  const getToday = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
 
-  const handleSaveEdit = () => {
-    updateTask(task.id, editData);
-    setIsEditing(false);
+  const isOverdue = !isDone && task.endDate && task.endDate < getToday();
+
+  const formatDateRange = () => {
+    if (!task.startDate && !task.endDate) return null;
+    const opts = { day: 'numeric', month: 'short' };
+    const parts = [];
+
+    if (task.startDate) {
+      let s = new Date(task.startDate + 'T12:00:00').toLocaleDateString('fr-FR', opts);
+      if (task.startTime) s += ` à ${task.startTime}`;
+      parts.push(s);
+    }
+
+    if (task.endDate) {
+      const sameDay = task.startDate === task.endDate;
+      if (sameDay && task.endTime) {
+        // Same day — just add end time
+        parts[0] += ` → ${task.endTime}`;
+      } else if (!sameDay) {
+        let e = new Date(task.endDate + 'T12:00:00').toLocaleDateString('fr-FR', opts);
+        if (task.endTime) e += ` à ${task.endTime}`;
+        parts.push(e);
+      }
+    }
+
+    return parts.join(' → ');
   };
 
-  const handleCancelEdit = () => {
-    setEditData({
-      title: task.title,
-      description: task.description,
-      dueDate: task.dueDate,
-    });
-    setIsEditing(false);
-  };
-
-  const handleAddFolder = (e) => {
-    const folderId = parseInt(e.target.value);
-    if (!folderId) return;
-    addRelation(task.id, folderId);
-    e.target.value = '';
+  const durationLabel = () => {
+    if (!task.startDate || !task.endDate || task.startDate === task.endDate) return null;
+    const start = new Date(task.startDate + 'T00:00:00');
+    const end = new Date(task.endDate + 'T00:00:00');
+    const days = Math.round((end - start) / (1000 * 60 * 60 * 24));
+    if (days <= 0) return null;
+    return `${days + 1} jour${days > 0 ? 's' : ''}`;
   };
 
   return (
-    <article className="task-item">
-      <header className="task-item-header">
-        {isEditing ? (
-          <input
-            type="text"
-            name="title"
-            className="edit-input edit-title"
-            value={editData.title}
-            onChange={handleEditChange}
-          />
-        ) : (
-          <h3>{task.title}</h3>
-        )}
+    <article
+      className={`task-item ${isDone ? 'task-done' : ''} ${isOverdue ? 'task-overdue' : ''}`}
+      style={{ animationDelay: `${index * 0.04}s` }}
+    >
+      <div className="task-item-row">
+        <button
+          className={`task-checkbox ${isDone ? 'task-checkbox-checked' : ''}`}
+          onClick={() => toggleTaskDone(task.id)}
+          aria-label={isDone ? 'Marquer comme non terminé' : 'Marquer comme terminé'}
+        >
+          {isDone && (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+        </button>
+
+        <div className="task-item-content" onClick={() => setIsExpanded(!isExpanded)}>
+          <div className="task-item-header">
+            <h3 className={isDone ? 'task-title-done' : ''}>{task.title}</h3>
+            <span
+              className="task-status-badge"
+              style={{ backgroundColor: STATUS_COLORS[task.status] || 'var(--color-status-new)' }}
+            >
+              {task.status}
+            </span>
+          </div>
+
+          <div className="task-item-meta">
+            {formatDateRange() && (
+              <time className={`task-date ${isOverdue ? 'task-date-overdue' : ''}`}>
+                {isOverdue && '⚠ '}{formatDateRange()}
+              </time>
+            )}
+            {durationLabel() && (
+              <span className="task-duration">{durationLabel()}</span>
+            )}
+          </div>
+        </div>
+
         <button
           className="toggle-btn"
           onClick={() => setIsExpanded(!isExpanded)}
           aria-label={isExpanded ? 'Réduire' : 'Développer'}
         >
-          {isExpanded ? '▼' : '▶'}
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            className={`toggle-icon ${isExpanded ? 'toggle-icon-open' : ''}`}
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
         </button>
-      </header>
-
-      {displayFolders.length > 0 && (
-        <nav className="task-categories">
-          {displayFolders.map(f => (
-            <button
-              key={f.id}
-              className="task-category"
-              onClick={() => onFilterByFolder && onFilterByFolder(f.id)}
-            >
-              {f.title}
-            </button>
-          ))}
-        </nav>
-      )}
-
-      {!isEditing && task.dueDate && (
-        <time className="task-date">{task.dueDate}</time>
-      )}
-
-      {isEditing && (
-        <fieldset className="edit-fieldset">
-          <label htmlFor={`dueDate-${task.id}`}>Date d'échéance</label>
-          <input
-            type="date"
-            id={`dueDate-${task.id}`}
-            name="dueDate"
-            className="edit-input"
-            value={editData.dueDate}
-            onChange={handleEditChange}
-          />
-        </fieldset>
-      )}
+      </div>
 
       {isExpanded && (
         <section className="task-expanded">
-          {isEditing ? (
-            <fieldset className="edit-fieldset">
-              <label htmlFor={`desc-${task.id}`}>Description</label>
-              <textarea
-                id={`desc-${task.id}`}
-                name="description"
-                className="edit-input"
-                value={editData.description}
-                onChange={handleEditChange}
-                rows="3"
-              ></textarea>
-            </fieldset>
-          ) : (
-            task.description && <p>{task.description}</p>
-          )}
-
-          {availableFolders.length > 0 && (
-            <fieldset className="edit-fieldset">
-              <label htmlFor={`addFolder-${task.id}`}>Ajouter un dossier</label>
-              <select
-                id={`addFolder-${task.id}`}
-                className="edit-input"
-                onChange={handleAddFolder}
-                defaultValue=""
-              >
-                <option value="">Choisir un dossier...</option>
-                {availableFolders.map(f => (
-                  <option key={f.id} value={f.id}>{f.title}</option>
-                ))}
-              </select>
-            </fieldset>
-          )}
+          {task.description && <p className="task-description">{task.description}</p>}
 
           <footer className="task-actions">
-            {isEditing ? (
-              <>
-                <button className="btn btn-primary btn-small" onClick={handleSaveEdit}>
-                  Enregistrer
-                </button>
-                <button className="btn btn-secondary btn-small" onClick={handleCancelEdit}>
-                  Annuler
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  className="btn btn-secondary btn-small"
-                  onClick={() => setIsEditing(true)}
-                >
-                  Modifier
-                </button>
-                <button
-                  className="btn btn-danger btn-small"
-                  onClick={() => deleteTask(task.id)}
-                >
-                  Supprimer
-                </button>
-              </>
-            )}
+            <button
+              className="btn btn-secondary btn-small"
+              onClick={() => openModal(task)}
+            >
+              ✏️ Modifier
+            </button>
+            <button
+              className="btn btn-danger btn-small"
+              onClick={() => deleteTask(task.id)}
+            >
+              🗑️ Supprimer
+            </button>
           </footer>
         </section>
       )}

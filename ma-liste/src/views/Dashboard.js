@@ -1,6 +1,6 @@
 import { useContext, useMemo } from 'react';
 import { TodoContext } from '../ctx/TodoContext';
-import { ETATS } from '../config/constants';
+import { ETATS, ETAT_TERMINE } from '../config/constants';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import './Dashboard.css';
@@ -18,8 +18,28 @@ const getStatusColors = () => ({
   [ETATS.ABANDONNE]: getCSSVar('--color-status-cancelled'),
 });
 
+const getToday = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 function Dashboard() {
   const { tasks } = useContext(TodoContext);
+
+  const stats = useMemo(() => {
+    const total = tasks.length;
+    const active = tasks.filter(t => !ETAT_TERMINE.includes(t.status)).length;
+    const done = tasks.filter(t => t.status === ETATS.REUSSI).length;
+    const today = getToday();
+    const overdue = tasks.filter(t => {
+      if (ETAT_TERMINE.includes(t.status)) return false;
+      if (!t.endDate) return false;
+      return t.endDate < today;
+    }).length;
+    const completionRate = total > 0 ? Math.round((done / total) * 100) : 0;
+
+    return { total, active, done, overdue, completionRate };
+  }, [tasks]);
 
   const chartData = useMemo(() => {
     const counts = {};
@@ -35,7 +55,6 @@ function Dashboard() {
     const labels = [];
     const data = [];
     const colors = [];
-
     const statusColors = getStatusColors();
 
     Object.entries(counts).forEach(([status, count]) => {
@@ -52,6 +71,7 @@ function Dashboard() {
         data,
         backgroundColor: colors,
         borderWidth: 0,
+        borderRadius: 4,
       }],
     };
   }, [tasks]);
@@ -59,16 +79,17 @@ function Dashboard() {
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: true,
+    cutout: '65%',
     plugins: {
       legend: {
         position: 'bottom',
         labels: {
-          padding: 20,
+          padding: 16,
           usePointStyle: true,
           pointStyle: 'circle',
           font: {
             family: "'VendSans', sans-serif",
-            size: 16,
+            size: 13,
             weight: 'bold',
           },
           color: '#555',
@@ -82,29 +103,54 @@ function Dashboard() {
             return ` ${context.label}: ${context.parsed} (${percent}%)`;
           },
         },
-        titleFont: {
-          family: "'VendSans', sans-serif",
-          size: 14,
-        },
-        bodyFont: {
-          family: "'VendSans', sans-serif",
-          size: 14,
-        },
+        titleFont: { family: "'VendSans', sans-serif", size: 13 },
+        bodyFont: { family: "'VendSans', sans-serif", size: 13 },
       },
     },
   };
 
   return (
     <section className="dashboard">
-      <h1>Tableau de bord</h1>
-      {tasks.length === 0 ? (
-        <p>Aucune tâche à afficher</p>
-      ) : (
-        <article className="chart-container">
-          <figure className="pie-chart">
-            <Doughnut data={chartData} options={chartOptions} />
-          </figure>
+      <h1>Dashboard</h1>
+
+      <div className="dashboard-stats">
+        <article className="stat-card">
+          <span className="stat-number">{stats.total}</span>
+          <span className="stat-label">Total</span>
         </article>
+        <article className="stat-card">
+          <span className="stat-number">{stats.active}</span>
+          <span className="stat-label">En cours</span>
+        </article>
+        <article className="stat-card stat-card-success">
+          <span className="stat-number">{stats.done}</span>
+          <span className="stat-label">Terminées</span>
+        </article>
+        {stats.overdue > 0 && (
+          <article className="stat-card stat-card-danger">
+            <span className="stat-number">{stats.overdue}</span>
+            <span className="stat-label">En retard</span>
+          </article>
+        )}
+      </div>
+
+      {stats.total > 0 ? (
+        <article className="chart-container">
+          <div className="chart-wrapper">
+            <div className="chart-center-label">
+              <span className="chart-percent">{stats.completionRate}%</span>
+              <span className="chart-percent-label">complété</span>
+            </div>
+            <figure className="pie-chart">
+              <Doughnut data={chartData} options={chartOptions} />
+            </figure>
+          </div>
+        </article>
+      ) : (
+        <div className="dashboard-empty">
+          <span>📊</span>
+          <p>Créez des tâches pour voir vos statistiques</p>
+        </div>
       )}
     </section>
   );

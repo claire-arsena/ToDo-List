@@ -4,79 +4,82 @@ import { ModalContext } from '../../ctx/ModalContext';
 import { ETATS } from '../../config/constants';
 import './TaskFormModal.css';
 
+const getToday = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 function TaskFormModal() {
-  const { addTask, updateTask, folders, relations } = useContext(TodoContext);
-  const { isModalOpen, modalType, modalData, closeModal } = useContext(ModalContext);
+  const { addTask, updateTask } = useContext(TodoContext);
+  const { isModalOpen, modalData, closeModal } = useContext(ModalContext);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    dueDate: '',
+    startDate: '',
+    endDate: '',
+    startTime: '',
+    endTime: '',
     status: ETATS.NOUVEAU,
-    membersInput: '',
-    folderId: '',
   });
 
   useEffect(() => {
-    if (modalData && modalType === 'task') {
-      const relation = relations.find(r => r.taskId === modalData.id);
-      setFormData({
-        title: modalData.title || '',
-        description: modalData.description || '',
-        dueDate: modalData.dueDate || '',
-        status: modalData.status || ETATS.NOUVEAU,
-        membersInput: modalData.members ? modalData.members.map(m => m.name).join(', ') : '',
-        folderId: relation ? relation.folderId.toString() : '',
-      });
-    } else {
-      setFormData({
-        title: '',
-        description: '',
-        dueDate: '',
-        status: ETATS.NOUVEAU,
-        membersInput: '',
-        folderId: '',
-      });
+    if (isModalOpen) {
+      if (modalData) {
+        setFormData({
+          title: modalData.title || '',
+          description: modalData.description || '',
+          startDate: modalData.startDate || '',
+          endDate: modalData.endDate || '',
+          startTime: modalData.startTime || '',
+          endTime: modalData.endTime || '',
+          status: modalData.status || ETATS.NOUVEAU,
+        });
+      } else {
+        const today = getToday();
+        setFormData({
+          title: '',
+          description: '',
+          startDate: today,
+          endDate: today,
+          startTime: '',
+          endTime: '',
+          status: ETATS.NOUVEAU,
+        });
+      }
     }
-  }, [modalData, modalType, relations]);
+  }, [modalData, isModalOpen]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData(prev => {
+      const updated = { ...prev, [name]: value };
+      // Auto-sync endDate when startDate changes and endDate is before startDate
+      if (name === 'startDate' && updated.endDate && updated.endDate < value) {
+        updated.endDate = value;
+      }
+      return updated;
+    });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (formData.title.trim()) {
-      const members = formData.membersInput
-        .split(',')
-        .map(name => ({ name: name.trim() }))
-        .filter(obj => obj.name !== '');
-      
       const taskPayload = {
-        title: formData.title,
-        description: formData.description,
-        dueDate: formData.dueDate,
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        startTime: formData.startTime,
+        endTime: formData.endTime,
         status: formData.status,
-        members
       };
 
       if (modalData) {
-        updateTask(modalData.id, taskPayload, formData.folderId);
+        updateTask(modalData.id, taskPayload);
       } else {
-        addTask(taskPayload, formData.folderId);
+        addTask(taskPayload);
       }
 
-      setFormData({
-        title: '',
-        description: '',
-        dueDate: '',
-        status: ETATS.NOUVEAU,
-        membersInput: '',
-        folderId: '',
-      });
       closeModal();
     }
   };
@@ -87,104 +90,116 @@ function TaskFormModal() {
     }
   };
 
-  if (!isModalOpen || modalType !== 'task') return null;
+  if (!isModalOpen) return null;
 
   return (
-    <dialog className="modal-backdrop" onClick={handleBackdropClick}>
-      <section className="modal-content">
+    <div className="modal-backdrop" onClick={handleBackdropClick}>
+      <section className="modal-content" onClick={(e) => e.stopPropagation()}>
         <header className="modal-header">
-          <h2>Créer une nouvelle tâche</h2>
-          <button className="modal-close" onClick={closeModal}>×</button>
+          <h2>{modalData ? 'Modifier la tâche' : 'Nouvelle tâche'}</h2>
+          <button className="modal-close" onClick={closeModal} aria-label="Fermer">×</button>
         </header>
         <form onSubmit={handleSubmit} className="task-form">
           <fieldset className="form-group">
-            <label htmlFor="title">Titre *</label>
+            <label htmlFor="task-title">Titre *</label>
             <input
               type="text"
-              id="title"
+              id="task-title"
               name="title"
               value={formData.title}
               onChange={handleChange}
-              placeholder="Entrez le titre de la tâche"
+              placeholder="Que devez-vous faire ?"
               required
+              autoFocus
             />
           </fieldset>
 
           <fieldset className="form-group">
-            <label htmlFor="description">Description</label>
+            <label htmlFor="task-description">Description</label>
             <textarea
-              id="description"
+              id="task-description"
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Entrez une description (optionnel)"
-              rows="4"
+              placeholder="Détails optionnels..."
+              rows="3"
             />
           </fieldset>
 
-          <fieldset className="form-group">
-            <label htmlFor="dueDate">Date d'échéance</label>
-            <input
-              type="date"
-              id="dueDate"
-              name="dueDate"
-              value={formData.dueDate}
-              onChange={handleChange}
-            />
-          </fieldset>
+          <div className="form-row">
+            <fieldset className="form-group form-group-flex">
+              <label htmlFor="task-startDate">Début</label>
+              <input
+                type="date"
+                id="task-startDate"
+                name="startDate"
+                value={formData.startDate}
+                onChange={handleChange}
+              />
+            </fieldset>
+            <fieldset className="form-group form-group-time">
+              <label htmlFor="task-startTime">Heure</label>
+              <input
+                type="time"
+                id="task-startTime"
+                name="startTime"
+                value={formData.startTime}
+                onChange={handleChange}
+              />
+            </fieldset>
+          </div>
 
-          <fieldset className="form-group">
-            <label htmlFor="folderId">Dossier</label>
-            <select
-              id="folderId"
-              name="folderId"
-              value={formData.folderId}
-              onChange={handleChange}
-            >
-              <option value="">Aucun dossier</option>
-              {folders.map(folder => (
-                <option key={folder.id} value={folder.id}>{folder.title}</option>
-              ))}
-            </select>
-          </fieldset>
+          <div className="form-row">
+            <fieldset className="form-group form-group-flex">
+              <label htmlFor="task-endDate">Fin</label>
+              <input
+                type="date"
+                id="task-endDate"
+                name="endDate"
+                value={formData.endDate}
+                onChange={handleChange}
+                min={formData.startDate}
+              />
+            </fieldset>
+            <fieldset className="form-group form-group-time">
+              <label htmlFor="task-endTime">Heure</label>
+              <input
+                type="time"
+                id="task-endTime"
+                name="endTime"
+                value={formData.endTime}
+                onChange={handleChange}
+              />
+            </fieldset>
+          </div>
 
-          <fieldset className="form-group">
-            <label htmlFor="membersInput">Équipiers (séparés par des virgules)</label>
-            <input
-              type="text"
-              id="membersInput"
-              name="membersInput"
-              value={formData.membersInput}
-              onChange={handleChange}
-              placeholder="Ex: Paul, Marie, Bob"
-            />
-          </fieldset>
-          
-          <fieldset className="form-group">
-            <label htmlFor="status">Statut</label>
-            <select
-              id="status"
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-            >
-              {Object.values(ETATS).map(status => (
-                <option key={status} value={status}>{status}</option>
-              ))}
-            </select>
-          </fieldset>
+          {modalData && (
+            <fieldset className="form-group">
+              <label htmlFor="task-status">Statut</label>
+              <select
+                id="task-status"
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+              >
+                {Object.values(ETATS).map(status => (
+                  <option key={status} value={status}>{status}</option>
+                ))}
+              </select>
+            </fieldset>
+          )}
 
           <footer className="form-buttons">
             <button type="button" className="btn btn-secondary" onClick={closeModal}>
               Annuler
             </button>
             <button type="submit" className="btn btn-primary">
-              {modalData ? 'Enregistrer les modifications' : 'Créer la tâche'}
+              {modalData ? 'Enregistrer' : 'Créer la tâche'}
             </button>
           </footer>
         </form>
       </section>
-    </dialog>
+    </div>
   );
 }
 

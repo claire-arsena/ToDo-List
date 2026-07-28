@@ -1,34 +1,141 @@
 @import '../styles/Variables.css';
+
 .dashboard {
   padding: 20px;
-  max-width: 800px;
+  max-width: 680px;
   margin: 0 auto;
 }
 
 .dashboard h1 {
   color: var(--color-pink-dark);
   text-align: left;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
+  font-size: 26px;
 }
 
+/* ── Stat cards ── */
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: 16px;
+  padding: 18px;
+  text-align: center;
+  box-shadow: var(--glass-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-number {
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--color-pink-dark);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-gray-dark);
+  opacity: 0.5;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-card-success .stat-number {
+  color: #43a047;
+}
+
+.stat-card-danger .stat-number {
+  color: var(--color-red);
+}
+
+/* ── Chart ── */
 .chart-container {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: var(--glass-border);
-  border-radius: 40px;
-  padding: 50px;
-  margin: 30px auto;
-  max-width: 600px;
+  border-radius: 24px;
+  padding: 32px;
   box-shadow: var(--glass-shadow);
+}
+
+.chart-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.chart-center-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -70%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.chart-percent {
+  display: block;
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--color-pink-dark);
+  line-height: 1;
+}
+
+.chart-percent-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-gray-dark);
+  opacity: 0.4;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
 }
 
 .pie-chart {
   width: 100%;
-  max-width: 400px;
+  max-width: 320px;
   margin: 0;
 }
 
+/* ── Empty state ── */
+.dashboard-empty {
+  text-align: center;
+  padding: 50px 20px;
+}
+
+.dashboard-empty span {
+  font-size: 44px;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.dashboard-empty p {
+  font-size: 15px;
+  color: var(--color-gray-dark);
+  opacity: 0.4;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ── Responsive ── */
 @media (max-width: 768px) {
   .dashboard {
     padding: 12px;
@@ -36,7 +143,19 @@
 
   .dashboard h1 {
     font-size: 22px;
-    margin-bottom: 15px;
+    margin-bottom: 14px;
+  }
+
+  .dashboard-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat-card {
+    padding: 14px;
+  }
+
+  .stat-number {
+    font-size: 24px;
   }
 
   .chart-container {
@@ -44,17 +163,32 @@
   }
 
   .pie-chart {
-    max-width: 300px;
+    max-width: 250px;
+  }
+
+  .chart-percent {
+    font-size: 26px;
   }
 }
 
 @media (max-width: 480px) {
-  .pie-chart {
-    max-width: 220px;
+  .stat-number {
+    font-size: 20px;
+  }
+
+  .stat-label {
+    font-size: 10px;
   }
 
   .chart-container {
     padding: 16px;
-    gap: 20px;
+  }
+
+  .chart-percent {
+    font-size: 22px;
+  }
+
+  .pie-chart {
+    max-width: 200px;
   }
 }
