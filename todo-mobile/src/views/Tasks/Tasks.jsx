@@ -5,9 +5,10 @@ import { TodoContext } from '../../ctx/TodoContext';
 import TasksItem from './TasksItem';
 import GlassCard from '../../components/GlassCard';
 import { COLORS } from '../../theme';
+import { isTaskOverdue } from '../../config/constants';
 
 export default function Tasks() {
-  const { tasks, folders, deleteFolder } = useContext(TodoContext);
+  const { tasks, folders, deleteFolder, rescheduleToToday } = useContext(TodoContext);
   const [filterTab, setFilterTab] = useState('active'); // 'all', 'active', 'completed', 'overdue'
   const [selectedFolderId, setSelectedFolderId] = useState(null); // null = all folders
 
@@ -38,28 +39,22 @@ export default function Tasks() {
     return tasks.filter((t) => t.folderId === selectedFolderId);
   }, [tasks, selectedFolderId]);
 
-  const overdueCount = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    return folderTasks.filter((t) => {
-      const isDone = t.status === 'Réussi' || t.status === 'Abandonné';
-      const endDate = t.endDate || t.dueDate || t.startDate;
-      return !isDone && endDate && endDate < today;
-    }).length;
+  const overdueTasks = useMemo(() => {
+    return folderTasks.filter((t) => isTaskOverdue(t));
   }, [folderTasks]);
 
+  const handleRescheduleAllOverdue = () => {
+    overdueTasks.forEach((t) => rescheduleToToday(t.id));
+  };
+
   const filtered = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
     let r = [...folderTasks];
     if (filterTab === 'active') {
       r = r.filter((t) => t.status !== 'Réussi' && t.status !== 'Abandonné');
     } else if (filterTab === 'completed') {
       r = r.filter((t) => t.status === 'Réussi' || t.status === 'Abandonné');
     } else if (filterTab === 'overdue') {
-      r = r.filter((t) => {
-        const isDone = t.status === 'Réussi' || t.status === 'Abandonné';
-        const endDate = t.endDate || t.dueDate || t.startDate;
-        return !isDone && endDate && endDate < today;
-      });
+      r = r.filter((t) => isTaskOverdue(t));
     }
 
     // Sort by earliest date
@@ -78,6 +73,41 @@ export default function Tasks() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
+      {/* Banner alerte globale si des tâches sont en retard */}
+      {overdueTasks.length > 0 && filterTab !== 'overdue' && (
+        <GlassCard style={styles.alertBannerCard}>
+          <View style={styles.alertBannerInner}>
+            <View style={styles.alertBannerTextRow}>
+              <Ionicons name="warning" size={20} color="#e74c3c" />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.alertBannerTitle}>
+                  {overdueTasks.length} tâche{overdueTasks.length > 1 ? 's' : ''} en retard !
+                </Text>
+                <Text style={styles.alertBannerSub}>
+                  Des délais sont dépassés. Prenez une décision ou reportez-les.
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.alertBannerBtnRow}>
+              <TouchableOpacity
+                style={styles.alertBannerBtnFilter}
+                onPress={() => setFilterTab('overdue')}
+              >
+                <Text style={styles.alertBannerBtnFilterText}>Voir les retards</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.alertBannerBtnReschedule}
+                onPress={handleRescheduleAllOverdue}
+              >
+                <Text style={styles.alertBannerBtnRescheduleText}>Tout reporter à aujourd'hui</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </GlassCard>
+      )}
+
       {/* Filters: En cours / Toutes / Terminées / En retard */}
       <GlassCard style={styles.filterCard}>
         <View style={styles.tabRow}>
@@ -108,7 +138,7 @@ export default function Tasks() {
             </Text>
           </TouchableOpacity>
 
-          {overdueCount > 0 && (
+          {overdueTasks.length > 0 && (
             <TouchableOpacity
               style={[
                 styles.tabBtn,
@@ -124,7 +154,7 @@ export default function Tasks() {
                   filterTab === 'overdue' && styles.tabTextActive,
                 ]}
               >
-                ⚠ En retard ({overdueCount})
+                ⚠ En retard ({overdueTasks.length})
               </Text>
             </TouchableOpacity>
           )}
@@ -219,6 +249,35 @@ export default function Tasks() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 100 },
+
+  alertBannerCard: {
+    marginBottom: 14,
+    borderColor: '#e74c3c',
+    borderWidth: 1.5,
+    backgroundColor: 'rgba(231,76,60,0.08)',
+  },
+  alertBannerInner: { padding: 12 },
+  alertBannerTextRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  alertBannerTitle: { fontSize: 14, fontWeight: '800', color: '#e74c3c' },
+  alertBannerSub: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+  alertBannerBtnRow: { flexDirection: 'row', gap: 8 },
+  alertBannerBtnFilter: {
+    backgroundColor: 'rgba(231,76,60,0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(231,76,60,0.3)',
+  },
+  alertBannerBtnFilterText: { fontSize: 11, fontWeight: '800', color: '#e74c3c' },
+  alertBannerBtnReschedule: {
+    backgroundColor: COLORS.pinkDark,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 14,
+  },
+  alertBannerBtnRescheduleText: { fontSize: 11, fontWeight: '800', color: '#fff' },
+
   filterCard: { padding: 8, marginBottom: 16 },
   tabRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   tabBtn: {
