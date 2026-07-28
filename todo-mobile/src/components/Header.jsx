@@ -1,9 +1,8 @@
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BlurView } from 'expo-blur';
 import { TodoContext } from '../ctx/TodoContext';
-import { COLORS, SHADOWS } from '../theme';
+import { COLORS } from '../theme';
 
 const ROUTE_TITLES = {
   Tasks: 'Tâches',
@@ -21,7 +20,7 @@ export default function AppHeader({ routeName }) {
 
   return (
     <View style={[styles.wrapper, { paddingTop: insets.top + 8 }]}>
-      <BlurView intensity={80} tint="light" style={styles.iosBar}>
+      <View style={styles.iosBar}>
         <View style={styles.inner}>
           <Text style={styles.title}>{title}</Text>
           <View style={styles.iosPillBadge}>
@@ -30,7 +29,7 @@ export default function AppHeader({ routeName }) {
             </Text>
           </View>
         </View>
-      </BlurView>
+      </View>
     </View>
   );
 }
@@ -42,11 +41,16 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   iosBar: {
+    backgroundColor: '#ffffff',
     borderRadius: 24,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
     overflow: 'hidden',
-    ...SHADOWS.glass,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
   },
   inner: {
     flexDirection: 'row',
@@ -54,7 +58,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.75)',
   },
   title: {
     fontSize: 24,
@@ -63,7 +66,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   iosPillBadge: {
-    backgroundColor: 'rgba(216, 27, 96, 0.1)',
+    backgroundColor: 'rgba(216, 27, 96, 0.08)',
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 100,
