@@ -20,20 +20,14 @@ export default function AppHeader({ routeName }) {
   const activeTasksCount = getActiveTasks().length;
 
   return (
-    <View style={[styles.wrapper, { paddingTop: insets.top + 12 }]}>
-      <BlurView intensity={60} tint="light" style={styles.pill}>
+    <View style={[styles.wrapper, { paddingTop: insets.top + 8 }]}>
+      <BlurView intensity={80} tint="light" style={styles.iosBar}>
         <View style={styles.inner}>
-          <View style={styles.left}>
-            <Text style={styles.title}>{title}</Text>
-            <View style={styles.stats}>
-              <Text style={styles.stat}>
-                Total : <Text style={styles.statBold}>{totalTasks}</Text>
-              </Text>
-              <Text style={styles.statSep}>·</Text>
-              <Text style={styles.stat}>
-                En cours : <Text style={styles.statBold}>{activeTasksCount}</Text>
-              </Text>
-            </View>
+          <Text style={styles.title}>{title}</Text>
+          <View style={styles.iosPillBadge}>
+            <Text style={styles.badgeText}>
+              <Text style={styles.badgeHighlight}>{activeTasksCount}</Text> en cours / <Text style={styles.badgeHighlight}>{totalTasks}</Text> total
+            </Text>
           </View>
         </View>
       </BlurView>
@@ -44,13 +38,13 @@ export default function AppHeader({ routeName }) {
 const styles = StyleSheet.create({
   wrapper: {
     backgroundColor: 'transparent',
-    paddingHorizontal: 20,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 4,
   },
-  pill: {
-    borderRadius: 100,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.6)',
+  iosBar: {
+    borderRadius: 24,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
     overflow: 'hidden',
     ...SHADOWS.glass,
   },
@@ -58,19 +52,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: 'rgba(255,255,255,0.5)',
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
   },
-  left: { flex: 1 },
   title: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: '800',
-    color: COLORS.text,
-    letterSpacing: 0.2,
+    color: '#000000',
+    letterSpacing: -0.5,
   },
-  stats: { flexDirection: 'row', alignItems: 'center', marginTop: 3 },
-  stat: { fontSize: 12, color: COLORS.textLight },
-  statBold: { fontWeight: '800', color: COLORS.pinkDark },
-  statSep: { marginHorizontal: 6, color: COLORS.textMuted },
+  iosPillBadge: {
+    backgroundColor: 'rgba(216, 27, 96, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: 'rgba(216, 27, 96, 0.2)',
+  },
+  badgeText: { fontSize: 12, fontWeight: '600', color: COLORS.textLight },
+  badgeHighlight: { fontWeight: '800', color: COLORS.pinkDark },
 });
