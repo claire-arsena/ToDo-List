@@ -52,6 +52,7 @@ export default function TaskFormModal() {
   const { addTask, updateTask, folders, addFolder, deleteFolder } = useContext(TodoContext);
   const { isModalOpen, modalType, modalData, closeModal } = useContext(ModalContext);
   const [form, setForm] = useState(EMPTY);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   // Quick Folder creation form
   const [showNewFolderForm, setShowNewFolderForm] = useState(false);
@@ -73,11 +74,11 @@ export default function TaskFormModal() {
           isRegular: modalData.isRegular !== undefined ? modalData.isRegular : true,
         });
       } else {
-        // Reinitialisation complete pour toute NOUVELLE tache
         setForm({ ...EMPTY, startDate: getToday(), endDate: getToday(), status: ETATS.NOUVEAU });
       }
     }
     setShowNewFolderForm(false);
+    setIsFullScreen(false);
   }, [modalData, modalType, isModalOpen]);
 
   const set = (key, val) => setForm((prev) => ({ ...prev, [key]: val }));
@@ -127,7 +128,7 @@ export default function TaskFormModal() {
       isRegular: form.isRegular,
     };
     modalData ? updateTask(modalData.id, payload) : addTask(payload);
-    setForm(EMPTY); // Vider explicitement a la soumission
+    setForm(EMPTY);
     closeModal();
   };
 
@@ -141,10 +142,30 @@ export default function TaskFormModal() {
         <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={closeModal} />
 
-        <BlurView intensity={90} tint="light" style={styles.iosSheet}>
+        <BlurView
+          intensity={90}
+          tint="light"
+          style={[styles.iosSheet, isFullScreen ? styles.iosSheetFull : styles.iosSheetNormal]}
+        >
           <View style={styles.sheetInner}>
-            {/* iOS Sheet Drag Indicator Handle */}
-            <View style={styles.iosHandle} />
+            {/* iOS Sheet Interactive Drag & Height Handle Bar */}
+            <TouchableOpacity
+              style={styles.handleTouchArea}
+              onPress={() => setIsFullScreen(!isFullScreen)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.iosHandle} />
+              <View style={styles.handleHintRow}>
+                <Ionicons
+                  name={isFullScreen ? 'chevron-down' : 'chevron-up'}
+                  size={13}
+                  color={COLORS.textMuted}
+                />
+                <Text style={styles.handleHintText}>
+                  {isFullScreen ? 'Réduire' : 'Plein écran'}
+                </Text>
+              </View>
+            </TouchableOpacity>
 
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
@@ -402,30 +423,51 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 32,
     borderWidth: 0.5,
     borderColor: 'rgba(255, 255, 255, 0.9)',
-    maxHeight: '90%',
     overflow: 'hidden',
     ...SHADOWS.glass,
+  },
+  iosSheetNormal: {
+    maxHeight: '82%',
+  },
+  iosSheetFull: {
+    height: '96%',
+    maxHeight: '96%',
   },
   sheetInner: {
     backgroundColor: '#ffffff',
     maxHeight: '100%',
+    flex: 1,
+  },
+  handleTouchArea: {
+    alignItems: 'center',
+    paddingTop: 10,
+    paddingBottom: 6,
+    cursor: 'pointer',
   },
   iosHandle: {
-    width: 38,
+    width: 40,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: 'rgba(60, 60, 67, 0.25)',
-    alignSelf: 'center',
-    marginTop: 10,
+    backgroundColor: 'rgba(60, 60, 67, 0.3)',
     marginBottom: 4,
+  },
+  handleHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  handleHintText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.textMuted,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 14,
+    paddingTop: 4,
+    paddingBottom: 12,
     borderBottomWidth: 0.5,
     borderBottomColor: 'rgba(0, 0, 0, 0.08)',
   },
