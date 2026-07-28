@@ -56,7 +56,7 @@ export function TodoContextProvider({ children }) {
     } else {
       Alert.alert('Réinitialiser', 'Êtes-vous sûr(e) ? Cette action supprimera toutes les tâches.', [
         { text: 'Annuler', style: 'cancel' },
-        { text: 'Supprimer', style: 'destructive', onPress: doReset },
+        { text: 'Supprimer', style: 'destructive', onPress: doDelete },
       ]);
     }
   };
@@ -136,6 +136,47 @@ export function TodoContextProvider({ children }) {
     );
   };
 
+  const rescheduleToToday = (id) => {
+    const today = new Date().toISOString().split('T')[0];
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === id
+          ? {
+              ...t,
+              startDate: today,
+              endDate: today,
+              dueDate: today,
+            }
+          : t
+      )
+    );
+  };
+
+  const rescheduleByDays = (id, daysToAdd = 1) => {
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.id !== id) return t;
+        const todayStr = new Date().toISOString().split('T')[0];
+        const baseDateStr = t.endDate && t.endDate >= todayStr ? t.endDate : todayStr;
+        const dateObj = new Date(baseDateStr + 'T12:00:00');
+        dateObj.setDate(dateObj.getDate() + daysToAdd);
+        const newDate = dateObj.toISOString().split('T')[0];
+        return {
+          ...t,
+          startDate: newDate,
+          endDate: newDate,
+          dueDate: newDate,
+        };
+      })
+    );
+  };
+
+  const cancelTask = (id) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, status: ETATS.ABANDONNE } : t))
+    );
+  };
+
   const getActiveTasks = () => tasks.filter((task) => !ETAT_TERMINE.includes(task.status));
 
   const value = {
@@ -147,6 +188,9 @@ export function TodoContextProvider({ children }) {
     addFolder,
     deleteFolder,
     toggleTaskDone,
+    rescheduleToToday,
+    rescheduleByDays,
+    cancelTask,
     resetData,
     getActiveTasks,
   };

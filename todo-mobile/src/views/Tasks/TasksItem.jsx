@@ -12,7 +12,14 @@ const getToday = () => {
 };
 
 export default function TasksItem({ task }) {
-  const { toggleTaskDone, deleteTask, folders } = useContext(TodoContext);
+  const {
+    toggleTaskDone,
+    deleteTask,
+    folders,
+    rescheduleToToday,
+    rescheduleByDays,
+    cancelTask,
+  } = useContext(TodoContext);
   const { openModal } = useContext(ModalContext);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -117,6 +124,50 @@ export default function TasksItem({ task }) {
           </TouchableOpacity>
         </View>
 
+        {/* Section de décision pour tâche en retard (Overdue Decision Banner) */}
+        {isOverdue && (
+          <View style={styles.overdueDecisionCard}>
+            <View style={styles.overdueHeaderRow}>
+              <Ionicons name="alert-circle-outline" size={16} color="#e74c3c" />
+              <Text style={styles.overdueTitle}>Délai dépassé ! Quelle décision prendre ?</Text>
+            </View>
+
+            <View style={styles.overdueActionsRow}>
+              <TouchableOpacity
+                style={styles.overdueBtnSuccess}
+                onPress={() => toggleTaskDone(task.id)}
+              >
+                <Ionicons name="checkmark-circle-outline" size={13} color="#fff" />
+                <Text style={styles.overdueBtnText}>Valider</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.overdueBtnPrimary}
+                onPress={() => rescheduleToToday(task.id)}
+              >
+                <Ionicons name="today-outline" size={13} color="#fff" />
+                <Text style={styles.overdueBtnText}>Reporter à aujourd'hui</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.overdueBtnSecondary}
+                onPress={() => rescheduleByDays(task.id, 1)}
+              >
+                <Ionicons name="time-outline" size={13} color={COLORS.pinkDark} />
+                <Text style={styles.overdueBtnSecondaryText}>+1 jour</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.overdueBtnDanger}
+                onPress={() => cancelTask(task.id)}
+              >
+                <Ionicons name="close-circle-outline" size={13} color="#e74c3c" />
+                <Text style={styles.overdueBtnDangerText}>Abandonner</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* Détails étendu */}
         {isExpanded && (
           <View style={styles.expanded}>
@@ -153,7 +204,7 @@ export default function TasksItem({ task }) {
 const styles = StyleSheet.create({
   card: { marginBottom: 10, borderRadius: 14 },
   cardDone: { opacity: 0.75 },
-  cardOverdue: { borderColor: 'rgba(231,76,60,0.4)', borderWidth: 1.5 },
+  cardOverdue: { borderColor: 'rgba(231,76,60,0.5)', borderWidth: 1.5 },
   inner: { padding: 12 },
   mainRow: { flexDirection: 'row', alignItems: 'center' },
   checkbox: { marginRight: 10 },
@@ -186,6 +237,62 @@ const styles = StyleSheet.create({
   },
   durationText: { fontSize: 10, fontWeight: '800', color: COLORS.pinkDark },
   toggleBtn: { padding: 4 },
+
+  overdueDecisionCard: {
+    marginTop: 10,
+    padding: 10,
+    borderRadius: 12,
+    backgroundColor: 'rgba(231,76,60,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(231,76,60,0.2)',
+  },
+  overdueHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  overdueTitle: { fontSize: 12, fontWeight: '800', color: '#e74c3c' },
+  overdueActionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  overdueBtnSuccess: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#2ecc71',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  overdueBtnPrimary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: COLORS.pinkDark,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  overdueBtnSecondary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,102,179,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,102,179,0.3)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  overdueBtnDanger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(231,76,60,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(231,76,60,0.25)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  overdueBtnText: { fontSize: 11, fontWeight: '700', color: '#fff' },
+  overdueBtnSecondaryText: { fontSize: 11, fontWeight: '700', color: COLORS.pinkDark },
+  overdueBtnDangerText: { fontSize: 11, fontWeight: '700', color: '#e74c3c' },
+
   expanded: { marginTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)', paddingTop: 8 },
   desc: { fontSize: 13, color: COLORS.text, lineHeight: 18 },
   noDesc: { fontSize: 12, color: COLORS.textMuted, fontStyle: 'italic' },
