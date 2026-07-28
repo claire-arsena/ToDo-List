@@ -1,7 +1,7 @@
 import { ETATS } from './config/constants';
 
 export const COLORS = {
-  // iOS Deep Pink Theme (Remplacement du bleu Apple #007AFF par le rose foncé iOS #d81b60)
+  // iOS Deep Pink Theme (Pas de blanc pur, fond casse doux)
   pinkLight:       '#fce4ec',
   pinkMid:         '#f8bbd0',
   pinkDark:        '#d81b60', // iOS Deep Pink Principal
@@ -12,21 +12,21 @@ export const COLORS = {
   redDark:         '#c62828',
 
   // Couleurs de statuts iOS
-  statusNew:       '#d81b60', // Nouveau = Pink iOS
-  statusProgress:  '#ff9500', // Orange iOS
-  statusDone:      '#34c759', // Green iOS
-  statusWaiting:   '#af52de', // Purple iOS
-  statusCancelled: '#8e8e93', // Muted iOS
+  statusNew:       '#d81b60',
+  statusProgress:  '#ff9500',
+  statusDone:      '#34c759',
+  statusWaiting:   '#af52de',
+  statusCancelled: '#8e8e93',
 
-  // iOS System Colors
-  iosBg:           '#f2f2f7',
-  iosCard:         'rgba(255, 255, 255, 0.88)',
-  iosCardSolid:    '#ffffff',
-  iosBorder:       'rgba(60, 60, 67, 0.12)',
-  iosGlassBorder:  'rgba(255, 255, 255, 0.8)',
+  // iOS System Colors (Off-white / Blanc casse)
+  iosBg:           '#f0f1f5',
+  iosCard:         '#f8f9fc', // Blanc cassé doux (pas de blanc pur)
+  iosCardSolid:    '#f7f8fb',
+  iosBorder:       'rgba(0, 0, 0, 0.08)',
+  iosGlassBorder:  'rgba(0, 0, 0, 0.08)',
 
   // Typographie iOS
-  text:            '#000000',
+  text:            '#1c1c1e',
   textLight:       '#3c3c43',
   textMuted:       '#8e8e93',
   white:           '#ffffff',
@@ -41,27 +41,27 @@ export const STATUS_COLORS = {
   [ETATS.ABANDONNE]:  COLORS.statusCancelled,
 };
 
-// Ombre iOS douce et raffinée
+// Ombres iOS prononcées et douces
 export const SHADOWS = {
   glass: {
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.14,
+    shadowRadius: 20,
+    elevation: 6,
   },
   addBtn: {
     shadowColor: '#d81b60',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 14,
     elevation: 8,
   },
 };
 
 export const GLASS = {
   backgroundColor: COLORS.iosCard,
-  borderWidth: 0.5,
+  borderWidth: 1,
   borderColor: COLORS.iosBorder,
   borderRadius: 20,
   ...SHADOWS.glass,
