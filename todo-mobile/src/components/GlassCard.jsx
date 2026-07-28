@@ -1,25 +1,29 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { COLORS, SHADOWS } from '../theme';
+import { StyleSheet, View } from 'react-native';
+import { SHADOWS } from '../theme';
 
 /**
- * Carte glassmorphism — équivalent du glass-bg + blur(28px) du web.
- * Props : intensity (défaut 55), style, children.
+ * Carte iOS Blanche Haute Contraste avec ombre et bordure subtile.
  */
-export default function GlassCard({ children, style, intensity = 55 }) {
+export default function GlassCard({ children, style }) {
   return (
-    <BlurView intensity={intensity} tint="light" style={[styles.card, style]}>
+    <View style={[styles.card, style]}>
       {children}
-    </BlurView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
-    borderWidth: 0,
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
     overflow: 'hidden',
-    ...SHADOWS.glass,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
   },
 });

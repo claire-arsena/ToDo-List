@@ -1,11 +1,10 @@
 import React, { useContext } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ModalContext } from '../ctx/ModalContext';
-import { COLORS, SHADOWS } from '../theme';
+import { COLORS } from '../theme';
 
 const LEFT_TABS = [
   { routeName: 'Tasks', icon: 'checkbox-outline', iconActive: 'checkbox', label: 'Tâches' },
@@ -26,7 +25,7 @@ export default function CustomTabBar({ state, navigation }) {
     const active = currentRoute === routeName;
     return (
       <TouchableOpacity style={styles.tabItem} onPress={() => go(routeName)} activeOpacity={0.7}>
-        <View style={[styles.iconWrap, active && styles.iconWrapActive]}>
+        <View style={styles.iconWrap}>
           <Ionicons name={active ? iconActive : icon} size={22} color={active ? COLORS.pinkDark : COLORS.textMuted} />
         </View>
         <Text style={[styles.label, active && styles.labelActive]}>{label}</Text>
@@ -38,29 +37,27 @@ export default function CustomTabBar({ state, navigation }) {
     <View style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
       <View style={styles.container}>
         <View style={styles.pillClip}>
-          <BlurView intensity={90} tint="light" style={styles.pillBlur}>
-            <View style={styles.row}>
-              {LEFT_TABS.map((t) => <TabItem key={t.routeName} {...t} />)}
+          <View style={styles.row}>
+            {LEFT_TABS.map((t) => <TabItem key={t.routeName} {...t} />)}
 
-              {/* iOS Deep Pink Central + Action Button */}
-              <TouchableOpacity
-                style={styles.addTabItem}
-                onPress={() => openModal('task')}
-                activeOpacity={0.8}
+            {/* iOS Deep Pink Central + Action Button */}
+            <TouchableOpacity
+              style={styles.addTabItem}
+              onPress={() => openModal('task')}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={[COLORS.pinkDark, '#c2185b']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                style={styles.addBtnCircle}
               >
-                <LinearGradient
-                  colors={[COLORS.pinkDark, '#c2185b']}
-                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                  style={styles.addBtnCircle}
-                >
-                  <Ionicons name="add" size={24} color="#ffffff" />
-                </LinearGradient>
-                <Text style={styles.addLabel}>Ajouter</Text>
-              </TouchableOpacity>
+                <Ionicons name="add" size={24} color="#ffffff" />
+              </LinearGradient>
+              <Text style={styles.addLabel}>Ajouter</Text>
+            </TouchableOpacity>
 
-              {RIGHT_TABS.map((t) => <TabItem key={t.routeName} {...t} />)}
-            </View>
-          </BlurView>
+            {RIGHT_TABS.map((t) => <TabItem key={t.routeName} {...t} />)}
+          </View>
         </View>
       </View>
     </View>
@@ -80,19 +77,21 @@ const styles = StyleSheet.create({
   },
   pillClip: {
     borderRadius: 36,
-    overflow: 'hidden',
-    borderWidth: 0.5,
-    borderColor: 'rgba(255, 255, 255, 0.9)',
-    ...SHADOWS.glass,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
   },
-  pillBlur: { borderRadius: 36 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
     paddingVertical: 8,
     paddingHorizontal: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.88)',
   },
   tabItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   iconWrap: {
@@ -102,7 +101,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconWrapActive: {},
   label: { fontSize: 10, color: COLORS.textMuted, marginTop: 2, fontWeight: '600' },
   labelActive: { color: COLORS.pinkDark, fontWeight: '800' },
 
