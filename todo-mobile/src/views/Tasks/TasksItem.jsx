@@ -4,12 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { TodoContext } from '../../ctx/TodoContext';
 import { ModalContext } from '../../ctx/ModalContext';
 import { COLORS, STATUS_COLORS } from '../../theme';
+import { isTaskOverdue, ETATS } from '../../config/constants';
 import GlassCard from '../../components/GlassCard';
-
-const getToday = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
 
 export default function TasksItem({ task }) {
   const {
@@ -23,9 +19,8 @@ export default function TasksItem({ task }) {
   const { openModal } = useContext(ModalContext);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const isDone = task.status === 'Réussi';
-  const endDate = task.endDate || task.dueDate || task.startDate;
-  const isOverdue = !isDone && endDate && endDate < getToday();
+  const isDone = task.status === ETATS.REUSSI;
+  const overdue = isTaskOverdue(task);
 
   const folder = task.folderId ? folders.find((f) => f.id === task.folderId) : null;
 
@@ -51,7 +46,7 @@ export default function TasksItem({ task }) {
   const statusColor = folder?.color || STATUS_COLORS[task.status] || COLORS.pinkDark;
 
   return (
-    <GlassCard style={[styles.card, isDone && styles.cardDone, isOverdue && styles.cardOverdue]}>
+    <GlassCard style={[styles.card, isDone && styles.cardDone, overdue && styles.cardOverdue]}>
       <View style={styles.inner}>
         {/* Ligne principale */}
         <View style={styles.mainRow}>
@@ -64,7 +59,7 @@ export default function TasksItem({ task }) {
             <Ionicons
               name={isDone ? 'checkbox' : 'square-outline'}
               size={22}
-              color={isDone ? '#2ecc71' : isOverdue ? '#e74c3c' : statusColor}
+              color={isDone ? '#2ecc71' : overdue ? '#e74c3c' : statusColor}
             />
           </TouchableOpacity>
 
@@ -92,8 +87,8 @@ export default function TasksItem({ task }) {
 
             <View style={styles.metaRow}>
               {formatDateRange() && (
-                <Text style={[styles.dateText, isOverdue && styles.overdueText]}>
-                  {isOverdue ? '⚠ Expiré : ' : '📅 '}
+                <Text style={[styles.dateText, overdue && styles.overdueText]}>
+                  {overdue ? '⚠ Expiré : ' : '📅 '}
                   {formatDateRange()}
                 </Text>
               )}
@@ -124,12 +119,12 @@ export default function TasksItem({ task }) {
           </TouchableOpacity>
         </View>
 
-        {/* Section de décision pour tâche en retard (Overdue Decision Banner) */}
-        {isOverdue && (
+        {/* Banner interactif de décision si tâche en retard */}
+        {overdue && (
           <View style={styles.overdueDecisionCard}>
             <View style={styles.overdueHeaderRow}>
-              <Ionicons name="alert-circle-outline" size={16} color="#e74c3c" />
-              <Text style={styles.overdueTitle}>Délai dépassé ! Quelle décision prendre ?</Text>
+              <Ionicons name="alert-circle" size={16} color="#e74c3c" />
+              <Text style={styles.overdueTitle}>Tâche en retard ! Quelle décision prendre ?</Text>
             </View>
 
             <View style={styles.overdueActionsRow}>
@@ -137,7 +132,7 @@ export default function TasksItem({ task }) {
                 style={styles.overdueBtnSuccess}
                 onPress={() => toggleTaskDone(task.id)}
               >
-                <Ionicons name="checkmark-circle-outline" size={13} color="#fff" />
+                <Ionicons name="checkmark-circle" size={14} color="#fff" />
                 <Text style={styles.overdueBtnText}>Valider</Text>
               </TouchableOpacity>
 
@@ -145,7 +140,7 @@ export default function TasksItem({ task }) {
                 style={styles.overdueBtnPrimary}
                 onPress={() => rescheduleToToday(task.id)}
               >
-                <Ionicons name="today-outline" size={13} color="#fff" />
+                <Ionicons name="today" size={14} color="#fff" />
                 <Text style={styles.overdueBtnText}>Reporter à aujourd'hui</Text>
               </TouchableOpacity>
 
@@ -153,7 +148,7 @@ export default function TasksItem({ task }) {
                 style={styles.overdueBtnSecondary}
                 onPress={() => rescheduleByDays(task.id, 1)}
               >
-                <Ionicons name="time-outline" size={13} color={COLORS.pinkDark} />
+                <Ionicons name="time" size={14} color={COLORS.pinkDark} />
                 <Text style={styles.overdueBtnSecondaryText}>+1 jour</Text>
               </TouchableOpacity>
 
@@ -161,7 +156,7 @@ export default function TasksItem({ task }) {
                 style={styles.overdueBtnDanger}
                 onPress={() => cancelTask(task.id)}
               >
-                <Ionicons name="close-circle-outline" size={13} color="#e74c3c" />
+                <Ionicons name="close-circle" size={14} color="#e74c3c" />
                 <Text style={styles.overdueBtnDangerText}>Abandonner</Text>
               </TouchableOpacity>
             </View>
@@ -204,7 +199,7 @@ export default function TasksItem({ task }) {
 const styles = StyleSheet.create({
   card: { marginBottom: 10, borderRadius: 14 },
   cardDone: { opacity: 0.75 },
-  cardOverdue: { borderColor: 'rgba(231,76,60,0.5)', borderWidth: 1.5 },
+  cardOverdue: { borderColor: '#e74c3c', borderWidth: 2 },
   inner: { padding: 12 },
   mainRow: { flexDirection: 'row', alignItems: 'center' },
   checkbox: { marginRight: 10 },
@@ -242,9 +237,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
     padding: 10,
     borderRadius: 12,
-    backgroundColor: 'rgba(231,76,60,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(231,76,60,0.2)',
+    backgroundColor: 'rgba(231,76,60,0.1)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(231,76,60,0.4)',
   },
   overdueHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
   overdueTitle: { fontSize: 12, fontWeight: '800', color: '#e74c3c' },
@@ -255,7 +250,7 @@ const styles = StyleSheet.create({
     gap: 4,
     backgroundColor: '#2ecc71',
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 6,
     borderRadius: 12,
   },
   overdueBtnPrimary: {
@@ -264,7 +259,7 @@ const styles = StyleSheet.create({
     gap: 4,
     backgroundColor: COLORS.pinkDark,
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 6,
     borderRadius: 12,
   },
   overdueBtnSecondary: {
@@ -275,23 +270,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,102,179,0.3)',
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 6,
     borderRadius: 12,
   },
   overdueBtnDanger: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(231,76,60,0.1)',
+    backgroundColor: 'rgba(231,76,60,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(231,76,60,0.25)',
+    borderColor: 'rgba(231,76,60,0.3)',
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 6,
     borderRadius: 12,
   },
-  overdueBtnText: { fontSize: 11, fontWeight: '700', color: '#fff' },
-  overdueBtnSecondaryText: { fontSize: 11, fontWeight: '700', color: COLORS.pinkDark },
-  overdueBtnDangerText: { fontSize: 11, fontWeight: '700', color: '#e74c3c' },
+  overdueBtnText: { fontSize: 11, fontWeight: '800', color: '#fff' },
+  overdueBtnSecondaryText: { fontSize: 11, fontWeight: '800', color: COLORS.pinkDark },
+  overdueBtnDangerText: { fontSize: 11, fontWeight: '800', color: '#e74c3c' },
 
   expanded: { marginTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)', paddingTop: 8 },
   desc: { fontSize: 13, color: COLORS.text, lineHeight: 18 },
