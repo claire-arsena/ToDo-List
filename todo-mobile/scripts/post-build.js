@@ -1,23 +1,26 @@
 #!/usr/bin/env node
 /**
  * Post-build : après `expo export --platform web`
- * 1. Copie les icônes PNG dans dist/assets/ et à la racine dist/
- * 2. Écrase le vieux favicon.ico d'Expo par la nouvelle icône iOS
- * 3. Génère manifest.json et patche dist/index.html avec le cache-busting (?v=2)
+ * Copie la nouvelle icône iOS 3D dans TOUS les noms et dossiers possibles pour iOS Safari :
+ * - /apple-touch-icon.png
+ * - /apple-touch-icon-precomposed.png
+ * - /apple-touch-icon-180x180.png
+ * - /apple-touch-icon-180x180-precomposed.png
+ * - /favicon.ico
+ * - /favicon.png
  */
 
 const fs = require('fs');
 const path = require('path');
 
-const ROOT    = path.join(__dirname, '..');
-const ASSETS  = path.join(ROOT, 'assets');
-const DIST    = path.join(ROOT, 'dist');
+const ROOT        = path.join(__dirname, '..');
+const ASSETS      = path.join(ROOT, 'assets');
+const DIST        = path.join(ROOT, 'dist');
 const DIST_ASSETS = path.join(DIST, 'assets');
-
-// ── 1. Copier les icônes PNG ──────────────────────────────────────────────────
 
 if (!fs.existsSync(DIST_ASSETS)) fs.mkdirSync(DIST_ASSETS, { recursive: true });
 
+// Copie des PNG dans assets/
 const icons = fs.readdirSync(ASSETS).filter(f => f.endsWith('.png'));
 icons.forEach(file => {
   fs.copyFileSync(
@@ -28,16 +31,26 @@ icons.forEach(file => {
 
 const iconPath = path.join(ASSETS, 'icon.png');
 if (fs.existsSync(iconPath)) {
-  // Écrase la racine et le favicon.ico par la nouvelle icône iOS
-  fs.copyFileSync(iconPath, path.join(DIST, 'apple-touch-icon.png'));
-  fs.copyFileSync(iconPath, path.join(DIST, 'favicon.ico'));
-  fs.copyFileSync(iconPath, path.join(DIST, 'favicon.png'));
-  console.log('✅  dist/apple-touch-icon.png & dist/favicon.ico écrasés avec la nouvelle icône iOS !');
+  // Écrasement absolu à la racine pour TOUS les patterns iOS Safari
+  const rootFiles = [
+    'apple-touch-icon.png',
+    'apple-touch-icon-precomposed.png',
+    'apple-touch-icon-180x180.png',
+    'apple-touch-icon-180x180-precomposed.png',
+    'apple-touch-icon-152x152.png',
+    'apple-touch-icon-167x167.png',
+    'favicon.ico',
+    'favicon.png',
+  ];
+
+  rootFiles.forEach((file) => {
+    fs.copyFileSync(iconPath, path.join(DIST, file));
+  });
+
+  console.log('✅  Toutes les icônes racine iOS Safari (apple-touch-icon*.png & favicon.ico) écrasées à 100% !');
 }
 
-console.log(`✅  ${icons.length} icônes copiées dans dist/assets/`);
-
-// ── 2. Générer manifest.json PWA ──────────────────────────────────────────────
+// ── 2. Générer manifest.json PWA pour iOS & Chrome ────────────────────────────
 
 const manifest = {
   name: "Ma Liste",
@@ -49,9 +62,9 @@ const manifest = {
   background_color: "#f2f2f7",
   theme_color: "#d81b60",
   icons: [
-    { src: "/apple-touch-icon.png?v=2", sizes: "180x180", type: "image/png" },
-    { src: "/assets/pwa-icon-192x192.png?v=2", sizes: "192x192", type: "image/png" },
-    { src: "/assets/pwa-icon-512x512.png?v=2", sizes: "512x512", type: "image/png" },
+    { src: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    { src: "/assets/pwa-icon-192x192.png", sizes: "192x192", type: "image/png" },
+    { src: "/assets/pwa-icon-512x512.png", sizes: "512x512", type: "image/png" },
   ],
 };
 
@@ -69,32 +82,29 @@ html = html.replace(
   '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no"'
 );
 
-// Supprimer tout vieux lien favicon Expo préexistant
+// Nettoyer les anciens liens
 html = html.replace(/<link rel="shortcut icon"[^>]*>/gi, '');
 html = html.replace(/<link rel="icon"[^>]*>/gi, '');
+html = html.replace(/<link rel="apple-touch-icon"[^>]*>/gi, '');
+html = html.replace(/<link rel="apple-touch-icon-precomposed"[^>]*>/gi, '');
 
-const appleTags = `
-    <!-- iOS home screen icons & Favicons avec cache-busting -->
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
-    <link rel="apple-touch-icon" sizes="57x57"   href="/assets/apple-touch-icon-57x57.png?v=2" />
-    <link rel="apple-touch-icon" sizes="60x60"   href="/assets/apple-touch-icon-60x60.png?v=2" />
-    <link rel="apple-touch-icon" sizes="72x72"   href="/assets/apple-touch-icon-72x72.png?v=2" />
-    <link rel="apple-touch-icon" sizes="76x76"   href="/assets/apple-touch-icon-76x76.png?v=2" />
-    <link rel="apple-touch-icon" sizes="114x114" href="/assets/apple-touch-icon-114x114.png?v=2" />
-    <link rel="apple-touch-icon" sizes="120x120" href="/assets/apple-touch-icon-120x120.png?v=2" />
-    <link rel="apple-touch-icon" sizes="144x144" href="/assets/apple-touch-icon-144x144.png?v=2" />
-    <link rel="apple-touch-icon" sizes="152x152" href="/assets/apple-touch-icon-152x152.png?v=2" />
-    <link rel="apple-touch-icon" sizes="167x167" href="/assets/apple-touch-icon-167x167.png?v=2" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon-180x180.png?v=2" />
+const iosTags = `
+    <!-- Icônes iOS Safari Écran d'accueil -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/apple-touch-icon-180x180-precomposed.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
 
-    <!-- Favicon & PWA icons -->
-    <link rel="icon" type="image/png" href="/favicon.png?v=2" />
-    <link rel="shortcut icon" type="image/png" href="/apple-touch-icon.png?v=2" />
-    <link rel="manifest" href="/manifest.json?v=2" />
+    <!-- Favicon & PWA -->
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="manifest" href="/manifest.json" />
 
-    <!-- iOS PWA -->
+    <!-- Meta iOS PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Ma Liste" />
 
     <!-- Styling anti-zoom et harmonisation de la police -->
@@ -106,8 +116,8 @@ const appleTags = `
       }
     </style>`;
 
-html = html.replace('</head>', appleTags + '\n  </head>');
+html = html.replace('</head>', iosTags + '\n  </head>');
 
 fs.writeFileSync(indexPath, html);
-console.log('✅  dist/index.html patché (icônes iOS forcées & cache-busting)');
+console.log('✅  dist/index.html patché avec toutes les balises iOS Safari officielles !');
 console.log('\n🚀 Post-build terminé avec succès !');
