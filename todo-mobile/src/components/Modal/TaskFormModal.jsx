@@ -245,12 +245,6 @@ export default function TaskFormModal() {
               onResponderRelease={() => handleDragEnd()}
             >
               <View style={[styles.iosHandle, isDragging && styles.iosHandleActive]} />
-              <View style={styles.handleHintRow}>
-                <Ionicons name="swap-vertical" size={13} color={COLORS.pinkDark} />
-                <Text style={styles.handleHintText}>
-                  {isDragging ? 'Ajustement...' : 'Glisser au doigt pour ajuster / fermer'}
-                </Text>
-              </View>
             </View>
 
             <View style={styles.modalHeader}>
