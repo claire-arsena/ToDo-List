@@ -6,11 +6,14 @@ import {
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Picker } from '@react-native-picker/picker';
+import { Ionicons } from '@expo/vector-icons';
 import { TodoContext } from '../../ctx/TodoContext';
 import { ModalContext } from '../../ctx/ModalContext';
 import { ETATS } from '../../config/constants';
 import DatePickerInput from '../DatePickerInput';
 import { COLORS, SHADOWS } from '../../theme';
+
+const FOLDER_COLORS = ['#3498db', '#2ecc71', '#9b59b6', '#e67e22', '#e74c3c', '#ff66b3'];
 
 const getToday = () => {
   const d = new Date();
@@ -25,12 +28,18 @@ const EMPTY = {
   startTime: '09:00',
   endTime: '10:00',
   status: ETATS.NOUVEAU,
+  folderId: null,
 };
 
 export default function TaskFormModal() {
-  const { addTask, updateTask } = useContext(TodoContext);
+  const { addTask, updateTask, folders, addFolder } = useContext(TodoContext);
   const { isModalOpen, modalType, modalData, closeModal } = useContext(ModalContext);
   const [form, setForm] = useState(EMPTY);
+
+  // Quick Folder creation form
+  const [showNewFolderForm, setShowNewFolderForm] = useState(false);
+  const [newFolderTitle, setNewFolderTitle] = useState('');
+  const [newFolderColor, setNewFolderColor] = useState(FOLDER_COLORS[0]);
 
   useEffect(() => {
     if (modalData && modalType === 'task') {
@@ -42,13 +51,23 @@ export default function TaskFormModal() {
         startTime: modalData.startTime || '09:00',
         endTime: modalData.endTime || '10:00',
         status: modalData.status || ETATS.NOUVEAU,
+        folderId: modalData.folderId || null,
       });
     } else {
       setForm({ ...EMPTY, startDate: getToday(), endDate: getToday() });
     }
+    setShowNewFolderForm(false);
   }, [modalData, modalType]);
 
   const set = (key, val) => setForm((prev) => ({ ...prev, [key]: val }));
+
+  const handleCreateFolder = () => {
+    if (!newFolderTitle.trim()) return;
+    const created = addFolder({ title: newFolderTitle.trim(), color: newFolderColor });
+    set('folderId', created.id);
+    setNewFolderTitle('');
+    setShowNewFolderForm(false);
+  };
 
   const handleSubmit = () => {
     if (!form.title.trim()) return;
@@ -61,6 +80,7 @@ export default function TaskFormModal() {
       endTime: form.endTime,
       dueDate: form.endDate || form.startDate,
       status: form.status,
+      folderId: form.folderId,
     };
     modalData ? updateTask(modalData.id, payload) : addTask(payload);
     closeModal();
@@ -102,6 +122,76 @@ export default function TaskFormModal() {
                 />
               </View>
 
+              {/* Choix du Dossier avec couleur */}
+              <View style={styles.formGroup}>
+                <View style={styles.labelRow}>
+                  <Text style={styles.label}>Dossier (Optionnel)</Text>
+                  <TouchableOpacity onPress={() => setShowNewFolderForm(!showNewFolderForm)}>
+                    <Text style={styles.addFolderBtnText}>
+                      {showNewFolderForm ? 'Fermer' : '+ Nouveau dossier'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {showNewFolderForm ? (
+                  <View style={styles.newFolderCard}>
+                    <TextInput
+                      style={styles.input}
+                      value={newFolderTitle}
+                      onChangeText={setNewFolderTitle}
+                      placeholder="Nom du dossier..."
+                      placeholderTextColor={COLORS.textMuted}
+                    />
+                    <Text style={[styles.label, { marginTop: 8 }]}>Couleur du dossier :</Text>
+                    <View style={styles.colorPickerRow}>
+                      {FOLDER_COLORS.map((c) => (
+                        <TouchableOpacity
+                          key={c}
+                          style={[styles.colorDot, { backgroundColor: c }, newFolderColor === c && styles.colorDotActive]}
+                          onPress={() => setNewFolderColor(c)}
+                        />
+                      ))}
+                    </View>
+                    <TouchableOpacity style={styles.createFolderSubmit} onPress={handleCreateFolder}>
+                      <Text style={styles.createFolderSubmitText}>Créer le dossier</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 4 }}>
+                    <View style={styles.folderChipRow}>
+                      <TouchableOpacity
+                        style={[styles.folderChip, !form.folderId && styles.folderChipActive]}
+                        onPress={() => set('folderId', null)}
+                      >
+                        <Text style={[styles.folderChipText, !form.folderId && styles.folderChipTextActive]}>
+                          Aucun
+                        </Text>
+                      </TouchableOpacity>
+
+                      {folders.map((f) => {
+                        const isSelected = form.folderId === f.id;
+                        return (
+                          <TouchableOpacity
+                            key={f.id}
+                            style={[
+                              styles.folderChip,
+                              { borderColor: f.color },
+                              isSelected && { backgroundColor: f.color },
+                            ]}
+                            onPress={() => set('folderId', f.id)}
+                          >
+                            <View style={[styles.smallDot, { backgroundColor: isSelected ? '#fff' : f.color }]} />
+                            <Text style={[styles.folderChipText, isSelected && { color: '#fff', fontWeight: '800' }]}>
+                              {f.title}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </ScrollView>
+                )}
+              </View>
+
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Description</Text>
                 <TextInput
@@ -116,7 +206,7 @@ export default function TaskFormModal() {
                 />
               </View>
 
-              {/* Dates de début et fin pour tâches multi-jours */}
+              {/* Dates de début et fin */}
               <View style={styles.row}>
                 <View style={[styles.formGroup, { flex: 1 }]}>
                   <DatePickerInput
@@ -238,7 +328,46 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 20, paddingBottom: 40 },
   formGroup: { marginBottom: 14 },
   row: { flexDirection: 'row', gap: 10 },
-  label: { fontSize: 13, fontWeight: '700', color: COLORS.text, marginBottom: 6 },
+  labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  label: { fontSize: 13, fontWeight: '700', color: COLORS.text },
+  addFolderBtnText: { fontSize: 12, fontWeight: '800', color: COLORS.pinkDark },
+
+  folderChipRow: { flexDirection: 'row', gap: 8, paddingVertical: 4 },
+  folderChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.4)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(0,0,0,0.1)',
+  },
+  folderChipActive: { backgroundColor: COLORS.pinkDark, borderColor: COLORS.pinkDark },
+  folderChipText: { fontSize: 12, fontWeight: '700', color: COLORS.text },
+  folderChipTextActive: { color: '#fff' },
+  smallDot: { width: 8, height: 8, borderRadius: 4 },
+
+  newFolderCard: {
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.7)',
+  },
+  colorPickerRow: { flexDirection: 'row', gap: 10, marginTop: 6 },
+  colorDot: { width: 28, height: 28, borderRadius: 14 },
+  colorDotActive: { borderWidth: 3, borderColor: '#fff', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 4 },
+  createFolderSubmit: {
+    marginTop: 10,
+    backgroundColor: COLORS.pinkDark,
+    paddingVertical: 8,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  createFolderSubmitText: { color: '#fff', fontWeight: '700', fontSize: 12 },
+
   input: {
     backgroundColor: 'rgba(255,255,255,0.3)',
     borderWidth: 1,
@@ -251,7 +380,7 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     minHeight: 44,
   },
-  textarea: { minHeight: 80, paddingTop: 10 },
+  textarea: { minHeight: 70, paddingTop: 10 },
   pickerWrap: {
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.5)',

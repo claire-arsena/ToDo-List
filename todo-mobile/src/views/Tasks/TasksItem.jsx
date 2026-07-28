@@ -12,13 +12,15 @@ const getToday = () => {
 };
 
 export default function TasksItem({ task }) {
-  const { toggleTaskDone, deleteTask } = useContext(TodoContext);
+  const { toggleTaskDone, deleteTask, folders } = useContext(TodoContext);
   const { openModal } = useContext(ModalContext);
   const [isExpanded, setIsExpanded] = useState(false);
 
   const isDone = task.status === 'Réussi';
   const endDate = task.endDate || task.dueDate || task.startDate;
   const isOverdue = !isDone && endDate && endDate < getToday();
+
+  const folder = task.folderId ? folders.find((f) => f.id === task.folderId) : null;
 
   const formatDateRange = () => {
     const start = task.startDate || task.dueDate;
@@ -39,7 +41,7 @@ export default function TasksItem({ task }) {
     return `${days} jour${days > 1 ? 's' : ''}`;
   };
 
-  const statusColor = STATUS_COLORS[task.status] || COLORS.pinkDark;
+  const statusColor = folder?.color || STATUS_COLORS[task.status] || COLORS.pinkDark;
 
   return (
     <GlassCard style={[styles.card, isDone && styles.cardDone, isOverdue && styles.cardOverdue]}>
@@ -55,7 +57,7 @@ export default function TasksItem({ task }) {
             <Ionicons
               name={isDone ? 'checkbox' : 'square-outline'}
               size={22}
-              color={isDone ? '#2ecc71' : isOverdue ? '#e74c3c' : COLORS.pinkDark}
+              color={isDone ? '#2ecc71' : isOverdue ? '#e74c3c' : statusColor}
             />
           </TouchableOpacity>
 
@@ -69,6 +71,13 @@ export default function TasksItem({ task }) {
               <Text style={[styles.title, isDone && styles.titleDone]} numberOfLines={isExpanded ? undefined : 2}>
                 {task.title}
               </Text>
+
+              {folder && (
+                <View style={[styles.folderBadge, { backgroundColor: folder.color }]}>
+                  <Text style={styles.folderBadgeText}>{folder.title}</Text>
+                </View>
+              )}
+
               <View style={[styles.statusBadge, { backgroundColor: statusColor + '20', borderColor: statusColor }]}>
                 <Text style={[styles.statusBadgeText, { color: statusColor }]}>{task.status}</Text>
               </View>
@@ -149,9 +158,15 @@ const styles = StyleSheet.create({
   mainRow: { flexDirection: 'row', alignItems: 'center' },
   checkbox: { marginRight: 10 },
   contentWrap: { flex: 1, marginRight: 6 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
   title: { flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.text },
   titleDone: { textDecorationLine: 'line-through', color: COLORS.textMuted },
+  folderBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  folderBadgeText: { fontSize: 10, fontWeight: '800', color: '#fff' },
   statusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
