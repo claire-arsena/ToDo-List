@@ -5,15 +5,20 @@ import { ETAT_TERMINE, ETATS } from '../config/constants';
 
 export const TodoContext = createContext();
 
-const STORAGE_KEY = '@todoMobile_data';
+const STORAGE_KEY = '@todoMobile_data_v2';
+
+const DEFAULT_FOLDERS = [
+  { id: 1, title: 'Travail', color: '#3498db' },
+  { id: 2, title: 'Personnel', color: '#e67e22' },
+  { id: 3, title: 'Études', color: '#9b59b6' },
+  { id: 4, title: 'Urgent', color: '#e74c3c' },
+];
 
 export function TodoContextProvider({ children }) {
   const [tasks, setTasks] = useState([]);
-  const [folders, setFolders] = useState([]);
-  const [relations, setRelations] = useState([]);
+  const [folders, setFolders] = useState(DEFAULT_FOLDERS);
   const hasLoaded = useRef(false);
 
-  // Charge les données depuis AsyncStorage au démarrage
   useEffect(() => {
     const load = async () => {
       try {
@@ -21,17 +26,14 @@ export function TodoContextProvider({ children }) {
         if (stored) {
           const data = JSON.parse(stored);
           setTasks(data.tasks || []);
-          setFolders(data.folders || []);
-          setRelations(data.relations || []);
+          setFolders(data.folders && data.folders.length > 0 ? data.folders : DEFAULT_FOLDERS);
         } else {
           setTasks([]);
-          setFolders([]);
-          setRelations([]);
+          setFolders(DEFAULT_FOLDERS);
         }
       } catch {
         setTasks([]);
-        setFolders([]);
-        setRelations([]);
+        setFolders(DEFAULT_FOLDERS);
       } finally {
         hasLoaded.current = true;
       }
@@ -39,68 +41,62 @@ export function TodoContextProvider({ children }) {
     load();
   }, []);
 
-  // Sauvegarde automatique à chaque changement
   useEffect(() => {
     if (!hasLoaded.current) return;
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, folders, relations })).catch(
-      () => {}
-    );
-  }, [tasks, folders, relations]);
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, folders })).catch(() => {});
+  }, [tasks, folders]);
 
   const resetData = () => {
     const doReset = () => {
       setTasks([]);
-      setFolders([]);
-      setRelations([]);
+      setFolders(DEFAULT_FOLDERS);
     };
     if (Platform.OS === 'web') {
       if (window.confirm('Êtes-vous sûr(e) ? Cette action supprimera toutes les tâches.')) doReset();
     } else {
-      Alert.alert(
-        'Réinitialiser',
-        'Êtes-vous sûr(e) ? Cette action supprimera toutes les tâches.',
-        [
-          { text: 'Annuler', style: 'cancel' },
-          { text: 'Supprimer', style: 'destructive', onPress: doReset },
-        ]
-      );
+      Alert.alert('Réinitialiser', 'Êtes-vous sûr(e) ? Cette action supprimera toutes les tâches.', [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Supprimer', style: 'destructive', onPress: doReset },
+      ]);
     }
   };
 
-  const addTask = (task, folderId = null) => {
+  const addTask = (task) => {
     const maxId = tasks.length > 0 ? Math.max(...tasks.map((t) => t.id)) : 100;
     const newTask = {
       id: maxId + 1,
       title: task.title,
       description: task.description || '',
+      startDate: task.startDate || '',
+      endDate: task.endDate || '',
+      startTime: task.startTime || '',
+      endTime: task.endTime || '',
       creationDate: new Date().toISOString().split('T')[0],
-      dueDate: task.dueDate || '',
+      dueDate: task.endDate || task.startDate || task.dueDate || '',
       status: task.status || ETATS.NOUVEAU,
-      members: task.members || [],
+      folderId: task.folderId ? parseInt(task.folderId) : null,
     };
     setTasks((prev) => [...prev, newTask]);
-    if (folderId) {
-      setRelations((prev) => [...prev, { taskId: newTask.id, folderId: parseInt(folderId) }]);
-    }
     return newTask;
   };
 
-  const updateTask = (id, updatedTask, folderId = undefined) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...updatedTask } : t)));
-    if (folderId !== undefined) {
-      const otherRelations = relations.filter((r) => r.taskId !== id);
-      if (folderId) {
-        setRelations([...otherRelations, { taskId: id, folderId: parseInt(folderId) }]);
-      } else {
-        setRelations(otherRelations);
-      }
-    }
+  const updateTask = (id, updatedTask) => {
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === id
+          ? {
+              ...t,
+              ...updatedTask,
+              folderId: updatedTask.folderId !== undefined ? (updatedTask.folderId ? parseInt(updatedTask.folderId) : null) : t.folderId,
+            }
+          : t
+      )
+    );
   };
 
   const deleteTask = (id) => {
     const doDelete = () => {
       setTasks((prev) => prev.filter((t) => t.id !== id));
-      setRelations((prev) => prev.filter((r) => r.taskId !== id));
     };
     if (Platform.OS === 'web') {
       if (window.confirm('Supprimer cette tâche ?')) doDelete();
@@ -117,67 +113,42 @@ export function TodoContextProvider({ children }) {
     const newFolder = {
       id: maxId + 1,
       title: folder.title,
-      description: folder.description || '',
+      color: folder.color || '#ff66b3',
     };
     setFolders((prev) => [...prev, newFolder]);
     return newFolder;
   };
 
-  const updateFolder = (id, updatedFolder) => {
-    setFolders((prev) => prev.map((f) => (f.id === id ? { ...f, ...updatedFolder } : f)));
-  };
-
   const deleteFolder = (id) => {
-    const doDelete = () => {
-      setFolders((prev) => prev.filter((f) => f.id !== id));
-      setRelations((prev) => prev.filter((r) => r.folderId !== id));
-    };
-    if (Platform.OS === 'web') {
-      if (window.confirm('Supprimer ce dossier ? Les tâches associées resteront mais ne seront plus classées.')) doDelete();
-    } else {
-      Alert.alert(
-        'Supprimer le dossier',
-        'Supprimer ce dossier ? Les tâches associées resteront mais ne seront plus classées.',
-        [
-          { text: 'Annuler', style: 'cancel' },
-          { text: 'Supprimer', style: 'destructive', onPress: doDelete },
-        ]
-      );
-    }
+    setFolders((prev) => prev.filter((f) => f.id !== id));
+    setTasks((prev) => prev.map((t) => (t.folderId === id ? { ...t, folderId: null } : t)));
   };
 
-  const addRelation = (taskId, folderId) => {
-    const exists = relations.some((r) => r.taskId === taskId && r.folderId === folderId);
-    if (!exists) {
-      setRelations((prev) => [...prev, { taskId, folderId: parseInt(folderId) }]);
-    }
+  const toggleTaskDone = (id) => {
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.id !== id) return t;
+        if (ETAT_TERMINE.includes(t.status)) {
+          return { ...t, status: ETATS.NOUVEAU };
+        }
+        return { ...t, status: ETATS.REUSSI };
+      })
+    );
   };
 
   const getActiveTasks = () => tasks.filter((task) => !ETAT_TERMINE.includes(task.status));
 
-  const getActiveSortedTasks = () => {
-    return getActiveTasks().sort((a, b) => {
-      if (!a.dueDate && !b.dueDate) return 0;
-      if (!a.dueDate) return 1;
-      if (!b.dueDate) return -1;
-      return new Date(b.dueDate) - new Date(a.dueDate);
-    });
-  };
-
   const value = {
     tasks,
     folders,
-    relations,
     addTask,
     updateTask,
     deleteTask,
     addFolder,
-    updateFolder,
     deleteFolder,
+    toggleTaskDone,
     resetData,
     getActiveTasks,
-    getActiveSortedTasks,
-    addRelation,
   };
 
   return <TodoContext.Provider value={value}>{children}</TodoContext.Provider>;

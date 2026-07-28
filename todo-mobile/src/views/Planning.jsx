@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { TodoContext } from '../ctx/TodoContext';
 import GlassCard from '../components/GlassCard';
-import { COLORS, SHADOWS } from '../theme';
+import { COLORS } from '../theme';
 
 const STATUS_COLORS = {
   'Nouveau': COLORS.pinkDark || '#ff66b3',
@@ -24,7 +24,7 @@ const formatLocalDate = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 export default function Planning() {
-  const { tasks, toggleTaskDone } = useContext(TodoContext);
+  const { tasks, folders, toggleTaskDone } = useContext(TodoContext);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   const dateStr = formatLocalDate(selectedDate);
@@ -43,6 +43,22 @@ export default function Planning() {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() + 1);
     setSelectedDate(d);
+  };
+
+  const getTaskColor = (t) => {
+    if (t.folderId) {
+      const f = folders.find((folder) => folder.id === t.folderId);
+      if (f?.color) return f.color;
+    }
+    return STATUS_COLORS[t.status] || COLORS.pinkDark;
+  };
+
+  const getFolderName = (t) => {
+    if (t.folderId) {
+      const f = folders.find((folder) => folder.id === t.folderId);
+      return f?.title;
+    }
+    return null;
   };
 
   // Filter tasks that fall on the selected day
@@ -90,7 +106,7 @@ export default function Planning() {
 
     const top = Math.max(0, (startH - START_HOUR) * HOUR_HEIGHT + (startM / 60) * HOUR_HEIGHT);
     const bottom = (endH - START_HOUR) * HOUR_HEIGHT + (endM / 60) * HOUR_HEIGHT;
-    const height = Math.max(32, bottom - top);
+    const height = Math.max(36, bottom - top);
 
     return { top, height };
   };
@@ -140,7 +156,8 @@ export default function Planning() {
           <View style={styles.allDayList}>
             {allDayTasks.map((t) => {
               const isDone = t.status === 'Réussi';
-              const color = STATUS_COLORS[t.status] || COLORS.pinkDark;
+              const color = getTaskColor(t);
+              const folderName = getFolderName(t);
               return (
                 <TouchableOpacity
                   key={t.id}
@@ -150,10 +167,15 @@ export default function Planning() {
                   <Ionicons
                     name={isDone ? 'checkbox' : 'square-outline'}
                     size={20}
-                    color={isDone ? '#2ecc71' : COLORS.textMuted}
+                    color={isDone ? '#2ecc71' : color}
                     style={{ marginRight: 8 }}
                   />
                   <Text style={[styles.allDayText, isDone && styles.doneText]}>{t.title}</Text>
+                  {folderName && (
+                    <View style={[styles.folderBadge, { backgroundColor: color + '22', borderColor: color }]}>
+                      <Text style={[styles.folderBadgeText, { color }]}>{folderName}</Text>
+                    </View>
+                  )}
                   {t.startDate && t.endDate && t.startDate !== t.endDate && (
                     <Text style={styles.rangeText}>
                       {t.startDate.slice(5)} → {t.endDate.slice(5)}
@@ -193,7 +215,8 @@ export default function Planning() {
             {timedTasks.map((t) => {
               const pos = getTaskPosition(t);
               const isDone = t.status === 'Réussi';
-              const color = STATUS_COLORS[t.status] || COLORS.pinkDark;
+              const color = getTaskColor(t);
+              const folderName = getFolderName(t);
               return (
                 <TouchableOpacity
                   key={t.id}
@@ -208,8 +231,18 @@ export default function Planning() {
                   ]}
                   onPress={() => toggleTaskDone(t.id)}
                 >
-                  <Text style={[styles.eventTitle, { color }]}>{t.title}</Text>
-                  {pos.height > 35 && (
+                  <View style={styles.eventHeaderRow}>
+                    <Text style={[styles.eventTitle, { color }, isDone && styles.doneText]}>
+                      {t.title}
+                    </Text>
+                    {folderName && (
+                      <View style={[styles.folderBadge, { backgroundColor: color, borderColor: color }]}>
+                        <Text style={[styles.folderBadgeText, { color: '#fff' }]}>{folderName}</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {pos.height > 40 && (
                     <Text style={styles.eventTime}>
                       {t.startTime || ''}
                       {t.startTime && t.endTime ? ' → ' : ''}
@@ -277,6 +310,15 @@ const styles = StyleSheet.create({
   doneText: { textDecorationLine: 'line-through', opacity: 0.6 },
   rangeText: { fontSize: 11, color: COLORS.textMuted, marginLeft: 8 },
 
+  folderBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginLeft: 6,
+  },
+  folderBadgeText: { fontSize: 9, fontWeight: '800' },
+
   timelineCard: { padding: 14 },
   timelineArea: { height: TOTAL_HOURS * HOUR_HEIGHT, marginTop: 10, position: 'relative' },
   hourSlot: {
@@ -317,7 +359,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     justifyContent: 'center',
   },
-  eventTitle: { fontSize: 12, fontWeight: '700' },
+  eventHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  eventTitle: { fontSize: 12, fontWeight: '700', flex: 1 },
   eventTime: { fontSize: 10, color: COLORS.textLight, marginTop: 1 },
   emptyWrap: {
     position: 'absolute',
