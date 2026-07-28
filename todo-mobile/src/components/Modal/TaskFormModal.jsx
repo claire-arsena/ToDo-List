@@ -11,6 +11,7 @@ import { TodoContext } from '../../ctx/TodoContext';
 import { ModalContext } from '../../ctx/ModalContext';
 import { ETATS } from '../../config/constants';
 import DatePickerInput from '../DatePickerInput';
+import TimePickerInput from '../TimePickerInput';
 import { COLORS, SHADOWS } from '../../theme';
 
 const FOLDER_COLORS = [
@@ -58,23 +59,26 @@ export default function TaskFormModal() {
   const [newFolderColor, setNewFolderColor] = useState(FOLDER_COLORS[0]);
 
   useEffect(() => {
-    if (modalData && modalType === 'task') {
-      setForm({
-        title: modalData.title || '',
-        description: modalData.description || '',
-        startDate: modalData.startDate || modalData.dueDate || getToday(),
-        endDate: modalData.endDate || modalData.startDate || modalData.dueDate || getToday(),
-        startTime: modalData.startTime || '09:00',
-        endTime: modalData.endTime || '10:00',
-        status: modalData.status || ETATS.NOUVEAU,
-        folderId: modalData.folderId || null,
-        isRegular: modalData.isRegular !== undefined ? modalData.isRegular : true,
-      });
-    } else {
-      setForm({ ...EMPTY, startDate: getToday(), endDate: getToday(), status: ETATS.NOUVEAU });
+    if (isModalOpen && modalType === 'task') {
+      if (modalData) {
+        setForm({
+          title: modalData.title || '',
+          description: modalData.description || '',
+          startDate: modalData.startDate || modalData.dueDate || getToday(),
+          endDate: modalData.endDate || modalData.startDate || modalData.dueDate || getToday(),
+          startTime: modalData.startTime || '09:00',
+          endTime: modalData.endTime || '10:00',
+          status: modalData.status || ETATS.NOUVEAU,
+          folderId: modalData.folderId || null,
+          isRegular: modalData.isRegular !== undefined ? modalData.isRegular : true,
+        });
+      } else {
+        // Reinitialisation complete pour toute NOUVELLE tache
+        setForm({ ...EMPTY, startDate: getToday(), endDate: getToday(), status: ETATS.NOUVEAU });
+      }
     }
     setShowNewFolderForm(false);
-  }, [modalData, modalType]);
+  }, [modalData, modalType, isModalOpen]);
 
   const set = (key, val) => setForm((prev) => ({ ...prev, [key]: val }));
 
@@ -123,6 +127,7 @@ export default function TaskFormModal() {
       isRegular: form.isRegular,
     };
     modalData ? updateTask(modalData.id, payload) : addTask(payload);
+    setForm(EMPTY); // Vider explicitement a la soumission
     closeModal();
   };
 
@@ -296,26 +301,22 @@ export default function TaskFormModal() {
                 </View>
               </View>
 
-              {/* Heures */}
+              {/* Heures style réveil / alarme */}
               <View style={styles.row}>
                 <View style={[styles.formGroup, { flex: 1 }]}>
-                  <Text style={styles.label}>Heure début</Text>
-                  <TextInput
-                    style={styles.iosInput}
+                  <TimePickerInput
+                    label="Heure début"
                     value={form.startTime}
-                    onChangeText={(v) => set('startTime', v)}
+                    onChange={(v) => set('startTime', v)}
                     placeholder="09:00"
-                    placeholderTextColor={COLORS.textMuted}
                   />
                 </View>
                 <View style={[styles.formGroup, { flex: 1 }]}>
-                  <Text style={styles.label}>Heure fin</Text>
-                  <TextInput
-                    style={styles.iosInput}
+                  <TimePickerInput
+                    label="Heure fin"
                     value={form.endTime}
-                    onChangeText={(v) => set('endTime', v)}
+                    onChange={(v) => set('endTime', v)}
                     placeholder="10:00"
-                    placeholderTextColor={COLORS.textMuted}
                   />
                 </View>
               </View>
@@ -406,7 +407,7 @@ const styles = StyleSheet.create({
     ...SHADOWS.glass,
   },
   sheetInner: {
-    backgroundColor: 'rgba(255, 255, 255, 0.88)',
+    backgroundColor: '#ffffff',
     maxHeight: '100%',
   },
   iosHandle: {
@@ -453,7 +454,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 100,
-    backgroundColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.04)',
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.08)',
   },
@@ -467,9 +468,9 @@ const styles = StyleSheet.create({
   newFolderCard: {
     padding: 12,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: 'rgba(0,0,0,0.03)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.9)',
+    borderColor: 'rgba(0,0,0,0.08)',
   },
   colorPickerRow: { flexDirection: 'row', gap: 8, paddingVertical: 6 },
   colorDot: { width: 28, height: 28, borderRadius: 14 },
