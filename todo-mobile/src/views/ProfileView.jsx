@@ -199,15 +199,82 @@ export default function ProfileView() {
   // Advanced Stats Computations
   const stats = useMemo(() => {
     const total = tasks.length;
-    const completed = tasks.filter((t) => t.status === ETATS.REUSSI).length;
+    const completedTasks = tasks.filter((t) => t.status === ETATS.REUSSI);
+    const completed = completedTasks.length;
     const inProgress = tasks.filter((t) => t.status === ETATS.EN_COURS).length;
     const successRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-    // Calculate most productive month
-    const monthCounts = {};
+    const now = new Date();
+    const oneDayMs = 24 * 60 * 60 * 1000;
+
+    // 1. Tendance vs semaine passée
+    let thisWeekCount = 0;
+    let lastWeekCount = 0;
+
     tasks.forEach((t) => {
-      if (t.status === ETATS.REUSSI && t.startDate) {
-        const [y, m] = t.startDate.split('-');
+      if (t.status === ETATS.REUSSI) {
+        const dateStr = t.endDate || t.dueDate || t.startDate || t.creationDate;
+        if (dateStr) {
+          const [y, m, d] = dateStr.split('-').map(Number);
+          const taskDate = new Date(y, m - 1, d);
+          const diffDays = Math.floor((now - taskDate) / oneDayMs);
+          if (diffDays >= 0 && diffDays < 7) {
+            thisWeekCount++;
+          } else if (diffDays >= 7 && diffDays < 14) {
+            lastWeekCount++;
+          }
+        }
+      }
+    });
+
+    let weekTrendPct = 0;
+    let weekTrendText = 'Pas encore assez de recul';
+    if (lastWeekCount > 0) {
+      weekTrendPct = Math.round(((thisWeekCount - lastWeekCount) / lastWeekCount) * 100);
+      weekTrendText = weekTrendPct >= 0 ? `+${weekTrendPct}% vs semaine passée 🚀` : `${weekTrendPct}% vs semaine passée 📉`;
+    } else if (thisWeekCount > 0) {
+      weekTrendText = `${thisWeekCount} tâche${thisWeekCount > 1 ? 's' : ''} cette semaine 🔥`;
+    }
+
+    // 2. Jour le plus productif
+    const DAYS_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+    const dayCounts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+    completedTasks.forEach((t) => {
+      const dateStr = t.endDate || t.dueDate || t.startDate || t.creationDate;
+      if (dateStr) {
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const dayIdx = new Date(y, m - 1, d).getDay();
+        dayCounts[dayIdx] = (dayCounts[dayIdx] || 0) + 1;
+      }
+    });
+
+    let bestDayIdx = -1;
+    let maxDayCount = 0;
+    Object.entries(dayCounts).forEach(([day, count]) => {
+      if (count > maxDayCount) {
+        maxDayCount = count;
+        bestDayIdx = parseInt(day, 10);
+      }
+    });
+    const bestDayName = bestDayIdx >= 0 ? DAYS_FR[bestDayIdx] : 'Aucune donnée';
+
+    // 3. Taux de réussite des checklists (sous-tâches)
+    let totalSubtasks = 0;
+    let completedSubtasks = 0;
+    tasks.forEach((t) => {
+      if (t.subtasks && t.subtasks.length > 0) {
+        totalSubtasks += t.subtasks.length;
+        completedSubtasks += t.subtasks.filter((st) => st.isDone).length;
+      }
+    });
+    const checklistSuccessRate = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
+
+    // 4. Mois le plus productif
+    const monthCounts = {};
+    completedTasks.forEach((t) => {
+      const dateStr = t.endDate || t.dueDate || t.startDate || t.creationDate;
+      if (dateStr) {
+        const [y, m] = dateStr.split('-');
         if (y && m) {
           const key = `${MONTHS_FR[parseInt(m, 10) - 1]} ${y}`;
           monthCounts[key] = (monthCounts[key] || 0) + 1;
@@ -252,6 +319,12 @@ export default function ProfileView() {
       completed,
       inProgress,
       successRate,
+      weekTrendText,
+      bestDayName,
+      maxDayCount,
+      totalSubtasks,
+      completedSubtasks,
+      checklistSuccessRate,
       mostProductiveMonth,
       maxCount,
       chartData,
@@ -525,6 +598,37 @@ export default function ProfileView() {
                   <Text style={styles.kpiLabel}>Taux de réussite</Text>
                 </View>
               </View>
+
+              {/* Cartes statistiques cool */}
+              <View style={styles.kpiFullCard}>
+                <Ionicons name="trending-up" size={20} color={currentTheme.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.kpiFullTitle}>Tendance Semaine</Text>
+                  <Text style={styles.kpiFullSub}>{stats.weekTrendText}</Text>
+                </View>
+              </View>
+
+              <View style={styles.kpiFullCard}>
+                <Ionicons name="calendar-outline" size={20} color={currentTheme.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.kpiFullTitle}>Jour le plus efficace</Text>
+                  <Text style={styles.kpiFullSub}>
+                    {stats.bestDayName} {stats.maxDayCount > 0 ? `(${stats.maxDayCount} tâches terminées)` : ''}
+                  </Text>
+                </View>
+              </View>
+
+              {stats.totalSubtasks > 0 && (
+                <View style={styles.kpiFullCard}>
+                  <Ionicons name="checkbox-outline" size={20} color={currentTheme.primary} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.kpiFullTitle}>Accomplissement Checklists</Text>
+                    <Text style={styles.kpiFullSub}>
+                      {stats.checklistSuccessRate}% des sous-tâches validées ({stats.completedSubtasks}/{stats.totalSubtasks})
+                    </Text>
+                  </View>
+                </View>
+              )}
 
               <View style={styles.kpiFullCard}>
                 <Ionicons name="trophy-outline" size={20} color={currentTheme.primary} />

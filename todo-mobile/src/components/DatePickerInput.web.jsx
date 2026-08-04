@@ -25,16 +25,19 @@ export default function DatePickerInput({
         style={{
           width: '100%',
           boxSizing: 'border-box',
-          padding: '10px 12px',
-          fontSize: 14,
-          fontFamily: 'inherit',
-          color: value ? '#333' : '#888',
-          backgroundColor: 'rgba(255,255,255,0.75)',
-          border: '1.5px solid rgba(255,255,255,0.65)',
-          borderRadius: 12,
+          padding: '11px 14px',
+          fontSize: '15px',
+          fontWeight: '700',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+          fontStyle: 'normal',
+          color: value ? '#000000' : COLORS.textMuted,
+          backgroundColor: 'rgba(118, 118, 128, 0.08)',
+          border: 'none',
+          borderRadius: 14,
           minHeight: 44,
           outline: 'none',
           cursor: 'pointer',
+          WebkitAppearance: 'none',
         }}
       />
     </View>
