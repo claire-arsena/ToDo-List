@@ -41,6 +41,7 @@ if (fs.existsSync(iconPath)) {
     'apple-touch-icon-167x167.png',
     'favicon.ico',
     'favicon.png',
+    'icon.png',
   ];
 
   rootFiles.forEach((file) => {
@@ -62,9 +63,10 @@ const manifest = {
   background_color: "#f2f2f7",
   theme_color: "#d81b60",
   icons: [
-    { src: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
-    { src: "/assets/pwa-icon-192x192.png", sizes: "192x192", type: "image/png" },
-    { src: "/assets/pwa-icon-512x512.png", sizes: "512x512", type: "image/png" },
+    { src: "/apple-touch-icon.png", sizes: "180x180", type: "image/png", purpose: "any maskable" },
+    { src: "/apple-touch-icon-180x180.png", sizes: "180x180", type: "image/png", purpose: "any maskable" },
+    { src: "/assets/pwa-icon-192x192.png", sizes: "192x192", type: "image/png", purpose: "any maskable" },
+    { src: "/assets/pwa-icon-512x512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
   ],
 };
 
@@ -89,7 +91,7 @@ html = html.replace(/<link rel="apple-touch-icon"[^>]*>/gi, '');
 html = html.replace(/<link rel="apple-touch-icon-precomposed"[^>]*>/gi, '');
 
 const iosTags = `
-    <!-- Icônes iOS Safari Écran d'accueil -->
+    <!-- Icônes iOS Safari Écran d'accueil Officiel -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
@@ -102,7 +104,7 @@ const iosTags = `
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="manifest" href="/manifest.json" />
 
-    <!-- Meta iOS PWA -->
+    <!-- Meta iOS PWA Web App -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Ma Liste" />

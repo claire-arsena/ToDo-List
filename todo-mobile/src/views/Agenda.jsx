@@ -57,6 +57,8 @@ export default function Agenda() {
     return map;
   }, [tasks]);
 
+  const undatedTasks = useMemo(() => tasks.filter((t) => !t.startDate && !t.endDate && !t.dueDate), [tasks]);
+
   const days = useMemo(() => {
     const firstDayObj = new Date(year, month, 1);
     const dayOfWeek = firstDayObj.getDay(); // 0: Dimanche, 1: Lundi ... 6: Samedi
@@ -98,6 +100,21 @@ export default function Agenda() {
           </LinearGradient>
         </TouchableOpacity>
       </GlassCard>
+
+      {/* Tâches sans date */}
+      {undatedTasks.length > 0 && (
+        <GlassCard style={styles.undatedSection}>
+          <Text style={styles.undatedTitle}>Sans date</Text>
+          {undatedTasks.map((t) => {
+            const taskColor = getTaskColor(t);
+            return (
+              <View key={t.id} style={[styles.undatedChip, { backgroundColor: taskColor }]}>
+                <Text style={styles.undatedChipText} numberOfLines={1}>{t.title}</Text>
+              </View>
+            );
+          })}
+        </GlassCard>
+      )}
 
       {/* Grille calendrier */}
       <GlassCard style={styles.grid}>
@@ -190,4 +207,8 @@ const styles = StyleSheet.create({
   taskDot: { borderRadius: 6, paddingHorizontal: 4, paddingVertical: 2, marginBottom: 2 },
   taskDotText: { fontSize: 9, color: '#fff', fontWeight: '800' },
   moreTasks: { fontSize: 8, color: COLORS.textMuted, fontWeight: '700' },
+  undatedSection: { padding: 12, marginBottom: 12, gap: 8 },
+  undatedTitle: { fontSize: 14, fontWeight: '800', color: COLORS.pinkDark, marginBottom: 4 },
+  undatedChip: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 4 },
+  undatedChipText: { fontSize: 13, color: '#fff', fontWeight: '700' },
 });
