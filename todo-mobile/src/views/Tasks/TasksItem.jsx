@@ -25,14 +25,40 @@ export default function TasksItem({ task }) {
 
   const folder = task.folderId ? folders.find((f) => f.id === task.folderId) : null;
 
+  const formatDateFr = (dateStr) => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const [y, m, d] = parts;
+      return `${d}/${m}`;
+    }
+    return dateStr;
+  };
+
+  const formatCreationDate = (dateStr) => {
+    if (!dateStr) return null;
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const [y, m, d] = parts;
+      return `${d}/${m}/${y}`;
+    }
+    return dateStr;
+  };
+
   const formatDateRange = () => {
-    const start = task.startDate || task.dueDate;
+    const start = task.startDate;
     const end = task.endDate || task.dueDate;
-    if (!start && !end) return null;
-    const parts = [];
-    if (start) parts.push(start.slice(5).replace('-', '/'));
-    if (end && end !== start) parts.push(end.slice(5).replace('-', '/'));
-    return parts.join(' → ');
+
+    if (!start && !end) {
+      return "Pas d'échéance";
+    }
+
+    if (start && end && start !== end) {
+      return `${formatDateFr(start)} → ${formatDateFr(end)}`;
+    }
+
+    const singleDate = end || start;
+    return `Échéance : ${formatDateFr(singleDate)}`;
   };
 
   const durationLabel = () => {
@@ -45,6 +71,7 @@ export default function TasksItem({ task }) {
   };
 
   const statusColor = folder?.color || STATUS_COLORS[task.status] || COLORS.pinkDark;
+  const hasNoDate = !task.startDate && !task.endDate && !task.dueDate;
 
   return (
     <GlassCard style={[styles.iosCard, isDone && styles.cardDone, overdue && styles.cardOverdue]}>
@@ -91,12 +118,10 @@ export default function TasksItem({ task }) {
             </View>
 
             <View style={styles.metaRow}>
-              {formatDateRange() && (
-                <Text style={[styles.dateText, overdue && styles.overdueText]}>
-                  {overdue ? '⚠ Expiré : ' : '📅 '}
-                  {formatDateRange()}
-                </Text>
-              )}
+              <Text style={[styles.dateText, overdue && styles.overdueText, hasNoDate && styles.noDateText]}>
+                {overdue ? '⚠ Expiré : ' : '📅 '}
+                {formatDateRange()}
+              </Text>
               {task.startTime && (
                 <Text style={styles.timeText}>
                   ⏰ {task.startTime}{task.endTime ? ` - ${task.endTime}` : ''}
@@ -197,6 +222,12 @@ export default function TasksItem({ task }) {
 
             {!task.description && (!task.subtasks || task.subtasks.length === 0) && (
               <Text style={styles.noDesc}>Aucune description ou checklist</Text>
+            )}
+
+            {task.creationDate && (
+              <Text style={styles.creationText}>
+                Créée le {formatCreationDate(task.creationDate)}
+              </Text>
             )}
 
             <View style={styles.actions}>
@@ -349,6 +380,8 @@ const styles = StyleSheet.create({
   expanded: { marginTop: 12, borderTopWidth: 0.5, borderTopColor: 'rgba(0,0,0,0.08)', paddingTop: 10 },
   desc: { fontSize: 13, color: COLORS.text, lineHeight: 18 },
   noDesc: { fontSize: 12, color: COLORS.textMuted, fontStyle: 'italic' },
+  noDateText: { color: COLORS.textMuted, opacity: 0.8 },
+  creationText: { fontSize: 11, color: COLORS.textMuted, marginTop: 8, fontStyle: 'italic' },
   
   subtasksContainer: { marginTop: 12, gap: 8 },
   subtaskRow: { flexDirection: 'row', alignItems: 'center' },

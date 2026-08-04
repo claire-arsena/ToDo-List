@@ -59,7 +59,7 @@ export default function TaskFormModal() {
   const { isModalOpen, modalType, modalData, closeModal } = useContext(ModalContext);
   const { currentTheme } = useContext(ProfileContext);
   const [form, setForm] = useState(EMPTY);
-  const [hasDate, setHasDate] = useState(true);
+  const [dateMode, setDateMode] = useState('PERIOD'); // 'NONE' | 'DEADLINE' | 'PERIOD'
   const [hasChecklist, setHasChecklist] = useState(false);
 
   // Hauteur personnalisable et persistante en LocalStorage
@@ -97,8 +97,16 @@ export default function TaskFormModal() {
     if (isModalOpen && modalType === 'task') {
       setSheetHeight(DEFAULT_HEIGHT);
       if (modalData) {
-        const taskHasDate = !!(modalData.startDate || modalData.endDate || modalData.dueDate);
-        setHasDate(taskHasDate);
+        let mode = 'NONE';
+        if (modalData.startDate && modalData.endDate && modalData.startDate !== modalData.endDate) {
+          mode = 'PERIOD';
+        } else if (modalData.endDate || modalData.dueDate) {
+          mode = 'DEADLINE';
+        } else if (modalData.startDate) {
+          mode = 'PERIOD';
+        }
+        setDateMode(mode);
+
         setForm({
           title: modalData.title || '',
           description: modalData.description || '',
@@ -113,7 +121,7 @@ export default function TaskFormModal() {
         });
         setHasChecklist(Array.isArray(modalData.subtasks) && modalData.subtasks.length > 0);
       } else {
-        setHasDate(true);
+        setDateMode('PERIOD');
         setHasChecklist(false);
         setForm({ ...EMPTY, startDate: getToday(), endDate: getToday(), status: ETATS.NOUVEAU });
       }
@@ -222,20 +230,38 @@ export default function TaskFormModal() {
 
   const handleSubmit = () => {
     if (!form.title.trim()) return;
+
+    let datePayload = {
+      startDate: '',
+      endDate: '',
+      dueDate: '',
+      startTime: '',
+      endTime: '',
+    };
+
+    if (dateMode === 'PERIOD') {
+      datePayload = {
+        startDate: form.startDate || getToday(),
+        endDate: form.endDate || form.startDate || getToday(),
+        dueDate: form.endDate || form.startDate || getToday(),
+        startTime: form.startTime || '',
+        endTime: form.endTime || '',
+      };
+    } else if (dateMode === 'DEADLINE') {
+      const deadline = form.endDate || form.startDate || getToday();
+      datePayload = {
+        startDate: '',
+        endDate: deadline,
+        dueDate: deadline,
+        startTime: '',
+        endTime: form.endTime || '',
+      };
+    }
+
     const payload = {
       title: form.title.trim(),
       description: form.description.trim(),
-      ...(hasDate ? {
-        startDate: form.startDate,
-        endDate: form.endDate || form.startDate,
-        dueDate: form.endDate || form.startDate,
-      } : {
-        startDate: '',
-        endDate: '',
-        dueDate: '',
-      }),
-      startTime: hasDate ? form.startTime : '',
-      endTime: hasDate ? form.endTime : '',
+      ...datePayload,
       status: modalData ? form.status : ETATS.NOUVEAU,
       folderId: form.folderId,
       isRegular: form.isRegular,
@@ -489,36 +515,53 @@ export default function TaskFormModal() {
                 </View>
               )}
 
-              {/* Toggle Ajouter une date */}
-              <View style={[styles.regularCard, { backgroundColor: currentTheme.tint, borderColor: currentTheme.primary + '33' }]}>
-                <View style={styles.regularTextRow}>
-                  <Ionicons name="calendar-outline" size={20} color={currentTheme.primary} />
-                  <View style={{ flex: 1, marginLeft: 8 }}>
-                    <Text style={[styles.regularTitle, { color: currentTheme.primary }]}>Ajouter une date</Text>
-                    <Text style={styles.regularSub}>
-                      {hasDate ? 'La tâche sera planifiée avec des dates' : 'Tâche rapide sans date d\'échéance'}
-                    </Text>
-                  </View>
+              {/* Mode de Date (3 modes) */}
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Mode d'échéance / Planification</Text>
+                <View style={styles.segmentedContainer}>
                   <TouchableOpacity
                     activeOpacity={0.8}
-                    onPress={() => setHasDate(!hasDate)}
+                    onPress={() => setDateMode('NONE')}
                     style={[
-                      styles.customToggleTrack,
-                      hasDate ? { backgroundColor: currentTheme.primary } : styles.customToggleTrackInactive,
+                      styles.segmentedBtn,
+                      dateMode === 'NONE' && { backgroundColor: currentTheme.primary },
                     ]}
                   >
-                    <View
-                      style={[
-                        styles.customToggleThumb,
-                        hasDate ? styles.customToggleThumbActive : styles.customToggleThumbInactive,
-                      ]}
-                    />
+                    <Text style={[styles.segmentedText, dateMode === 'NONE' && styles.segmentedTextActive]}>
+                      Pas de date
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => setDateMode('DEADLINE')}
+                    style={[
+                      styles.segmentedBtn,
+                      dateMode === 'DEADLINE' && { backgroundColor: currentTheme.primary },
+                    ]}
+                  >
+                    <Text style={[styles.segmentedText, dateMode === 'DEADLINE' && styles.segmentedTextActive]}>
+                      Date butoir
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => setDateMode('PERIOD')}
+                    style={[
+                      styles.segmentedBtn,
+                      dateMode === 'PERIOD' && { backgroundColor: currentTheme.primary },
+                    ]}
+                  >
+                    <Text style={[styles.segmentedText, dateMode === 'PERIOD' && styles.segmentedTextActive]}>
+                      Début & Fin
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
 
-              {/* Dates */}
-              {hasDate && (
+              {/* Affichage selon le mode de date choisi */}
+              {dateMode === 'PERIOD' && (
                 <>
                   <View style={styles.row}>
                     <View style={[styles.formGroup, { flex: 1 }]}>
@@ -537,7 +580,6 @@ export default function TaskFormModal() {
                     </View>
                   </View>
 
-                  {/* Heures style réveil / alarme */}
                   <View style={styles.row}>
                     <View style={[styles.formGroup, { flex: 1 }]}>
                       <TimePickerInput
@@ -557,6 +599,26 @@ export default function TaskFormModal() {
                     </View>
                   </View>
                 </>
+              )}
+
+              {dateMode === 'DEADLINE' && (
+                <View style={styles.row}>
+                  <View style={[styles.formGroup, { flex: 1 }]}>
+                    <DatePickerInput
+                      label="Date d'échéance (Butoir)"
+                      value={form.endDate}
+                      onChange={(v) => set('endDate', v)}
+                    />
+                  </View>
+                  <View style={[styles.formGroup, { flex: 1 }]}>
+                    <TimePickerInput
+                      label="Heure limite (Optionnel)"
+                      value={form.endTime}
+                      onChange={(v) => set('endTime', v)}
+                      placeholder="18:00"
+                    />
+                  </View>
+                </View>
               )}
 
               {/* Option Tâche Régulière */}
@@ -786,6 +848,30 @@ const styles = StyleSheet.create({
   subtaskDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.textMuted, marginRight: 10 },
   subtaskTitle: { flex: 1, fontSize: 13, color: COLORS.text, fontWeight: '500' },
   removeSubtaskBtn: { padding: 4 },
+
+  segmentedContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(118, 118, 128, 0.12)',
+    borderRadius: 12,
+    padding: 3,
+    marginTop: 6,
+  },
+  segmentedBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 9,
+  },
+  segmentedText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+  },
+  segmentedTextActive: {
+    color: '#ffffff',
+    fontWeight: '800',
+  },
 
   customToggleTrack: {
     width: 48,

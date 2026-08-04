@@ -142,11 +142,21 @@ export function TodoContextProvider({ children }) {
     setTasks((prev) =>
       prev.map((t) => {
         if (t.id === taskId && t.subtasks) {
+          const updatedSubtasks = t.subtasks.map((st) =>
+            st.id === subtaskId ? { ...st, isDone: !st.isDone } : st
+          );
+          const hasSubtasks = updatedSubtasks.length > 0;
+          const allDone = hasSubtasks && updatedSubtasks.every((st) => st.isDone);
+          let newStatus = t.status;
+          if (allDone) {
+            newStatus = ETATS.REUSSI;
+          } else if (!allDone && t.status === ETATS.REUSSI && hasSubtasks) {
+            newStatus = ETATS.NOUVEAU;
+          }
           return {
             ...t,
-            subtasks: t.subtasks.map((st) =>
-              st.id === subtaskId ? { ...st, isDone: !st.isDone } : st
-            ),
+            subtasks: updatedSubtasks,
+            status: newStatus,
           };
         }
         return t;
