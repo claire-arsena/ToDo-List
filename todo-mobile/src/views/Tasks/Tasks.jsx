@@ -93,7 +93,7 @@ export default function Tasks() {
             <Ionicons name="school" size={22} color={currentTheme.primary} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.univBannerTitle, { color: currentTheme.primary }]}>
-                Mode universitaire — Rendus & Devoirs
+                Mode universitaire : Rendus & Devoirs
               </Text>
               <Text style={styles.univBannerSub}>
                 Affichage ciblé sur les devoirs, projets et rendus universitaires à rendre.
