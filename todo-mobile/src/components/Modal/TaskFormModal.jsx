@@ -51,6 +51,7 @@ const EMPTY = {
   status: ETATS.NOUVEAU,
   folderId: null,
   isRegular: true,
+  subtasks: [],
 };
 
 export default function TaskFormModal() {
@@ -70,6 +71,9 @@ export default function TaskFormModal() {
   const [showNewFolderForm, setShowNewFolderForm] = useState(false);
   const [newFolderTitle, setNewFolderTitle] = useState('');
   const [newFolderColor, setNewFolderColor] = useState(FOLDER_COLORS[0]);
+  
+  // Subtasks
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
 
   // Charger la hauteur sauvegardee dans AsyncStorage/localStorage
   useEffect(() => {
@@ -104,6 +108,7 @@ export default function TaskFormModal() {
           status: modalData.status || ETATS.NOUVEAU,
           folderId: modalData.folderId || null,
           isRegular: modalData.isRegular !== undefined ? modalData.isRegular : true,
+          subtasks: Array.isArray(modalData.subtasks) ? modalData.subtasks : [],
         });
       } else {
         setHasDate(true);
@@ -173,6 +178,21 @@ export default function TaskFormModal() {
     set('folderId', created.id);
     setNewFolderTitle('');
     setShowNewFolderForm(false);
+  };
+
+  const handleAddSubtask = () => {
+    if (!newSubtaskTitle.trim()) return;
+    const newSubtask = {
+      id: Date.now().toString(),
+      title: newSubtaskTitle.trim(),
+      isDone: false,
+    };
+    set('subtasks', [...(form.subtasks || []), newSubtask]);
+    setNewSubtaskTitle('');
+  };
+
+  const handleRemoveSubtask = (id) => {
+    set('subtasks', (form.subtasks || []).filter((st) => st.id !== id));
   };
 
   const handleDeleteFolder = (folderId, folderTitle) => {
@@ -395,6 +415,44 @@ export default function TaskFormModal() {
                   numberOfLines={3}
                   textAlignVertical="top"
                 />
+              </View>
+
+              {/* Sous-tâches / Checklists */}
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Checklist / Sous-tâches</Text>
+                <View style={styles.subtaskInputRow}>
+                  <TextInput
+                    style={[styles.iosInput, styles.subtaskInput]}
+                    value={newSubtaskTitle}
+                    onChangeText={setNewSubtaskTitle}
+                    placeholder="Ajouter un élément (ex: Maillot de bain)..."
+                    placeholderTextColor={COLORS.textMuted}
+                    onSubmitEditing={handleAddSubtask}
+                  />
+                  <TouchableOpacity
+                    style={[styles.addSubtaskBtn, { backgroundColor: currentTheme.primary }]}
+                    onPress={handleAddSubtask}
+                  >
+                    <Ionicons name="add" size={20} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+
+                {form.subtasks && form.subtasks.length > 0 && (
+                  <View style={styles.subtasksList}>
+                    {form.subtasks.map((st) => (
+                      <View key={st.id} style={styles.subtaskItem}>
+                        <View style={styles.subtaskDot} />
+                        <Text style={styles.subtaskTitle}>{st.title}</Text>
+                        <TouchableOpacity
+                          style={styles.removeSubtaskBtn}
+                          onPress={() => handleRemoveSubtask(st.id)}
+                        >
+                          <Ionicons name="close" size={16} color={COLORS.textMuted} />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                )}
               </View>
 
               {/* Toggle Ajouter une date */}
@@ -672,6 +730,28 @@ const styles = StyleSheet.create({
   regularTextRow: { flexDirection: 'row', alignItems: 'center' },
   regularTitle: { fontSize: 13, fontWeight: '800', color: COLORS.pinkDark },
   regularSub: { fontSize: 11, color: COLORS.textLight, marginTop: 2 },
+
+  subtaskInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  subtaskInput: { flex: 1, marginBottom: 0 },
+  addSubtaskBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  subtasksList: { marginTop: 10, gap: 6 },
+  subtaskItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(118, 118, 128, 0.08)',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  subtaskDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.textMuted, marginRight: 10 },
+  subtaskTitle: { flex: 1, fontSize: 13, color: COLORS.text, fontWeight: '500' },
+  removeSubtaskBtn: { padding: 4 },
 
   customToggleTrack: {
     width: 48,

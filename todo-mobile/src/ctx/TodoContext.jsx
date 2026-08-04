@@ -41,19 +41,34 @@ export function TodoContextProvider({ children }) {
             setTasks([]);
           }
 
+          let initialFolders = [];
           if (rawFolders) {
             const parsed = JSON.parse(rawFolders);
-            const folderArray = Array.isArray(parsed) ? parsed : (parsed.folders || []);
-            setFolders(folderArray);
-          } else {
-            setFolders([]);
+            initialFolders = Array.isArray(parsed) ? parsed : (parsed.folders || []);
           }
+          
+          if (initialFolders.length === 0) {
+            initialFolders = [
+              { id: 'etudes', title: 'Études', color: '#3b82f6' },
+              { id: 'perso', title: 'Perso', color: '#10b981' },
+              { id: 'sport', title: 'Sport', color: '#f59e0b' },
+              { id: 'courses', title: 'Courses', color: '#8b5cf6' },
+              { id: 'vacances', title: 'Vacances', color: '#ec4899' },
+            ];
+          }
+          setFolders(initialFolders);
         }
       } catch (e) {
         console.error('Erreur chargement AsyncStorage', e);
         if (isMounted) {
           setTasks([]);
-          setFolders([]);
+          setFolders([
+            { id: 'etudes', title: 'Études', color: '#3b82f6' },
+            { id: 'perso', title: 'Perso', color: '#10b981' },
+            { id: 'sport', title: 'Sport', color: '#f59e0b' },
+            { id: 'courses', title: 'Courses', color: '#8b5cf6' },
+            { id: 'vacances', title: 'Vacances', color: '#ec4899' },
+          ]);
         }
       } finally {
         if (isMounted) setIsLoaded(true);
@@ -94,6 +109,7 @@ export function TodoContextProvider({ children }) {
       status: ETATS.NOUVEAU,
       folderId: taskData.folderId || null,
       isRegular: taskData.isRegular !== undefined ? taskData.isRegular : true,
+      subtasks: Array.isArray(taskData.subtasks) ? taskData.subtasks : [],
       creationDate: today,
       profileId: activeProfileId || null,
     };
@@ -119,6 +135,22 @@ export function TodoContextProvider({ children }) {
           return { ...t, status: ETATS.NOUVEAU };
         }
         return { ...t, status: ETATS.REUSSI };
+      })
+    );
+  };
+
+  const toggleSubtaskDone = (taskId, subtaskId) => {
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.id === taskId && t.subtasks) {
+          return {
+            ...t,
+            subtasks: t.subtasks.map((st) =>
+              st.id === subtaskId ? { ...st, isDone: !st.isDone } : st
+            ),
+          };
+        }
+        return t;
       })
     );
   };
@@ -203,6 +235,7 @@ export function TodoContextProvider({ children }) {
         updateTask,
         deleteTask,
         toggleTaskDone,
+        toggleSubtaskDone,
         rescheduleToToday,
         rescheduleByDays,
         cancelTask,

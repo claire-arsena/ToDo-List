@@ -15,6 +15,7 @@ export default function TasksItem({ task }) {
     rescheduleToToday,
     rescheduleByDays,
     cancelTask,
+    toggleSubtaskDone,
   } = useContext(TodoContext);
   const { openModal } = useContext(ModalContext);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -172,8 +173,30 @@ export default function TasksItem({ task }) {
           <View style={styles.expanded}>
             {task.description ? (
               <Text style={styles.desc}>{task.description}</Text>
-            ) : (
-              <Text style={styles.noDesc}>Aucune description</Text>
+            ) : null}
+
+            {task.subtasks && task.subtasks.length > 0 && (
+              <View style={styles.subtasksContainer}>
+                {task.subtasks.map((st) => (
+                  <TouchableOpacity
+                    key={st.id}
+                    style={styles.subtaskRow}
+                    onPress={() => toggleSubtaskDone(task.id, st.id)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.subtaskCheckbox, st.isDone && styles.subtaskCheckboxDone]}>
+                      {st.isDone && <Ionicons name="checkmark" size={10} color="#fff" />}
+                    </View>
+                    <Text style={[styles.subtaskTitle, st.isDone && styles.subtaskTitleDone]}>
+                      {st.title}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {!task.description && (!task.subtasks || task.subtasks.length === 0) && (
+              <Text style={styles.noDesc}>Aucune description ou checklist</Text>
             )}
 
             <View style={styles.actions}>
@@ -326,6 +349,23 @@ const styles = StyleSheet.create({
   expanded: { marginTop: 12, borderTopWidth: 0.5, borderTopColor: 'rgba(0,0,0,0.08)', paddingTop: 10 },
   desc: { fontSize: 13, color: COLORS.text, lineHeight: 18 },
   noDesc: { fontSize: 12, color: COLORS.textMuted, fontStyle: 'italic' },
+  
+  subtasksContainer: { marginTop: 12, gap: 8 },
+  subtaskRow: { flexDirection: 'row', alignItems: 'center' },
+  subtaskCheckbox: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: 'rgba(60, 60, 67, 0.3)',
+    marginRight: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  subtaskCheckboxDone: { backgroundColor: COLORS.pinkDark, borderColor: COLORS.pinkDark },
+  subtaskTitle: { fontSize: 13, color: COLORS.text, flex: 1 },
+  subtaskTitleDone: { textDecorationLine: 'line-through', color: COLORS.textMuted },
+
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 10 },
   btnEdit: {
     flexDirection: 'row',
