@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
+  TextInput,
   Modal,
   Platform,
   Alert,
@@ -31,7 +32,10 @@ export default function ProfileView() {
   const {
     allowedProfiles,
     currentProfile,
-    bindDeviceProfile,
+    isProfileRegistered,
+    registerProfile,
+    loginProfile,
+    logoutProfile,
     appMode,
     toggleAppMode,
     currentTheme,
@@ -48,23 +52,73 @@ export default function ProfileView() {
   // Active Sub-modal state: null | 'preferences' | 'stats' | 'backup'
   const [activeModal, setActiveModal] = useState(null);
 
-  // Profile Binding Confirmation Modal
-  const [selectedTarget, setSelectedTarget] = useState(null);
+  // PIN Authentication / Profile Registration Modal State
+  const [targetProfile, setTargetProfile] = useState(null);
+  const [authMode, setAuthMode] = useState(null); // 'register' or 'login'
+  const [pinInput, setPinInput] = useState('');
+  const [pinConfirm, setPinConfirm] = useState('');
+  const [pinError, setPinError] = useState('');
 
-  const handleSelectClick = (p) => {
-    setSelectedTarget(p);
+  const handleProfileClick = (profileObj) => {
+    setTargetProfile(profileObj);
+    setPinInput('');
+    setPinConfirm('');
+    setPinError('');
+
+    if (isProfileRegistered(profileObj.id)) {
+      setAuthMode('login');
+    } else {
+      setAuthMode('register');
+    }
   };
 
-  const confirmBinding = async () => {
-    if (!selectedTarget) return;
-    await bindDeviceProfile(selectedTarget.id);
-    setSelectedTarget(null);
+  const closeAuthModal = () => {
+    setTargetProfile(null);
+    setAuthMode(null);
+    setPinInput('');
+    setPinConfirm('');
+    setPinError('');
+  };
+
+  const handleAuthSubmit = async () => {
+    if (!targetProfile) return;
+
+    if (authMode === 'register') {
+      if (!pinInput || pinInput.length < 4) {
+        setPinError('Le code PIN doit comporter au moins 4 chiffres.');
+        return;
+      }
+      if (pinInput !== pinConfirm) {
+        setPinError('Les deux codes PIN ne correspondent pas.');
+        return;
+      }
+
+      const res = await registerProfile(targetProfile.id, pinInput.trim());
+      if (res.success) {
+        closeAuthModal();
+      } else {
+        setPinError(res.error);
+      }
+    } else if (authMode === 'login') {
+      if (!pinInput) {
+        setPinError('Veuillez entrer votre code PIN secret.');
+        return;
+      }
+
+      const res = await loginProfile(targetProfile.id, pinInput.trim());
+      if (res.success) {
+        closeAuthModal();
+      } else {
+        setPinError(res.error);
+      }
+    }
   };
 
   // Export JSON Backup
   const handleExport = useCallback(() => {
     const backup = {
-      version: 3,
+      version: 4,
+      profileId: currentProfile?.id || 'global',
       exportDate: new Date().toISOString(),
       tasks,
       folders,
@@ -85,7 +139,7 @@ export default function ProfileView() {
     } else {
       Alert.alert('Sauvegarde', 'Fichier de sauvegarde généré.');
     }
-  }, [tasks, folders]);
+  }, [tasks, folders, currentProfile]);
 
   // Import JSON Restore
   const handleImport = useCallback(() => {
@@ -113,9 +167,12 @@ export default function ProfileView() {
       const confirmMsg = `Restaurer ${data.tasks.length} tâche(s) ?\n\nAttention : vos données actuelles seront remplacées.`;
 
       const doRestore = async () => {
+        const key = currentProfile ? `@todo_tasks_profile_${currentProfile.id}` : '@todo_tasks_v2';
+        await AsyncStorage.setItem(key, JSON.stringify(data.tasks));
         await AsyncStorage.setItem('@todo_tasks_v2', JSON.stringify(data.tasks));
         if (data.folders) {
-          await AsyncStorage.setItem('@todo_folders_v2', JSON.stringify(data.folders));
+          const fKey = currentProfile ? `@todo_folders_profile_${currentProfile.id}` : '@todo_folders_v2';
+          await AsyncStorage.setItem(fKey, JSON.stringify(data.folders));
         }
         if (Platform.OS === 'web') {
           window.location.reload();
@@ -137,7 +194,7 @@ export default function ProfileView() {
       Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Erreur', msg);
     }
     if (e.target) e.target.value = '';
-  }, []);
+  }, [currentProfile]);
 
   // Advanced Stats Computations
   const stats = useMemo(() => {
@@ -209,7 +266,7 @@ export default function ProfileView() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      {/* 1. MON PROFIL & ASSIGNATION APPAREIL */}
+      {/* 1. MON PROFIL SELECTION ET BANNIERE DE CONNEXION */}
       {currentProfile ? (
         <GlassCard style={styles.activeProfileCard}>
           <View style={styles.avatarRow}>
@@ -219,39 +276,45 @@ export default function ProfileView() {
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.profileName}>{currentProfile.name}</Text>
               <Text style={styles.profileRole}>
-                Profil actif sur cet appareil · {currentProfile.role === 'full' ? 'Accès EDT complet' : 'Accès Tâches uniquement'}
+                Profil authentifié avec code PIN · {currentProfile.role === 'full' ? 'Accès EDT complet' : 'Accès Tâches uniquement'}
               </Text>
             </View>
-            <View style={[styles.boundBadge, { backgroundColor: currentTheme.tint }]}>
-              <Ionicons name="checkmark-done-circle" size={16} color={currentTheme.primary} />
-              <Text style={[styles.boundBadgeText, { color: currentTheme.primary }]}>Actif</Text>
-            </View>
+            <TouchableOpacity style={styles.logoutBtn} onPress={logoutProfile}>
+              <Ionicons name="lock-closed-outline" size={16} color={currentTheme.primary} />
+              <Text style={[styles.logoutText, { color: currentTheme.primary }]}>Déconnexion</Text>
+            </TouchableOpacity>
           </View>
         </GlassCard>
       ) : (
         <GlassCard style={styles.deviceSelectionCard}>
           <View style={styles.warningBox}>
-            <Ionicons name="warning-outline" size={22} color="#d97706" />
-            <Text style={styles.warningTitle}>Attention : Choix définitif de profil</Text>
+            <Ionicons name="shield-checkmark-outline" size={22} color={currentTheme.primary} />
+            <Text style={[styles.warningTitle, { color: currentTheme.primary }]}>Authentification Sécurisée par Code PIN</Text>
           </View>
           <Text style={styles.warningText}>
-            Pour accéder aux emplois du temps universitaires et personnaliser votre espace, sélectionnez votre prénom ci-dessous (Claire, Alban, Clara ou Marielle). Ce choix liera définitivement ce profil à cet appareil.
+            Pour accéder à votre espace personnel et à vos emplois du temps universitaires, sélectionnez votre prénom ci-dessous (**Claire, Alban, Clara ou Marielle**). Si votre profil est déjà créé, votre code PIN secret vous sera demandé.
           </Text>
 
-          <Text style={styles.selectLabel}>Sélectionnez votre prénom :</Text>
+          <Text style={styles.selectLabel}>Sélectionnez votre profil :</Text>
 
           <View style={styles.profilesGrid}>
-            {allowedProfiles.map((p) => (
-              <TouchableOpacity
-                key={p.id}
-                style={[styles.profileChoiceChip, { borderColor: p.defaultColor }]}
-                onPress={() => handleSelectClick(p)}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="person-outline" size={18} color={p.defaultColor} />
-                <Text style={styles.choiceName}>{p.name}</Text>
-              </TouchableOpacity>
-            ))}
+            {allowedProfiles.map((p) => {
+              const isReg = isProfileRegistered(p.id);
+              return (
+                <TouchableOpacity
+                  key={p.id}
+                  style={[styles.profileChoiceChip, { borderColor: p.defaultColor }]}
+                  onPress={() => handleProfileClick(p)}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name={isReg ? "lock-closed" : "person-add-outline"} size={18} color={p.defaultColor} />
+                  <View>
+                    <Text style={styles.choiceName}>{p.name}</Text>
+                    <Text style={styles.choiceStatus}>{isReg ? 'PIN requis' : 'Créer profil'}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </GlassCard>
       )}
@@ -511,9 +574,9 @@ export default function ProfileView() {
             </View>
 
             <View style={{ paddingVertical: 10 }}>
-              <Text style={styles.modalSectionLabel}>Données enregistrées sur l'appareil</Text>
+              <Text style={styles.modalSectionLabel}>Données enregistrées</Text>
               <Text style={styles.backupSubModal}>
-                {stats.total} tâche{stats.total !== 1 ? 's' : ''} · {folders.length} dossier{folders.length !== 1 ? 's' : ''} conservés en local.
+                {stats.total} tâche{stats.total !== 1 ? 's' : ''} · {folders.length} dossier{folders.length !== 1 ? 's' : ''} associés au profil {currentProfile ? currentProfile.name : 'actuel'}.
               </Text>
 
               <View style={styles.backupButtonsModal}>
@@ -539,30 +602,67 @@ export default function ProfileView() {
         </View>
       </Modal>
 
-      {/* MODAL DE CONFIRMATION DE LIEN PROFIL DÉFINITIF */}
-      {selectedTarget && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setSelectedTarget(null)}>
+      {/* MODAL DE SÉCURITÉ CODE PIN (Connexion vs Création) */}
+      {targetProfile && (
+        <Modal visible transparent animationType="fade" onRequestClose={closeAuthModal}>
           <View style={styles.modalOverlay}>
-            <View style={styles.confirmCard}>
-              <Ionicons name="alert-circle" size={40} color="#d97706" style={{ marginBottom: 8 }} />
-              <Text style={styles.confirmTitle}>Confirmer le profil {selectedTarget.name}</Text>
-
-              <Text style={styles.confirmSub}>
-                Attention : ce choix liera définitivement l'appareil à <Text style={{ fontWeight: '800' }}>{selectedTarget.name}</Text>. Vous ne pourrez pas choisir un autre prénom par la suite sur cet appareil.
+            <View style={styles.pinCard}>
+              <Ionicons name="shield-checkmark" size={36} color={currentTheme.primary} style={{ marginBottom: 6 }} />
+              <Text style={styles.pinTitle}>
+                {authMode === 'register'
+                  ? `Création du profil ${targetProfile.name}`
+                  : `Connexion au profil ${targetProfile.name}`}
               </Text>
 
-              <View style={styles.confirmButtons}>
-                <TouchableOpacity style={styles.cancelBtn} onPress={() => setSelectedTarget(null)}>
-                  <Text style={styles.cancelBtnText}>Annuler</Text>
+              <Text style={styles.pinSub}>
+                {authMode === 'register'
+                  ? `Définissez votre code PIN secret (min. 4 chiffres). Ce code vous sera demandé pour vous connecter sur tout autre appareil.`
+                  : `Le profil ${targetProfile.name} est protégé par un code PIN. Entrez le code PIN secret défini lors de la création pour y accéder :`}
+              </Text>
+
+              {/* Champ PIN 1 */}
+              <TextInput
+                style={styles.pinInput}
+                value={pinInput}
+                onChangeText={setPinInput}
+                placeholder={authMode === 'register' ? 'Nouveau code PIN (ex: 1234)' : 'Code PIN secret'}
+                placeholderTextColor={COLORS.textMuted}
+                keyboardType="numeric"
+                secureTextEntry
+                maxLength={8}
+                autoFocus
+              />
+
+              {/* Champ Confirmation PIN si Création */}
+              {authMode === 'register' && (
+                <TextInput
+                  style={styles.pinInput}
+                  value={pinConfirm}
+                  onChangeText={setPinConfirm}
+                  placeholder="Confirmer le code PIN"
+                  placeholderTextColor={COLORS.textMuted}
+                  keyboardType="numeric"
+                  secureTextEntry
+                  maxLength={8}
+                />
+              )}
+
+              {pinError ? <Text style={styles.errorText}>{pinError}</Text> : null}
+
+              <View style={styles.pinButtons}>
+                <TouchableOpacity style={styles.pinCancelBtn} onPress={closeAuthModal}>
+                  <Text style={styles.pinCancelText}>Annuler</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.confirmSubmitBtn} onPress={confirmBinding}>
+                <TouchableOpacity style={styles.pinConfirmBtn} onPress={handleAuthSubmit}>
                   <LinearGradient
                     colors={[currentTheme.primary, currentTheme.deep]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    style={styles.confirmGradient}
+                    style={styles.pinConfirmGradient}
                   >
-                    <Text style={styles.confirmSubmitText}>Confirmer {selectedTarget.name}</Text>
+                    <Text style={styles.pinConfirmText}>
+                      {authMode === 'register' ? 'Créer le profil' : 'Se connecter'}
+                    </Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
@@ -578,21 +678,6 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 40 },
 
-  // Mode Switch Card
-  modeCard: { padding: 16, marginBottom: 16 },
-  modeHeaderRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  modeTitle: { fontSize: 16, fontWeight: '800', marginBottom: 2 },
-  modeSub: { fontSize: 12, color: COLORS.textMuted, lineHeight: 17 },
-  switchModeBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    borderRadius: 100,
-  },
-  switchModeBtnText: { color: '#fff', fontWeight: '800', fontSize: 13 },
-
   // Active Profile Card
   activeProfileCard: { padding: 14, marginBottom: 16 },
   avatarRow: { flexDirection: 'row', alignItems: 'center' },
@@ -605,6 +690,16 @@ const styles = StyleSheet.create({
   },
   profileName: { fontSize: 17, fontWeight: '800', color: COLORS.text },
   profileRole: { fontSize: 11, color: COLORS.textMuted, marginTop: 1 },
+  logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  logoutText: { fontSize: 11, fontWeight: '700' },
   boundBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -618,7 +713,7 @@ const styles = StyleSheet.create({
   // Device Selection Card
   deviceSelectionCard: { padding: 16, marginBottom: 16 },
   warningBox: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  warningTitle: { fontSize: 15, fontWeight: '800', color: '#d97706' },
+  warningTitle: { fontSize: 15, fontWeight: '800' },
   warningText: { fontSize: 12, color: COLORS.textLight, lineHeight: 18, marginBottom: 14 },
   selectLabel: { fontSize: 13, fontWeight: '700', color: COLORS.text, marginBottom: 10 },
   profilesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -633,6 +728,22 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.02)',
   },
   choiceName: { fontSize: 14, fontWeight: '700', color: COLORS.text },
+  choiceStatus: { fontSize: 10, color: COLORS.textMuted, marginTop: 1 },
+
+  // Mode Switch Card
+  modeCard: { padding: 16, marginBottom: 16 },
+  modeHeaderRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  modeTitle: { fontSize: 16, fontWeight: '800', marginBottom: 2 },
+  modeSub: { fontSize: 12, color: COLORS.textMuted, lineHeight: 17 },
+  switchModeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 100,
+  },
+  switchModeBtnText: { color: '#fff', fontWeight: '800', fontSize: 13 },
 
   // Menu Section Cards (Buttons)
   menuSectionHeader: { fontSize: 15, fontWeight: '800', color: COLORS.text, marginBottom: 10, marginLeft: 4 },
@@ -772,8 +883,8 @@ const styles = StyleSheet.create({
   },
   restoreBtnText: { fontSize: 13, fontWeight: '700' },
 
-  // Confirm Modal
-  confirmCard: {
+  // PIN Modal
+  pinCard: {
     width: '100%',
     maxWidth: 340,
     backgroundColor: '#fff',
@@ -781,22 +892,36 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
   },
-  confirmTitle: { fontSize: 17, fontWeight: '800', color: COLORS.text, marginBottom: 8, textAlign: 'center' },
-  confirmSub: { fontSize: 13, color: COLORS.textLight, textAlign: 'center', marginBottom: 20, lineHeight: 18 },
-  confirmButtons: { flexDirection: 'row', gap: 10, width: '100%' },
-  cancelBtn: {
+  pinTitle: { fontSize: 17, fontWeight: '800', color: COLORS.text, marginBottom: 6, textAlign: 'center' },
+  pinSub: { fontSize: 12, color: COLORS.textLight, textAlign: 'center', marginBottom: 16, lineHeight: 18 },
+  pinInput: {
+    width: '100%',
+    backgroundColor: 'rgba(118, 118, 128, 0.12)',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    fontWeight: '700',
+    textAlign: 'center',
+    letterSpacing: 3,
+    color: COLORS.text,
+    marginBottom: 10,
+  },
+  errorText: { color: COLORS.danger, fontSize: 12, fontWeight: '700', marginBottom: 10, textAlign: 'center' },
+  pinButtons: { flexDirection: 'row', gap: 10, width: '100%', marginTop: 6 },
+  pinCancelBtn: {
     flex: 1,
     paddingVertical: 12,
     borderRadius: 100,
     backgroundColor: 'rgba(120, 120, 128, 0.12)',
     alignItems: 'center',
   },
-  cancelBtnText: { color: COLORS.text, fontWeight: '700', fontSize: 13 },
-  confirmSubmitBtn: { flex: 1 },
-  confirmGradient: {
+  pinCancelText: { color: COLORS.text, fontWeight: '700', fontSize: 14 },
+  pinConfirmBtn: { flex: 1 },
+  pinConfirmGradient: {
     paddingVertical: 12,
     borderRadius: 100,
     alignItems: 'center',
   },
-  confirmSubmitText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  pinConfirmText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 });

@@ -1,67 +1,84 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ETATS, ETAT_TERMINE, getTodayStr } from '../config/constants';
+import { ProfileContext } from './ProfileContext';
 
 export const TodoContext = createContext();
 
-const STORAGE_KEY = '@todo_tasks_v2';
-const FOLDERS_KEY = '@todo_folders_v2';
-
 export function TodoContextProvider({ children }) {
+  const { activeProfileId } = useContext(ProfileContext);
   const [tasks, setTasks] = useState([]);
   const [folders, setFolders] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Charger le stockage global
+  // Profile-scoped or global storage keys
+  const STORAGE_KEY = activeProfileId ? `@todo_tasks_profile_${activeProfileId}` : '@todo_tasks_v2';
+  const FOLDERS_KEY = activeProfileId ? `@todo_folders_profile_${activeProfileId}` : '@todo_folders_v2';
+
+  // Charger et restaurer automatiquement les tâches
   useEffect(() => {
+    let isMounted = true;
+    setIsLoaded(false);
+
     (async () => {
       try {
         let rawTasks = await AsyncStorage.getItem(STORAGE_KEY);
+        // Restauration automatique : si le profil actif n'a pas encore de tâches, récupérer depuis le stockage global
+        if (!rawTasks) rawTasks = await AsyncStorage.getItem('@todo_tasks_v2');
         if (!rawTasks) rawTasks = await AsyncStorage.getItem('@todo_tasks');
         if (!rawTasks) rawTasks = await AsyncStorage.getItem('@todo_data');
 
         let rawFolders = await AsyncStorage.getItem(FOLDERS_KEY);
+        if (!rawFolders) rawFolders = await AsyncStorage.getItem('@todo_folders_v2');
         if (!rawFolders) rawFolders = await AsyncStorage.getItem('@todo_folders');
 
-        if (rawTasks) {
-          const parsed = JSON.parse(rawTasks);
-          const taskArray = Array.isArray(parsed) ? parsed : (parsed.tasks || []);
-          setTasks(taskArray);
-        } else {
-          setTasks([]);
-        }
+        if (isMounted) {
+          if (rawTasks) {
+            const parsed = JSON.parse(rawTasks);
+            const taskArray = Array.isArray(parsed) ? parsed : (parsed.tasks || []);
+            setTasks(taskArray);
+          } else {
+            setTasks([]);
+          }
 
-        if (rawFolders) {
-          const parsed = JSON.parse(rawFolders);
-          const folderArray = Array.isArray(parsed) ? parsed : (parsed.folders || []);
-          setFolders(folderArray);
-        } else {
-          setFolders([]);
+          if (rawFolders) {
+            const parsed = JSON.parse(rawFolders);
+            const folderArray = Array.isArray(parsed) ? parsed : (parsed.folders || []);
+            setFolders(folderArray);
+          } else {
+            setFolders([]);
+          }
         }
       } catch (e) {
         console.error('Erreur chargement AsyncStorage', e);
-        setTasks([]);
-        setFolders([]);
+        if (isMounted) {
+          setTasks([]);
+          setFolders([]);
+        }
       } finally {
-        setIsLoaded(true);
+        if (isMounted) setIsLoaded(true);
       }
     })();
-  }, []);
 
-  // Sauvegarder dans AsyncStorage global
+    return () => {
+      isMounted = false;
+    };
+  }, [activeProfileId]);
+
+  // Sauvegarder automatiquement dans le stockage du profil actif + miroir de secours
   useEffect(() => {
     if (isLoaded) {
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-      AsyncStorage.setItem('@todo_tasks', JSON.stringify(tasks));
+      AsyncStorage.setItem('@todo_tasks_v2', JSON.stringify(tasks)); // Miroir global de secours
     }
-  }, [tasks, isLoaded]);
+  }, [tasks, isLoaded, STORAGE_KEY]);
 
   useEffect(() => {
     if (isLoaded) {
       AsyncStorage.setItem(FOLDERS_KEY, JSON.stringify(folders));
-      AsyncStorage.setItem('@todo_folders', JSON.stringify(folders));
+      AsyncStorage.setItem('@todo_folders_v2', JSON.stringify(folders));
     }
-  }, [folders, isLoaded]);
+  }, [folders, isLoaded, FOLDERS_KEY]);
 
   const addTask = (taskData) => {
     const today = getTodayStr();
@@ -78,6 +95,7 @@ export function TodoContextProvider({ children }) {
       folderId: taskData.folderId || null,
       isRegular: taskData.isRegular !== undefined ? taskData.isRegular : true,
       creationDate: today,
+      profileId: activeProfileId || null,
     };
     setTasks((prev) => [newTask, ...prev]);
     return newTask;

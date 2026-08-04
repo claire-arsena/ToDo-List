@@ -9,20 +9,22 @@ export const ALLOWED_PROFILES = [
 ];
 
 export const THEMES = {
-  rose: { key: 'rose', name: 'Rose iOS', primary: '#d81b60', deep: '#c2185b', tint: 'rgba(216, 27, 96, 0.12)' },
-  blue: { key: 'blue', name: 'Bleu Ocean', primary: '#1e88e5', deep: '#1565c0', tint: 'rgba(30, 136, 229, 0.12)' },
-  green: { key: 'green', name: 'Vert Émeraude', primary: '#2ecc71', deep: '#27ae60', tint: 'rgba(46, 204, 113, 0.12)' },
+  rose: { key: 'rose', name: 'Rose', primary: '#d81b60', deep: '#c2185b', tint: 'rgba(216, 27, 96, 0.12)' },
+  blue: { key: 'blue', name: 'Bleu', primary: '#1e88e5', deep: '#1565c0', tint: 'rgba(30, 136, 229, 0.12)' },
+  green: { key: 'green', name: 'Vert', primary: '#2ecc71', deep: '#27ae60', tint: 'rgba(46, 204, 113, 0.12)' },
 };
 
-const DEVICE_PROFILE_KEY = '@todo_device_profile_id_v3';
-const APP_MODE_KEY = '@todo_app_mode_v3';
-const THEME_KEY = '@todo_theme_color_v3';
-const VISIBLE_SCHEDULES_KEY = '@todo_visible_schedules_v3';
+const ACTIVE_PROFILE_KEY = '@todo_active_profile_v4';
+const REGISTERED_PROFILES_KEY = '@todo_registered_profiles_v4';
+const APP_MODE_KEY = '@todo_app_mode_v4';
+const THEME_KEY = '@todo_theme_color_v4';
+const VISIBLE_SCHEDULES_KEY = '@todo_visible_schedules_v4';
 
 export const ProfileContext = createContext();
 
 export function ProfileContextProvider({ children }) {
-  const [deviceProfileId, setDeviceProfileId] = useState(null); // Locked profile on this device
+  const [activeProfileId, setActiveProfileId] = useState(null);
+  const [registeredProfiles, setRegisteredProfiles] = useState({}); // { claire: { pin: '1234' }, ... }
   const [appMode, setAppMode] = useState('personal'); // 'personal' | 'university'
   const [themeKey, setThemeKey] = useState('rose'); // 'rose' | 'blue' | 'green'
   const [visibleSchedules, setVisibleSchedules] = useState({
@@ -36,9 +38,16 @@ export function ProfileContextProvider({ children }) {
   useEffect(() => {
     (async () => {
       try {
-        const savedDeviceProfile = await AsyncStorage.getItem(DEVICE_PROFILE_KEY);
-        if (savedDeviceProfile && ALLOWED_PROFILES.some((p) => p.id === savedDeviceProfile)) {
-          setDeviceProfileId(savedDeviceProfile);
+        const savedReg = await AsyncStorage.getItem(REGISTERED_PROFILES_KEY);
+        let parsedReg = {};
+        if (savedReg) {
+          parsedReg = JSON.parse(savedReg);
+          setRegisteredProfiles(parsedReg);
+        }
+
+        const savedActive = await AsyncStorage.getItem(ACTIVE_PROFILE_KEY);
+        if (savedActive && ALLOWED_PROFILES.some((p) => p.id === savedActive)) {
+          setActiveProfileId(savedActive);
         }
 
         const savedMode = await AsyncStorage.getItem(APP_MODE_KEY);
@@ -63,15 +72,51 @@ export function ProfileContextProvider({ children }) {
     })();
   }, []);
 
-  // Bind profile permanently to this device
-  const bindDeviceProfile = async (profileId, pinCode) => {
+  // Check if profile has registered PIN
+  const isProfileRegistered = (profileId) => {
+    return !!registeredProfiles[profileId];
+  };
+
+  // Create & Register profile with secret PIN
+  const registerProfile = async (profileId, pinCode) => {
     const found = ALLOWED_PROFILES.find((p) => p.id === profileId);
     if (!found) {
       return { success: false, error: 'Prénom non autorisé.' };
     }
-    setDeviceProfileId(found.id);
-    await AsyncStorage.setItem(DEVICE_PROFILE_KEY, found.id);
+    if (!pinCode || pinCode.trim().length < 4) {
+      return { success: false, error: 'Le code PIN doit comporter au moins 4 chiffres.' };
+    }
+
+    const updated = {
+      ...registeredProfiles,
+      [found.id]: { pin: pinCode.trim(), createdAt: new Date().toISOString() },
+    };
+    setRegisteredProfiles(updated);
+    setActiveProfileId(found.id);
+
+    await AsyncStorage.setItem(REGISTERED_PROFILES_KEY, JSON.stringify(updated));
+    await AsyncStorage.setItem(ACTIVE_PROFILE_KEY, found.id);
     return { success: true };
+  };
+
+  // Authenticate login into registered profile with PIN
+  const loginProfile = async (profileId, pinInput) => {
+    const target = registeredProfiles[profileId];
+    if (!target) {
+      return { success: false, error: 'Ce profil n\'est pas encore créé.' };
+    }
+    if (target.pin !== pinInput.trim()) {
+      return { success: false, error: 'Code PIN incorrect ! Accès refusé à ce profil.' };
+    }
+
+    setActiveProfileId(profileId);
+    await AsyncStorage.setItem(ACTIVE_PROFILE_KEY, profileId);
+    return { success: true };
+  };
+
+  const logoutProfile = async () => {
+    setActiveProfileId(null);
+    await AsyncStorage.removeItem(ACTIVE_PROFILE_KEY);
   };
 
   // Toggle App Mode ('personal' vs 'university')
@@ -98,7 +143,7 @@ export function ProfileContextProvider({ children }) {
     await AsyncStorage.setItem(VISIBLE_SCHEDULES_KEY, JSON.stringify(updated));
   };
 
-  const currentProfile = ALLOWED_PROFILES.find((p) => p.id === deviceProfileId) || null;
+  const currentProfile = ALLOWED_PROFILES.find((p) => p.id === activeProfileId) || null;
   const currentTheme = THEMES[themeKey] || THEMES.rose;
   const canAccessSchedules = currentProfile && currentProfile.role === 'full';
 
@@ -106,14 +151,18 @@ export function ProfileContextProvider({ children }) {
     <ProfileContext.Provider
       value={{
         allowedProfiles: ALLOWED_PROFILES,
-        deviceProfileId,
+        registeredProfiles,
+        activeProfileId,
         currentProfile,
         appMode,
         currentTheme,
         themeKey,
         visibleSchedules,
         isProfileLoaded,
-        bindDeviceProfile,
+        isProfileRegistered,
+        registerProfile,
+        loginProfile,
+        logoutProfile,
         toggleAppMode,
         changeTheme,
         toggleScheduleVisibility,
