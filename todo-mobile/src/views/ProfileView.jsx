@@ -51,6 +51,9 @@ export default function ProfileView() {
 
   const { tasks, folders } = useContext(TodoContext);
 
+  // Sub-tab inside Profile view: 'edt' vs 'stats'
+  const [subTab, setSubTab] = useState('stats');
+
   // Modal State for Create / Switch
   const [selectedTarget, setSelectedTarget] = useState(null); // profile object
   const [modalMode, setModalMode] = useState(null); // 'create' or 'login'
@@ -110,13 +113,10 @@ export default function ProfileView() {
     }
   };
 
-  // Export JSON Backup
+  // Export JSON Backup (Global tasks & folders)
   const handleExport = useCallback(() => {
-    if (!currentProfile) return;
     const backup = {
       version: 2,
-      profileId: currentProfile.id,
-      profileName: currentProfile.name,
       exportDate: new Date().toISOString(),
       tasks,
       folders,
@@ -129,7 +129,7 @@ export default function ProfileView() {
       const a = document.createElement('a');
       a.href = url;
       const date = new Date().toISOString().slice(0, 10);
-      a.download = `backup-${currentProfile.id}-${date}.json`;
+      a.download = `sauvegarde-taches-${date}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -137,7 +137,7 @@ export default function ProfileView() {
     } else {
       Alert.alert('Sauvegarde', 'Fichier de sauvegarde généré.');
     }
-  }, [tasks, folders, currentProfile]);
+  }, [tasks, folders]);
 
   // Import JSON Restore
   const handleImport = useCallback(() => {
@@ -148,53 +148,48 @@ export default function ProfileView() {
     }
   }, []);
 
-  const processImportFile = useCallback(
-    async (e) => {
-      const file = e.target.files?.[0];
-      if (!file || !currentProfile) return;
+  const processImportFile = useCallback(async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-      try {
-        const text = await file.text();
-        const data = JSON.parse(text);
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
 
-        if (!data.tasks || !Array.isArray(data.tasks)) {
-          const msg = 'Fichier invalide : aucune tâche trouvée.';
-          Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Erreur', msg);
-          return;
-        }
-
-        const confirmMsg = `Restaurer ${data.tasks.length} tâche(s) pour le profil "${currentProfile.name}" ?\n\nAttention : vos données actuelles pour ce profil seront remplacées.`;
-
-        const doRestore = async () => {
-          const storageKey = `@todo_tasks_v2_${currentProfile.id}`;
-          const foldersKey = `@todo_folders_v2_${currentProfile.id}`;
-          await AsyncStorage.setItem(storageKey, JSON.stringify(data.tasks));
-          if (data.folders) {
-            await AsyncStorage.setItem(foldersKey, JSON.stringify(data.folders));
-          }
-          if (Platform.OS === 'web') {
-            window.location.reload();
-          }
-        };
-
-        if (Platform.OS === 'web') {
-          if (window.confirm(confirmMsg)) {
-            await doRestore();
-          }
-        } else {
-          Alert.alert('Restaurer ?', confirmMsg, [
-            { text: 'Annuler', style: 'cancel' },
-            { text: 'Restaurer', style: 'destructive', onPress: doRestore },
-          ]);
-        }
-      } catch (err) {
-        const msg = 'Erreur lors de la lecture du fichier.';
+      if (!data.tasks || !Array.isArray(data.tasks)) {
+        const msg = 'Fichier invalide : aucune tâche trouvée.';
         Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Erreur', msg);
+        return;
       }
-      if (e.target) e.target.value = '';
-    },
-    [currentProfile]
-  );
+
+      const confirmMsg = `Restaurer ${data.tasks.length} tâche(s) ?\n\nAttention : vos données actuelles seront remplacées.`;
+
+      const doRestore = async () => {
+        await AsyncStorage.setItem('@todo_tasks_v2', JSON.stringify(data.tasks));
+        if (data.folders) {
+          await AsyncStorage.setItem('@todo_folders_v2', JSON.stringify(data.folders));
+        }
+        if (Platform.OS === 'web') {
+          window.location.reload();
+        }
+      };
+
+      if (Platform.OS === 'web') {
+        if (window.confirm(confirmMsg)) {
+          await doRestore();
+        }
+      } else {
+        Alert.alert('Restaurer ?', confirmMsg, [
+          { text: 'Annuler', style: 'cancel' },
+          { text: 'Restaurer', style: 'destructive', onPress: doRestore },
+        ]);
+      }
+    } catch (err) {
+      const msg = 'Erreur lors de la lecture du fichier.';
+      Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Erreur', msg);
+    }
+    if (e.target) e.target.value = '';
+  }, []);
 
   // Stats chart data
   const chartData = useMemo(() => {
@@ -220,18 +215,7 @@ export default function ProfileView() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      {/* BANNIÈRE D'INFORMATION */}
-      <GlassCard style={styles.infoBanner}>
-        <View style={styles.infoBannerHeader}>
-          <Ionicons name="information-circle" size={22} color={COLORS.pinkDark} />
-          <Text style={styles.infoBannerTitle}>Accès Emplois du Temps & Profils</Text>
-        </View>
-        <Text style={styles.infoBannerText}>
-          Pour accéder aux emplois du temps partagés et avoir votre espace personnel sécurisé, créez votre profil en entrant votre prénom. Seuls les 4 prénoms autorisés (**Claire, Alban, Clara, Marielle**) sont acceptés. Vous définirez votre propre code PIN secret lors de la création.
-        </Text>
-      </GlassCard>
-
-      {/* PROFIL EN COURS OU SELECTION */}
+      {/* BANNIÈRE PROFIL OU SÉLECTION */}
       {currentProfile ? (
         <GlassCard style={styles.activeProfileCard}>
           <View style={styles.avatarRow}>
@@ -241,21 +225,33 @@ export default function ProfileView() {
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.profileName}>{currentProfile.name}</Text>
               <Text style={styles.profileRole}>
-                {currentProfile.role === 'full' ? 'Accès complet (Planning & Agenda)' : 'Accès restreint (Liste de tâches uniquement)'}
+                {currentProfile.role === 'full'
+                  ? 'Accès Emplois du Temps Universitaires'
+                  : 'Accès Liste de tâches uniquement'}
               </Text>
             </View>
             <TouchableOpacity style={styles.logoutBtn} onPress={logoutProfile}>
-              <Ionicons name="log-out-outline" size={18} color={COLORS.pinkDark} />
+              <Ionicons name="log-out-outline" size={16} color={COLORS.pinkDark} />
               <Text style={styles.logoutText}>Déconnexion</Text>
             </TouchableOpacity>
           </View>
         </GlassCard>
-      ) : null}
+      ) : (
+        <GlassCard style={styles.infoBanner}>
+          <View style={styles.infoBannerHeader}>
+            <Ionicons name="school-outline" size={22} color={COLORS.pinkDark} />
+            <Text style={styles.infoBannerTitle}>Accès Emplois du temps universitaires</Text>
+          </View>
+          <Text style={styles.infoBannerText}>
+            Pour accéder aux emplois du temps universitaires et superposer les cours, créez ou rejoignez votre profil (Claire, Alban, Clara ou Marielle) en définissant votre code PIN secret.
+          </Text>
+        </GlassCard>
+      )}
 
       {/* SÉLECTEUR / CRÉATION DE PROFIL */}
       <GlassCard style={styles.profilesSectionCard}>
         <Text style={styles.sectionTitleHeader}>
-          {currentProfile ? 'Changer de profil' : 'Choisissez ou créez votre profil :'}
+          {currentProfile ? 'Changer de profil :' : 'Choisissez ou créez votre profil :'}
         </Text>
 
         <View style={styles.profilesGrid}>
@@ -280,7 +276,7 @@ export default function ProfileView() {
                 </View>
 
                 <Text style={[styles.chipName, isCurrent && styles.chipTextWhite]}>{p.name}</Text>
-                
+
                 <Text style={[styles.chipStatusText, isCurrent && styles.chipTextWhite]}>
                   {created ? (isCurrent ? 'Profil actif' : 'Créé · PIN requis') : 'Non créé · Créer'}
                 </Text>
@@ -290,66 +286,39 @@ export default function ProfileView() {
         </View>
       </GlassCard>
 
-      {/* N'AFFICHER LE RESTE QUE SI UN PROFIL EST CONNECTÉ */}
-      {currentProfile ? (
+      {/* SÉLECTEUR DE SOUS-ONGLET (EDT UNIV vs STATS/SAUVEGARDE) */}
+      <View style={styles.subTabRow}>
+        <TouchableOpacity
+          style={[styles.subTabBtn, subTab === 'stats' && styles.subTabBtnActive]}
+          onPress={() => setSubTab('stats')}
+        >
+          <Ionicons name="pie-chart-outline" size={16} color={subTab === 'stats' ? '#fff' : COLORS.text} />
+          <Text style={[styles.subTabText, subTab === 'stats' && styles.subTabTextActive]}>
+            Stats & Sauvegarde
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.subTabBtn, subTab === 'edt' && styles.subTabBtnActive]}
+          onPress={() => setSubTab('edt')}
+        >
+          <Ionicons name="calendar-outline" size={16} color={subTab === 'edt' ? '#fff' : COLORS.text} />
+          <Text style={[styles.subTabText, subTab === 'edt' && styles.subTabTextActive]}>
+            EDT Universitaires (.ics)
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* SOUS-ONGLET 1 : STATS & SAUVEGARDE (Visible par tous) */}
+      {subTab === 'stats' && (
         <>
-          {/* CARD EMPLOIS DU TEMPS PARTAGÉS (.ICS) */}
-          {canAccessSchedules ? (
-            <GlassCard style={styles.scheduleCard}>
-              <View style={styles.sectionHeaderRow}>
-                <Ionicons name="calendar-outline" size={20} color={COLORS.pinkDark} />
-                <Text style={styles.sectionTitleHeader}>Emplois du temps affichés sur l'Agenda</Text>
-              </View>
-              <Text style={styles.sectionSubText}>
-                Superposez à la volée les emplois du temps autorisés :
-              </Text>
-
-              {allowedProfiles
-                .filter((p) => p.role === 'full')
-                .map((p) => {
-                  const isChecked = !!visibleSchedules[p.id];
-                  return (
-                    <TouchableOpacity
-                      key={p.id}
-                      style={styles.scheduleToggleRow}
-                      onPress={() => toggleScheduleVisibility(p.id)}
-                      activeOpacity={0.7}
-                    >
-                      <View style={[styles.colorIndicator, { backgroundColor: p.color }]} />
-                      <Text style={styles.scheduleName}>Emploi du temps de {p.name}</Text>
-                      <View
-                        style={[
-                          styles.toggleTrack,
-                          isChecked ? { backgroundColor: p.color } : styles.toggleTrackOff,
-                        ]}
-                      >
-                        <View
-                          style={[
-                            styles.toggleThumb,
-                            isChecked ? styles.toggleThumbOn : styles.toggleThumbOff,
-                          ]}
-                        />
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-            </GlassCard>
-          ) : (
-            <GlassCard style={styles.restrictedCard}>
-              <Ionicons name="lock-closed-outline" size={24} color={COLORS.textMuted} />
-              <Text style={styles.restrictedText}>
-                Accès aux emplois du temps et au calendrier restreint pour le profil {currentProfile.name}. Marielle a un accès uniquement à la liste de ses tâches.
-              </Text>
-            </GlassCard>
-          )}
-
-          {/* CARD STATISTIQUES */}
+          {/* CARD STATISTIQUES DES TÂCHES (Global) */}
           <GlassCard style={styles.chartCard}>
-            <Text style={styles.sectionTitleHeader}>Statistiques ({currentProfile.name})</Text>
+            <Text style={styles.sectionTitleHeader}>Statistiques des tâches</Text>
 
             {total === 0 ? (
               <View style={styles.empty}>
-                <Text style={styles.emptyText}>Aucune tâche pour {currentProfile.name}</Text>
+                <Text style={styles.emptyText}>Aucune tâche dans votre liste</Text>
               </View>
             ) : (
               <>
@@ -387,11 +356,11 @@ export default function ProfileView() {
             )}
           </GlassCard>
 
-          {/* CARD SAUVEGARDE & RESTAURATION */}
+          {/* CARD SAUVEGARDE & RESTAURATION (Global) */}
           <GlassCard style={styles.backupCard}>
-            <Text style={styles.sectionTitleHeader}>Sauvegarde / Export ({currentProfile.name})</Text>
+            <Text style={styles.sectionTitleHeader}>Sauvegarde / Restauration de vos tâches</Text>
             <Text style={styles.backupSub}>
-              {total} tâche{total !== 1 ? 's' : ''} · {folders.length} dossier{folders.length !== 1 ? 's' : ''}
+              {total} tâche{total !== 1 ? 's' : ''} · {folders.length} dossier{folders.length !== 1 ? 's' : ''} en local
             </Text>
             <View style={styles.backupButtons}>
               <TouchableOpacity activeOpacity={0.8} onPress={handleExport} style={{ flex: 1 }}>
@@ -425,7 +394,77 @@ export default function ProfileView() {
             </View>
           )}
         </>
-      ) : null}
+      )}
+
+      {/* SOUS-ONGLET 2 : EMPLOIS DU TEMPS UNIVERSITAIRES (.ICS) */}
+      {subTab === 'edt' && (
+        <>
+          {!currentProfile ? (
+            <GlassCard style={styles.restrictedCard}>
+              <Ionicons name="lock-closed-outline" size={28} color={COLORS.pinkDark} />
+              <Text style={styles.restrictedTitle}>Profil requis</Text>
+              <Text style={styles.restrictedText}>
+                Veuillez sélectionner ou créer votre profil ci-dessus pour accéder à la vue des emplois du temps universitaires.
+              </Text>
+            </GlassCard>
+          ) : canAccessSchedules ? (
+            <GlassCard style={styles.scheduleCard}>
+              <View style={styles.sectionHeaderRow}>
+                <Ionicons name="school-outline" size={20} color={COLORS.pinkDark} />
+                <Text style={styles.sectionTitleHeader}>Emplois du Temps Universitaires Partagés (.ics)</Text>
+              </View>
+              <Text style={styles.sectionSubText}>
+                Superposez à la volée les emplois du temps universitaires de chacun :
+              </Text>
+
+              {allowedProfiles
+                .filter((p) => p.role === 'full')
+                .map((p) => {
+                  const isChecked = !!visibleSchedules[p.id];
+                  return (
+                    <TouchableOpacity
+                      key={p.id}
+                      style={styles.scheduleToggleRow}
+                      onPress={() => toggleScheduleVisibility(p.id)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[styles.colorIndicator, { backgroundColor: p.color }]} />
+                      <Text style={styles.scheduleName}>Emploi du temps universitaire de {p.name}</Text>
+                      <View
+                        style={[
+                          styles.toggleTrack,
+                          isChecked ? { backgroundColor: p.color } : styles.toggleTrackOff,
+                        ]}
+                      >
+                        <View
+                          style={[
+                            styles.toggleThumb,
+                            isChecked ? styles.toggleThumbOn : styles.toggleThumbOff,
+                          ]}
+                        />
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+
+              <View style={styles.icsNotice}>
+                <Ionicons name="cloud-download-outline" size={18} color={COLORS.pinkDark} />
+                <Text style={styles.icsNoticeText}>
+                  Gestion avancée des fichiers .ICS universitaires en cours d'intégration.
+                </Text>
+              </View>
+            </GlassCard>
+          ) : (
+            <GlassCard style={styles.restrictedCard}>
+              <Ionicons name="lock-closed-outline" size={28} color={COLORS.textMuted} />
+              <Text style={styles.restrictedTitle}>Accès restreint</Text>
+              <Text style={styles.restrictedText}>
+                Le profil Marielle a un accès uniquement réservé à la gestion des tâches. Les emplois du temps universitaires ne sont pas accessibles.
+              </Text>
+            </GlassCard>
+          )}
+        </>
+      )}
 
       {/* MODAL SYSTEM (Création vs Connexion) */}
       {selectedTarget && (
@@ -512,14 +551,14 @@ const styles = StyleSheet.create({
   activeProfileCard: { padding: 14, marginBottom: 14 },
   avatarRow: { flexDirection: 'row', alignItems: 'center' },
   avatarCircle: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarEmoji: { fontSize: 24 },
-  profileName: { fontSize: 18, fontWeight: '800', color: COLORS.text },
+  avatarEmoji: { fontSize: 22 },
+  profileName: { fontSize: 17, fontWeight: '800', color: COLORS.text },
   profileRole: { fontSize: 11, color: COLORS.textMuted, marginTop: 1 },
   logoutBtn: {
     flexDirection: 'row',
@@ -533,12 +572,12 @@ const styles = StyleSheet.create({
   logoutText: { fontSize: 11, color: COLORS.pinkDark, fontWeight: '700' },
 
   // Profiles Grid Section
-  profilesSectionCard: { padding: 16, marginBottom: 16 },
+  profilesSectionCard: { padding: 16, marginBottom: 14 },
   sectionTitleHeader: { fontSize: 15, fontWeight: '800', color: COLORS.pinkDark, marginBottom: 12 },
   profilesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   profileCardChip: {
     flex: 1,
-    minWidth: 140,
+    minWidth: 135,
     padding: 12,
     borderRadius: 16,
     borderWidth: 1.5,
@@ -550,6 +589,27 @@ const styles = StyleSheet.create({
   chipName: { fontSize: 15, fontWeight: '800', color: COLORS.text },
   chipStatusText: { fontSize: 10, color: COLORS.textMuted, marginTop: 2, fontWeight: '600' },
   chipTextWhite: { color: '#fff' },
+
+  // Sub Tab Navigation
+  subTabRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
+  subTabBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+  },
+  subTabBtnActive: {
+    backgroundColor: COLORS.pinkDark,
+    borderColor: COLORS.pinkDark,
+  },
+  subTabText: { fontSize: 12, fontWeight: '700', color: COLORS.text },
+  subTabTextActive: { color: '#fff' },
 
   // Schedule Card
   scheduleCard: { padding: 16, marginBottom: 16 },
@@ -563,7 +623,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(0,0,0,0.06)',
   },
   colorIndicator: { width: 12, height: 12, borderRadius: 6, marginRight: 10 },
-  scheduleName: { flex: 1, fontSize: 14, fontWeight: '600', color: COLORS.text },
+  scheduleName: { flex: 1, fontSize: 13, fontWeight: '600', color: COLORS.text },
   toggleTrack: {
     width: 44,
     height: 24,
@@ -586,8 +646,20 @@ const styles = StyleSheet.create({
   toggleThumbOn: { alignSelf: 'flex-end' },
   toggleThumbOff: { alignSelf: 'flex-start' },
 
-  restrictedCard: { padding: 16, marginBottom: 16, alignItems: 'center', gap: 8 },
-  restrictedText: { fontSize: 13, color: COLORS.textMuted, textAlign: 'center' },
+  icsNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 14,
+    padding: 10,
+    borderRadius: 12,
+    backgroundColor: 'rgba(216, 27, 96, 0.06)',
+  },
+  icsNoticeText: { flex: 1, fontSize: 11, color: COLORS.pinkDark, fontWeight: '600' },
+
+  restrictedCard: { padding: 20, marginBottom: 16, alignItems: 'center', gap: 8 },
+  restrictedTitle: { fontSize: 16, fontWeight: '800', color: COLORS.pinkDark },
+  restrictedText: { fontSize: 13, color: COLORS.textMuted, textAlign: 'center', lineHeight: 18 },
 
   // Stats Card
   chartCard: { padding: 16, marginBottom: 16 },

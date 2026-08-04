@@ -2,7 +2,6 @@ import React, { useContext, useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { TodoContext } from '../ctx/TodoContext';
-import { ProfileContext } from '../ctx/ProfileContext';
 import GlassCard from '../components/GlassCard';
 import { COLORS } from '../theme';
 
@@ -26,22 +25,7 @@ const formatLocalDate = (d) =>
 
 export default function Planning() {
   const { tasks, folders, toggleTaskDone } = useContext(TodoContext);
-  const { canAccessSchedules, currentProfile } = useContext(ProfileContext);
   const [selectedDate, setSelectedDate] = useState(new Date());
-
-  if (!canAccessSchedules) {
-    return (
-      <View style={styles.restrictedContainer}>
-        <GlassCard style={styles.restrictedCard}>
-          <Ionicons name="lock-closed" size={48} color={COLORS.pinkDark} />
-          <Text style={styles.restrictedTitle}>Accès restreint</Text>
-          <Text style={styles.restrictedSub}>
-            Le profil <Text style={{ fontWeight: '800' }}>{currentProfile.name}</Text> a un accès uniquement réservé à la liste des tâches. Le planning est masqué.
-          </Text>
-        </GlassCard>
-      </View>
-    );
-  }
 
   const dateStr = formatLocalDate(selectedDate);
   const todayStr = formatLocalDate(new Date());

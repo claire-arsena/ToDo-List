@@ -1,9 +1,7 @@
 import React, { useContext, useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import { TodoContext } from '../ctx/TodoContext';
-import { ProfileContext } from '../ctx/ProfileContext';
 import { COLORS, STATUS_COLORS } from '../theme';
 import GlassCard from '../components/GlassCard';
 import { getTodayStr, normalizeDateStr } from '../config/constants';
@@ -13,30 +11,10 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
 
 export default function Agenda() {
   const { tasks, folders } = useContext(TodoContext);
-  const { canAccessSchedules, profiles, visibleSchedules, currentProfile } = useContext(ProfileContext);
   const [current, setCurrent] = useState(new Date());
   const year = current.getFullYear();
   const month = current.getMonth();
   const today = getTodayStr();
-
-  const activeProfilesWithEDT = useMemo(
-    () => profiles.filter((p) => p.role === 'full' && visibleSchedules[p.id]),
-    [profiles, visibleSchedules]
-  );
-
-  if (!canAccessSchedules) {
-    return (
-      <View style={styles.restrictedContainer}>
-        <GlassCard style={styles.restrictedCard}>
-          <Ionicons name="lock-closed" size={48} color={COLORS.pinkDark} />
-          <Text style={styles.restrictedTitle}>Accès restreint</Text>
-          <Text style={styles.restrictedSub}>
-            Le profil <Text style={{ fontWeight: '800' }}>{currentProfile.name}</Text> a un accès uniquement réservé à la liste des tâches. Le calendrier et les emplois du temps sont masqués.
-          </Text>
-        </GlassCard>
-      </View>
-    );
-  }
 
   const getTaskColor = (t) => {
     if (t.folderId) {

@@ -1,81 +1,67 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ETATS, ETAT_TERMINE, getTodayStr } from '../config/constants';
-import { ProfileContext } from './ProfileContext';
 
 export const TodoContext = createContext();
 
+const STORAGE_KEY = '@todo_tasks_v2';
+const FOLDERS_KEY = '@todo_folders_v2';
+
 export function TodoContextProvider({ children }) {
-  const { activeProfileId } = useContext(ProfileContext);
   const [tasks, setTasks] = useState([]);
   const [folders, setFolders] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  const STORAGE_KEY = `@todo_tasks_v2_${activeProfileId}`;
-  const FOLDERS_KEY = `@todo_folders_v2_${activeProfileId}`;
-
-  // Charger le stockage spécifique au profil actif
+  // Charger le stockage global
   useEffect(() => {
-    let isMounted = true;
-    setIsLoaded(false);
-
     (async () => {
       try {
         let rawTasks = await AsyncStorage.getItem(STORAGE_KEY);
-        // Fallback migration vers le stockage global initial
-        if (!rawTasks) rawTasks = await AsyncStorage.getItem('@todo_tasks_v2');
         if (!rawTasks) rawTasks = await AsyncStorage.getItem('@todo_tasks');
         if (!rawTasks) rawTasks = await AsyncStorage.getItem('@todo_data');
 
         let rawFolders = await AsyncStorage.getItem(FOLDERS_KEY);
-        if (!rawFolders) rawFolders = await AsyncStorage.getItem('@todo_folders_v2');
         if (!rawFolders) rawFolders = await AsyncStorage.getItem('@todo_folders');
 
-        if (isMounted) {
-          if (rawTasks) {
-            const parsed = JSON.parse(rawTasks);
-            const taskArray = Array.isArray(parsed) ? parsed : (parsed.tasks || []);
-            setTasks(taskArray);
-          } else {
-            setTasks([]);
-          }
+        if (rawTasks) {
+          const parsed = JSON.parse(rawTasks);
+          const taskArray = Array.isArray(parsed) ? parsed : (parsed.tasks || []);
+          setTasks(taskArray);
+        } else {
+          setTasks([]);
+        }
 
-          if (rawFolders) {
-            const parsed = JSON.parse(rawFolders);
-            const folderArray = Array.isArray(parsed) ? parsed : (parsed.folders || []);
-            setFolders(folderArray);
-          } else {
-            setFolders([]);
-          }
+        if (rawFolders) {
+          const parsed = JSON.parse(rawFolders);
+          const folderArray = Array.isArray(parsed) ? parsed : (parsed.folders || []);
+          setFolders(folderArray);
+        } else {
+          setFolders([]);
         }
       } catch (e) {
         console.error('Erreur chargement AsyncStorage', e);
-        if (isMounted) {
-          setTasks([]);
-          setFolders([]);
-        }
+        setTasks([]);
+        setFolders([]);
       } finally {
-        if (isMounted) setIsLoaded(true);
+        setIsLoaded(true);
       }
     })();
+  }, []);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [activeProfileId]);
-
-  // Sauvegarder dans AsyncStorage pour le profil actif
+  // Sauvegarder dans AsyncStorage global
   useEffect(() => {
-    if (isLoaded && activeProfileId) {
+    if (isLoaded) {
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      AsyncStorage.setItem('@todo_tasks', JSON.stringify(tasks));
     }
-  }, [tasks, isLoaded, activeProfileId]);
+  }, [tasks, isLoaded]);
 
   useEffect(() => {
-    if (isLoaded && activeProfileId) {
+    if (isLoaded) {
       AsyncStorage.setItem(FOLDERS_KEY, JSON.stringify(folders));
+      AsyncStorage.setItem('@todo_folders', JSON.stringify(folders));
     }
-  }, [folders, isLoaded, activeProfileId]);
+  }, [folders, isLoaded]);
 
   const addTask = (taskData) => {
     const today = getTodayStr();

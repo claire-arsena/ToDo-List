@@ -4,40 +4,35 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ModalContext } from '../ctx/ModalContext';
-import { ProfileContext } from '../ctx/ProfileContext';
 import { COLORS } from '../theme';
 
 const LEFT_TABS = [
-  { routeName: 'Tasks', icon: 'checkbox-outline', iconActive: 'checkbox', label: 'Tâches', requiresFullRole: false },
-  { routeName: 'Planning', icon: 'time-outline', iconActive: 'time', label: 'Planning', requiresFullRole: true },
+  { routeName: 'Tasks', icon: 'checkbox-outline', iconActive: 'checkbox', label: 'Tâches' },
+  { routeName: 'Planning', icon: 'time-outline', iconActive: 'time', label: 'Planning' },
 ];
 const RIGHT_TABS = [
-  { routeName: 'Agenda', icon: 'calendar-outline', iconActive: 'calendar', label: 'Calendrier', requiresFullRole: true },
-  { routeName: 'Profile', icon: 'person-outline', iconActive: 'person', label: 'Profil', requiresFullRole: false },
+  { routeName: 'Agenda', icon: 'calendar-outline', iconActive: 'calendar', label: 'Calendrier' },
+  { routeName: 'Profile', icon: 'person-outline', iconActive: 'person', label: 'Profil' },
 ];
 
 export default function CustomTabBar({ state, navigation }) {
   const insets = useSafeAreaInsets();
   const { openModal } = useContext(ModalContext);
-  const { canAccessSchedules } = useContext(ProfileContext);
   const currentRoute = state.routes[state.index].name;
   const go = (name) => navigation.navigate(name);
 
-  const TabItem = ({ routeName, icon, iconActive, label, requiresFullRole }) => {
+  const TabItem = ({ routeName, icon, iconActive, label }) => {
     const active = currentRoute === routeName;
-    const isDisabled = requiresFullRole && !canAccessSchedules;
 
     return (
       <TouchableOpacity
-        style={[styles.tabItem, isDisabled && { opacity: 0.3 }]}
-        onPress={() => {
-          if (!isDisabled) go(routeName);
-        }}
-        activeOpacity={isDisabled ? 1 : 0.7}
+        style={styles.tabItem}
+        onPress={() => go(routeName)}
+        activeOpacity={0.7}
       >
         <View style={styles.iconWrap}>
           <Ionicons
-            name={isDisabled ? 'lock-closed-outline' : active ? iconActive : icon}
+            name={active ? iconActive : icon}
             size={22}
             color={active ? COLORS.pinkDark : COLORS.textMuted}
           />
