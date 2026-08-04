@@ -60,6 +60,7 @@ export default function TaskFormModal() {
   const { currentTheme } = useContext(ProfileContext);
   const [form, setForm] = useState(EMPTY);
   const [hasDate, setHasDate] = useState(true);
+  const [hasChecklist, setHasChecklist] = useState(false);
 
   // Hauteur personnalisable et persistante en LocalStorage
   const [sheetHeight, setSheetHeight] = useState(DEFAULT_HEIGHT);
@@ -110,8 +111,10 @@ export default function TaskFormModal() {
           isRegular: modalData.isRegular !== undefined ? modalData.isRegular : true,
           subtasks: Array.isArray(modalData.subtasks) ? modalData.subtasks : [],
         });
+        setHasChecklist(Array.isArray(modalData.subtasks) && modalData.subtasks.length > 0);
       } else {
         setHasDate(true);
+        setHasChecklist(false);
         setForm({ ...EMPTY, startDate: getToday(), endDate: getToday(), status: ETATS.NOUVEAU });
       }
     }
@@ -231,11 +234,12 @@ export default function TaskFormModal() {
         endDate: '',
         dueDate: '',
       }),
-      startTime: form.startTime,
-      endTime: form.endTime,
+      startTime: hasDate ? form.startTime : '',
+      endTime: hasDate ? form.endTime : '',
       status: modalData ? form.status : ETATS.NOUVEAU,
       folderId: form.folderId,
       isRegular: form.isRegular,
+      subtasks: hasChecklist ? (form.subtasks || []) : [],
     };
     modalData ? updateTask(modalData.id, payload) : addTask(payload);
     setForm(EMPTY);
@@ -417,43 +421,73 @@ export default function TaskFormModal() {
                 />
               </View>
 
-              {/* Sous-tâches / Checklists */}
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Checklist / Sous-tâches</Text>
-                <View style={styles.subtaskInputRow}>
-                  <TextInput
-                    style={[styles.iosInput, styles.subtaskInput]}
-                    value={newSubtaskTitle}
-                    onChangeText={setNewSubtaskTitle}
-                    placeholder="Ajouter un élément (ex: Maillot de bain)..."
-                    placeholderTextColor={COLORS.textMuted}
-                    onSubmitEditing={handleAddSubtask}
-                  />
+              {/* Toggle Ajouter une Checklist */}
+              <View style={[styles.regularCard, { backgroundColor: currentTheme.tint, borderColor: currentTheme.primary + '33', marginTop: 10 }]}>
+                <View style={styles.regularTextRow}>
+                  <Ionicons name="list" size={20} color={currentTheme.primary} />
+                  <View style={{ flex: 1, marginLeft: 8 }}>
+                    <Text style={[styles.regularTitle, { color: currentTheme.primary }]}>Ajouter une checklist</Text>
+                    <Text style={styles.regularSub}>
+                      {hasChecklist ? 'Une liste à cocher sera intégrée à la tâche' : 'Pas de checklist pour cette tâche'}
+                    </Text>
+                  </View>
                   <TouchableOpacity
-                    style={[styles.addSubtaskBtn, { backgroundColor: currentTheme.primary }]}
-                    onPress={handleAddSubtask}
+                    activeOpacity={0.8}
+                    onPress={() => setHasChecklist(!hasChecklist)}
+                    style={[
+                      styles.customToggleTrack,
+                      hasChecklist ? { backgroundColor: currentTheme.primary } : styles.customToggleTrackInactive,
+                    ]}
                   >
-                    <Ionicons name="add" size={20} color="#fff" />
+                    <View
+                      style={[
+                        styles.customToggleThumb,
+                        hasChecklist ? styles.customToggleThumbActive : styles.customToggleThumbInactive,
+                      ]}
+                    />
                   </TouchableOpacity>
                 </View>
-
-                {form.subtasks && form.subtasks.length > 0 && (
-                  <View style={styles.subtasksList}>
-                    {form.subtasks.map((st) => (
-                      <View key={st.id} style={styles.subtaskItem}>
-                        <View style={styles.subtaskDot} />
-                        <Text style={styles.subtaskTitle}>{st.title}</Text>
-                        <TouchableOpacity
-                          style={styles.removeSubtaskBtn}
-                          onPress={() => handleRemoveSubtask(st.id)}
-                        >
-                          <Ionicons name="close" size={16} color={COLORS.textMuted} />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </View>
-                )}
               </View>
+
+              {/* Sous-tâches / Checklists */}
+              {hasChecklist && (
+                <View style={[styles.formGroup, { marginTop: 15 }]}>
+                  <Text style={styles.label}>Éléments de la liste</Text>
+                  <View style={styles.subtaskInputRow}>
+                    <TextInput
+                      style={[styles.iosInput, styles.subtaskInput]}
+                      value={newSubtaskTitle}
+                      onChangeText={setNewSubtaskTitle}
+                      placeholder="Ajouter un élément (ex: Maillot de bain)..."
+                      placeholderTextColor={COLORS.textMuted}
+                      onSubmitEditing={handleAddSubtask}
+                    />
+                    <TouchableOpacity
+                      style={[styles.addSubtaskBtn, { backgroundColor: currentTheme.primary }]}
+                      onPress={handleAddSubtask}
+                    >
+                      <Ionicons name="add" size={20} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+
+                  {form.subtasks && form.subtasks.length > 0 && (
+                    <View style={styles.subtasksList}>
+                      {form.subtasks.map((st) => (
+                        <View key={st.id} style={styles.subtaskItem}>
+                          <View style={styles.subtaskDot} />
+                          <Text style={styles.subtaskTitle}>{st.title}</Text>
+                          <TouchableOpacity
+                            style={styles.removeSubtaskBtn}
+                            onPress={() => handleRemoveSubtask(st.id)}
+                          >
+                            <Ionicons name="close" size={16} color={COLORS.textMuted} />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              )}
 
               {/* Toggle Ajouter une date */}
               <View style={[styles.regularCard, { backgroundColor: currentTheme.tint, borderColor: currentTheme.primary + '33' }]}>
