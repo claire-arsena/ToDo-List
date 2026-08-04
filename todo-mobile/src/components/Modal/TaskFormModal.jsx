@@ -56,6 +56,7 @@ const EMPTY = {
 export default function TaskFormModal() {
   const { addTask, updateTask, folders, addFolder, deleteFolder } = useContext(TodoContext);
   const { isModalOpen, modalType, modalData, closeModal } = useContext(ModalContext);
+  const { currentTheme } = useContext(ProfileContext);
   const [form, setForm] = useState(EMPTY);
   const [hasDate, setHasDate] = useState(true);
 
