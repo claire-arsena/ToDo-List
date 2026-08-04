@@ -1,27 +1,22 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const PROFILES = [
-  { id: 'claire', name: 'Claire', role: 'full', color: '#d81b60', defaultPin: '1234', avatar: '👧' },
-  { id: 'alban', name: 'Alban', role: 'full', color: '#1e88e5', defaultPin: '5678', avatar: '👦' },
-  { id: 'clara', name: 'Clara', role: 'full', color: '#8e24aa', defaultPin: '4321', avatar: '👩' },
-  { id: 'marielle', name: 'Marielle', role: 'restricted', color: '#ff9800', defaultPin: '0000', avatar: '👩‍💼' },
+export const ALLOWED_PROFILES = [
+  { id: 'claire', name: 'Claire', role: 'full', color: '#d81b60', avatar: '👧' },
+  { id: 'alban', name: 'Alban', role: 'full', color: '#1e88e5', avatar: '👦' },
+  { id: 'clara', name: 'Clara', role: 'full', color: '#8e24aa', avatar: '👩' },
+  { id: 'marielle', name: 'Marielle', role: 'restricted', color: '#ff9800', avatar: '👩‍💼' },
 ];
 
-const ACTIVE_PROFILE_KEY = '@todo_active_profile_v1';
-const PINS_KEY = '@todo_profile_pins_v1';
-const VISIBLE_SCHEDULES_KEY = '@todo_visible_schedules_v1';
+const ACTIVE_PROFILE_KEY = '@todo_active_profile_v2';
+const CREATED_PROFILES_KEY = '@todo_created_profiles_v2';
+const VISIBLE_SCHEDULES_KEY = '@todo_visible_schedules_v2';
 
 export const ProfileContext = createContext();
 
 export function ProfileContextProvider({ children }) {
-  const [activeProfileId, setActiveProfileId] = useState('claire');
-  const [pins, setPins] = useState({
-    claire: '1234',
-    alban: '5678',
-    clara: '4321',
-    marielle: '0000',
-  });
+  const [activeProfileId, setActiveProfileId] = useState(null);
+  const [createdProfiles, setCreatedProfiles] = useState({}); // { claire: { pin: '1234' }, ... }
   const [visibleSchedules, setVisibleSchedules] = useState({
     claire: true,
     alban: true,
@@ -29,18 +24,20 @@ export function ProfileContextProvider({ children }) {
   });
   const [isProfileLoaded, setIsProfileLoaded] = useState(false);
 
-  // Load profile settings from storage
+  // Load from storage
   useEffect(() => {
     (async () => {
       try {
-        const savedProfile = await AsyncStorage.getItem(ACTIVE_PROFILE_KEY);
-        if (savedProfile && PROFILES.some(p => p.id === savedProfile)) {
-          setActiveProfileId(savedProfile);
+        const savedCreated = await AsyncStorage.getItem(CREATED_PROFILES_KEY);
+        let parsedCreated = {};
+        if (savedCreated) {
+          parsedCreated = JSON.parse(savedCreated);
+          setCreatedProfiles(parsedCreated);
         }
 
-        const savedPins = await AsyncStorage.getItem(PINS_KEY);
-        if (savedPins) {
-          setPins(JSON.parse(savedPins));
+        const savedActive = await AsyncStorage.getItem(ACTIVE_PROFILE_KEY);
+        if (savedActive && parsedCreated[savedActive]) {
+          setActiveProfileId(savedActive);
         }
 
         const savedSchedules = await AsyncStorage.getItem(VISIBLE_SCHEDULES_KEY);
@@ -48,58 +45,77 @@ export function ProfileContextProvider({ children }) {
           setVisibleSchedules(JSON.parse(savedSchedules));
         }
       } catch (e) {
-        console.error('Error loading profile context:', e);
+        console.error('Error loading ProfileContext:', e);
       } finally {
         setIsProfileLoaded(true);
       }
     })();
   }, []);
 
-  // Save active profile
+  // Persist active profile
   useEffect(() => {
     if (isProfileLoaded) {
-      AsyncStorage.setItem(ACTIVE_PROFILE_KEY, activeProfileId);
+      if (activeProfileId) {
+        AsyncStorage.setItem(ACTIVE_PROFILE_KEY, activeProfileId);
+      } else {
+        AsyncStorage.removeItem(ACTIVE_PROFILE_KEY);
+      }
     }
   }, [activeProfileId, isProfileLoaded]);
 
-  // Save pins
+  // Persist created profiles
   useEffect(() => {
     if (isProfileLoaded) {
-      AsyncStorage.setItem(PINS_KEY, JSON.stringify(pins));
+      AsyncStorage.setItem(CREATED_PROFILES_KEY, JSON.stringify(createdProfiles));
     }
-  }, [pins, isProfileLoaded]);
+  }, [createdProfiles, isProfileLoaded]);
 
-  // Save visible schedules
+  // Persist visible schedules
   useEffect(() => {
     if (isProfileLoaded) {
       AsyncStorage.setItem(VISIBLE_SCHEDULES_KEY, JSON.stringify(visibleSchedules));
     }
   }, [visibleSchedules, isProfileLoaded]);
 
-  const currentProfile = PROFILES.find((p) => p.id === activeProfileId) || PROFILES[0];
+  const currentProfile = ALLOWED_PROFILES.find((p) => p.id === activeProfileId) || null;
 
-  const verifyPin = (profileId, pinInput) => {
-    const correctPin = pins[profileId] || PROFILES.find((p) => p.id === profileId)?.defaultPin;
-    return pinInput === correctPin;
+  const isProfileCreated = (profileId) => {
+    return !!createdProfiles[profileId];
+  };
+
+  const createProfile = (profileId, pinCode) => {
+    const found = ALLOWED_PROFILES.find((p) => p.id === profileId || p.name.toLowerCase() === profileId.toLowerCase());
+    if (!found) {
+      return { success: false, error: 'Prénom non autorisé. Seuls Claire, Alban, Clara et Marielle peuvent créer un profil.' };
+    }
+    if (!pinCode || pinCode.length < 4) {
+      return { success: false, error: 'Veuillez définir un code PIN d\'au moins 4 chiffres.' };
+    }
+
+    const newCreated = {
+      ...createdProfiles,
+      [found.id]: { pin: pinCode, createdAt: new Date().toISOString() },
+    };
+    setCreatedProfiles(newCreated);
+    setActiveProfileId(found.id);
+    return { success: true };
   };
 
   const switchProfile = (profileId, pinInput) => {
-    if (verifyPin(profileId, pinInput)) {
-      setActiveProfileId(profileId);
-      return { success: true };
+    const target = createdProfiles[profileId];
+    if (!target) {
+      return { success: false, error: 'Profil non encore créé.' };
     }
-    return { success: false, error: 'Code PIN incorrect' };
+    if (target.pin !== pinInput.trim()) {
+      return { success: false, error: 'Code PIN incorrect. Seul le propriétaire du profil peut y accéder.' };
+    }
+
+    setActiveProfileId(profileId);
+    return { success: true };
   };
 
-  const updatePin = (profileId, oldPin, newPin) => {
-    if (!verifyPin(profileId, oldPin)) {
-      return { success: false, error: 'Ancien code PIN incorrect' };
-    }
-    if (!newPin || newPin.length < 4) {
-      return { success: false, error: 'Le nouveau code PIN doit comporter au moins 4 chiffres' };
-    }
-    setPins((prev) => ({ ...prev, [profileId]: newPin }));
-    return { success: true };
+  const logoutProfile = () => {
+    setActiveProfileId(null);
   };
 
   const toggleScheduleVisibility = (profileId) => {
@@ -109,20 +125,21 @@ export function ProfileContextProvider({ children }) {
     }));
   };
 
-  const canAccessSchedules = currentProfile.role === 'full';
+  const canAccessSchedules = currentProfile && currentProfile.role === 'full';
 
   return (
     <ProfileContext.Provider
       value={{
-        profiles: PROFILES,
+        allowedProfiles: ALLOWED_PROFILES,
+        createdProfiles,
         activeProfileId,
         currentProfile,
-        pins,
         visibleSchedules,
         isProfileLoaded,
-        verifyPin,
+        isProfileCreated,
+        createProfile,
         switchProfile,
-        updatePin,
+        logoutProfile,
         toggleScheduleVisibility,
         canAccessSchedules,
       }}
