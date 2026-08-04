@@ -12,6 +12,7 @@ const getToday = () => {
 function TaskFormModal() {
   const { addTask, updateTask } = useContext(TodoContext);
   const { isModalOpen, modalData, closeModal } = useContext(ModalContext);
+  const [hasDate, setHasDate] = useState(true);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -25,6 +26,8 @@ function TaskFormModal() {
   useEffect(() => {
     if (isModalOpen) {
       if (modalData) {
+        const taskHasDate = !!(modalData.startDate || modalData.endDate);
+        setHasDate(taskHasDate);
         setFormData({
           title: modalData.title || '',
           description: modalData.description || '',
@@ -35,12 +38,12 @@ function TaskFormModal() {
           status: modalData.status || ETATS.NOUVEAU,
         });
       } else {
-        const today = getToday();
+        setHasDate(false);
         setFormData({
           title: '',
           description: '',
-          startDate: today,
-          endDate: today,
+          startDate: '',
+          endDate: '',
           startTime: '',
           endTime: '',
           status: ETATS.NOUVEAU,
@@ -50,7 +53,15 @@ function TaskFormModal() {
   }, [modalData, isModalOpen]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, checked, value } = e.target;
+    if (name === 'hasDate') {
+      setHasDate(checked);
+      // clear dates when disabling
+      if (!checked) {
+        setFormData(prev => ({ ...prev, startDate: '', endDate: '' }));
+      }
+      return;
+    }
     setFormData(prev => {
       const updated = { ...prev, [name]: value };
       // Auto-sync endDate when startDate changes and endDate is before startDate
@@ -67,8 +78,7 @@ function TaskFormModal() {
       const taskPayload = {
         title: formData.title.trim(),
         description: formData.description.trim(),
-        startDate: formData.startDate,
-        endDate: formData.endDate,
+        ...(hasDate && { startDate: formData.startDate, endDate: formData.endDate }),
         startTime: formData.startTime,
         endTime: formData.endTime,
         status: formData.status,
@@ -113,6 +123,18 @@ function TaskFormModal() {
               autoFocus
             />
           </fieldset>
+          <fieldset className="form-group">
+            <label htmlFor="task-hasDate">
+              <input
+                type="checkbox"
+                id="task-hasDate"
+                name="hasDate"
+                checked={hasDate}
+                onChange={handleChange}
+              />
+              Ajouter une date
+            </label>
+          </fieldset>
 
           <fieldset className="form-group">
             <label htmlFor="task-description">Description</label>
@@ -126,52 +148,55 @@ function TaskFormModal() {
             />
           </fieldset>
 
-          <div className="form-row">
-            <fieldset className="form-group form-group-flex">
-              <label htmlFor="task-startDate">Début</label>
-              <input
-                type="date"
-                id="task-startDate"
-                name="startDate"
-                value={formData.startDate}
-                onChange={handleChange}
-              />
-            </fieldset>
-            <fieldset className="form-group form-group-time">
-              <label htmlFor="task-startTime">Heure</label>
-              <input
-                type="time"
-                id="task-startTime"
-                name="startTime"
-                value={formData.startTime}
-                onChange={handleChange}
-              />
-            </fieldset>
-          </div>
+          {hasDate && (
+            <>
+              <div className="form-row">
+                <fieldset className="form-group form-group-flex">
+                  <label htmlFor="task-startDate">Début</label>
+                  <input
+                    type="date"
+                    id="task-startDate"
+                    name="startDate"
+                    value={formData.startDate}
+                    onChange={handleChange}
+                  />
+                </fieldset>
+                <fieldset className="form-group form-group-time">
+                  <label htmlFor="task-startTime">Heure</label>
+                  <input
+                    type="time"
+                    id="task-startTime"
+                    name="startTime"
+                    value={formData.startTime}
+                    onChange={handleChange}
+                  />
+                </fieldset>
+              </div>
 
-          <div className="form-row">
-            <fieldset className="form-group form-group-flex">
-              <label htmlFor="task-endDate">Fin</label>
-              <input
-                type="date"
-                id="task-endDate"
-                name="endDate"
-                value={formData.endDate}
-                onChange={handleChange}
-                min={formData.startDate}
-              />
-            </fieldset>
-            <fieldset className="form-group form-group-time">
-              <label htmlFor="task-endTime">Heure</label>
-              <input
-                type="time"
-                id="task-endTime"
-                name="endTime"
-                value={formData.endTime}
-                onChange={handleChange}
-              />
-            </fieldset>
-          </div>
+              <div className="form-row">
+                <fieldset className="form-group form-group-flex">
+                  <label htmlFor="task-endDate">Fin</label>
+                  <input
+                    type="date"
+                    id="task-endDate"
+                    name="endDate"
+                    value={formData.endDate}
+                    onChange={handleChange}
+                  />
+                </fieldset>
+                <fieldset className="form-group form-group-time">
+                  <label htmlFor="task-endTime">Heure</label>
+                  <input
+                    type="time"
+                    id="task-endTime"
+                    name="endTime"
+                    value={formData.endTime}
+                    onChange={handleChange}
+                  />
+                </fieldset>
+              </div>
+            </>
+          )}
 
           {modalData && (
             <fieldset className="form-group">

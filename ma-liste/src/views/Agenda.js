@@ -52,6 +52,8 @@ function Agenda() {
     return map;
   }, [tasks]);
 
+  const undatedTasks = useMemo(() => tasks.filter(t => !t.startDate && !t.endDate), [tasks]);
+
   const days = useMemo(() => {
     const first = new Date(year, month, 1).getDay();
     const start = first === 0 ? 6 : first - 1;
@@ -87,6 +89,16 @@ function Agenda() {
         <button className="btn btn-small btn-secondary" onClick={() => setCurrent(new Date(year, month + 1, 1))}>▶</button>
         <button className="btn btn-small btn-primary" onClick={() => setCurrent(new Date())}>Aujourd'hui</button>
       </nav>
+      {undatedTasks.length > 0 && (
+        <section className="undated-tasks">
+          <h2>Sans date</h2>
+          <ul>
+            {undatedTasks.map(t => (
+              <li key={t.id} style={{ backgroundColor: `var(${STATUS_COLORS[t.status] || '--color-pink-light'})` }}>{t.title}</li>
+            ))}
+          </ul>
+        </section>
+      )}
       <table className="agenda-grid">
         <thead>
           <tr>{DAYS.map(d => <th key={d}>{d}</th>)}</tr>

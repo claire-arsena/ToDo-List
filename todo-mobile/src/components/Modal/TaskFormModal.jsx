@@ -56,6 +56,7 @@ export default function TaskFormModal() {
   const { addTask, updateTask, folders, addFolder, deleteFolder } = useContext(TodoContext);
   const { isModalOpen, modalType, modalData, closeModal } = useContext(ModalContext);
   const [form, setForm] = useState(EMPTY);
+  const [hasDate, setHasDate] = useState(true);
 
   // Hauteur personnalisable et persistante en LocalStorage
   const [sheetHeight, setSheetHeight] = useState(DEFAULT_HEIGHT);
@@ -88,6 +89,8 @@ export default function TaskFormModal() {
   useEffect(() => {
     if (isModalOpen && modalType === 'task') {
       if (modalData) {
+        const taskHasDate = !!(modalData.startDate || modalData.endDate || modalData.dueDate);
+        setHasDate(taskHasDate);
         setForm({
           title: modalData.title || '',
           description: modalData.description || '',
@@ -100,6 +103,7 @@ export default function TaskFormModal() {
           isRegular: modalData.isRegular !== undefined ? modalData.isRegular : true,
         });
       } else {
+        setHasDate(false);
         setForm({ ...EMPTY, startDate: getToday(), endDate: getToday(), status: ETATS.NOUVEAU });
       }
     }
@@ -195,11 +199,17 @@ export default function TaskFormModal() {
     const payload = {
       title: form.title.trim(),
       description: form.description.trim(),
-      startDate: form.startDate,
-      endDate: form.endDate || form.startDate,
+      ...(hasDate ? {
+        startDate: form.startDate,
+        endDate: form.endDate || form.startDate,
+        dueDate: form.endDate || form.startDate,
+      } : {
+        startDate: '',
+        endDate: '',
+        dueDate: '',
+      }),
       startTime: form.startTime,
       endTime: form.endTime,
-      dueDate: form.endDate || form.startDate,
       status: modalData ? form.status : ETATS.NOUVEAU,
       folderId: form.folderId,
       isRegular: form.isRegular,
@@ -384,43 +394,75 @@ export default function TaskFormModal() {
                 />
               </View>
 
-              {/* Dates */}
-              <View style={styles.row}>
-                <View style={[styles.formGroup, { flex: 1 }]}>
-                  <DatePickerInput
-                    label="Date de début"
-                    value={form.startDate}
-                    onChange={(v) => set('startDate', v)}
-                  />
-                </View>
-                <View style={[styles.formGroup, { flex: 1 }]}>
-                  <DatePickerInput
-                    label="Date de fin"
-                    value={form.endDate}
-                    onChange={(v) => set('endDate', v)}
-                  />
+              {/* Toggle Ajouter une date */}
+              <View style={styles.regularCard}>
+                <View style={styles.regularTextRow}>
+                  <Ionicons name="calendar-outline" size={20} color={COLORS.pinkDark} />
+                  <View style={{ flex: 1, marginLeft: 8 }}>
+                    <Text style={styles.regularTitle}>Ajouter une date</Text>
+                    <Text style={styles.regularSub}>
+                      {hasDate ? 'La tâche sera planifiée avec des dates' : 'Tâche rapide sans date d\'échéance'}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => setHasDate(!hasDate)}
+                    style={[
+                      styles.customToggleTrack,
+                      hasDate ? styles.customToggleTrackActive : styles.customToggleTrackInactive,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.customToggleThumb,
+                        hasDate ? styles.customToggleThumbActive : styles.customToggleThumbInactive,
+                      ]}
+                    />
+                  </TouchableOpacity>
                 </View>
               </View>
 
-              {/* Heures style réveil / alarme */}
-              <View style={styles.row}>
-                <View style={[styles.formGroup, { flex: 1 }]}>
-                  <TimePickerInput
-                    label="Heure début"
-                    value={form.startTime}
-                    onChange={(v) => set('startTime', v)}
-                    placeholder="09:00"
-                  />
-                </View>
-                <View style={[styles.formGroup, { flex: 1 }]}>
-                  <TimePickerInput
-                    label="Heure fin"
-                    value={form.endTime}
-                    onChange={(v) => set('endTime', v)}
-                    placeholder="10:00"
-                  />
-                </View>
-              </View>
+              {/* Dates */}
+              {hasDate && (
+                <>
+                  <View style={styles.row}>
+                    <View style={[styles.formGroup, { flex: 1 }]}>
+                      <DatePickerInput
+                        label="Date de début"
+                        value={form.startDate}
+                        onChange={(v) => set('startDate', v)}
+                      />
+                    </View>
+                    <View style={[styles.formGroup, { flex: 1 }]}>
+                      <DatePickerInput
+                        label="Date de fin"
+                        value={form.endDate}
+                        onChange={(v) => set('endDate', v)}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Heures style réveil / alarme */}
+                  <View style={styles.row}>
+                    <View style={[styles.formGroup, { flex: 1 }]}>
+                      <TimePickerInput
+                        label="Heure début"
+                        value={form.startTime}
+                        onChange={(v) => set('startTime', v)}
+                        placeholder="09:00"
+                      />
+                    </View>
+                    <View style={[styles.formGroup, { flex: 1 }]}>
+                      <TimePickerInput
+                        label="Heure fin"
+                        value={form.endTime}
+                        onChange={(v) => set('endTime', v)}
+                        placeholder="10:00"
+                      />
+                    </View>
+                  </View>
+                </>
+              )}
 
               {/* Option Tâche Régulière */}
               <View style={styles.regularCard}>
