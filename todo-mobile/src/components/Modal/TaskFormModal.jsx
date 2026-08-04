@@ -89,6 +89,7 @@ export default function TaskFormModal() {
 
   useEffect(() => {
     if (isModalOpen && modalType === 'task') {
+      setSheetHeight(DEFAULT_HEIGHT);
       if (modalData) {
         const taskHasDate = !!(modalData.startDate || modalData.endDate || modalData.dueDate);
         setHasDate(taskHasDate);
