@@ -12,8 +12,20 @@ export function TodoContextProvider({ children }) {
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Profile-scoped or global storage keys
+  const SHARED_ETUDES_KEY = '@todo_tasks_shared_etudes';
   const STORAGE_KEY = activeProfileId ? `@todo_tasks_profile_${activeProfileId}` : '@todo_tasks_v2';
   const FOLDERS_KEY = activeProfileId ? `@todo_folders_profile_${activeProfileId}` : '@todo_folders_v2';
+
+  const isEtudesTask = (t, currentFolders) => {
+    if (!t) return false;
+    if (t.folderId === 'etudes') return true;
+    const f = (currentFolders || []).find((fold) => fold.id === t.folderId);
+    if (f && f.title) {
+      const lower = f.title.toLowerCase();
+      if (lower.includes('étud') || lower.includes('etud')) return true;
+    }
+    return false;
+  };
 
   // Charger et restaurer automatiquement les tâches
   useEffect(() => {
@@ -22,16 +34,21 @@ export function TodoContextProvider({ children }) {
 
     (async () => {
       try {
-        let rawTasks = await AsyncStorage.getItem(STORAGE_KEY);
+        let rawProfileTasks = await AsyncStorage.getItem(STORAGE_KEY);
+        let rawSharedTasks = await AsyncStorage.getItem(SHARED_ETUDES_KEY);
         let rawFolders = await AsyncStorage.getItem(FOLDERS_KEY);
 
         if (isMounted) {
-          if (rawTasks) {
-            const parsed = JSON.parse(rawTasks);
-            const taskArray = Array.isArray(parsed) ? parsed : (parsed.tasks || []);
-            setTasks(taskArray);
-          } else {
-            setTasks([]);
+          let profileTasks = [];
+          if (rawProfileTasks) {
+            const parsed = JSON.parse(rawProfileTasks);
+            profileTasks = Array.isArray(parsed) ? parsed : (parsed.tasks || []);
+          }
+
+          let sharedTasks = [];
+          if (rawSharedTasks) {
+            const parsed = JSON.parse(rawSharedTasks);
+            sharedTasks = Array.isArray(parsed) ? parsed : (parsed.tasks || []);
           }
 
           let initialFolders = [];
@@ -56,6 +73,20 @@ export function TodoContextProvider({ children }) {
             }
           }
           setFolders(initialFolders);
+
+          // Filtrer les tâches spécifiques au profil (non-études)
+          const nonEtudesProfileTasks = profileTasks.filter((t) => !isEtudesTask(t, initialFolders));
+          const etudesFromProfile = profileTasks.filter((t) => isEtudesTask(t, initialFolders));
+
+          // Fusionner les tâches d'études s'il y en avait enregistrées localement
+          const combinedShared = [...sharedTasks];
+          etudesFromProfile.forEach((t) => {
+            if (!combinedShared.some((st) => st.id === t.id)) {
+              combinedShared.push(t);
+            }
+          });
+
+          setTasks([...nonEtudesProfileTasks, ...combinedShared]);
         }
       } catch (e) {
         console.error('Erreur chargement AsyncStorage', e);
@@ -81,12 +112,16 @@ export function TodoContextProvider({ children }) {
     };
   }, [activeProfileId]);
 
-  // Sauvegarder automatiquement dans le stockage du profil actif
+  // Sauvegarder séparément les tâches "Études" (partagées) et les tâches spécifiques au profil
   useEffect(() => {
     if (isLoaded) {
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      const etudesTasks = tasks.filter((t) => isEtudesTask(t, folders));
+      const profileSpecificTasks = tasks.filter((t) => !isEtudesTask(t, folders));
+
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(profileSpecificTasks));
+      AsyncStorage.setItem(SHARED_ETUDES_KEY, JSON.stringify(etudesTasks));
     }
-  }, [tasks, isLoaded, STORAGE_KEY]);
+  }, [tasks, isLoaded, STORAGE_KEY, folders]);
 
   useEffect(() => {
     if (isLoaded) {
