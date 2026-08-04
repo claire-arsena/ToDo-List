@@ -329,12 +329,12 @@ export default function ProfileView() {
           />
           <View style={{ flex: 1, marginLeft: 8 }}>
             <Text style={[styles.modeTitle, { color: currentTheme.primary }]}>
-              {appMode === 'university' ? 'Mode EDT Universitaire' : 'Mode ToDo-List'}
+              {appMode === 'university' ? 'Mode universitaire' : 'Mode perso'}
             </Text>
             <Text style={styles.modeSub}>
               {appMode === 'university'
                 ? 'Planning et Calendrier affichent les cours universitaires. L\'onglet Tâches est ciblé sur les devoirs d\'études.'
-                : 'Planning, Tâches et Calendrier affichent vos activités personnelles ToDo-List.'}
+                : 'Planning, Tâches et Calendrier affichent vos activités personnelles.'}
             </Text>
           </View>
         </View>
@@ -349,8 +349,8 @@ export default function ProfileView() {
             <Ionicons name="swap-horizontal-outline" size={18} color="#fff" />
             <Text style={styles.switchModeBtnText}>
               {appMode === 'university'
-                ? 'Basculer en Mode ToDo-List'
-                : 'Basculer en Mode EDT Universitaire'}
+                ? 'Basculer en Mode perso'
+                : 'Basculer en Mode universitaire'}
             </Text>
           </LinearGradient>
         </TouchableOpacity>

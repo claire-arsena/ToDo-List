@@ -86,21 +86,21 @@ export default function Tasks() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      {/* Banner Mode EDT Universitaire */}
+      {/* Banner Mode Universitaire */}
       {appMode === 'university' && (
         <GlassCard style={styles.univBannerCard}>
           <View style={styles.univBannerInner}>
             <Ionicons name="school" size={22} color={currentTheme.primary} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.univBannerTitle, { color: currentTheme.primary }]}>
-                Mode EDT Universitaire — Rendus & Devoirs
+                Mode universitaire — Rendus & Devoirs
               </Text>
               <Text style={styles.univBannerSub}>
                 Affichage ciblé sur les devoirs, projets et rendus universitaires à rendre.
               </Text>
             </View>
             <TouchableOpacity style={styles.univSwitchBtn} onPress={toggleAppMode}>
-              <Text style={styles.univSwitchBtnText}>Mode Perso</Text>
+              <Text style={styles.univSwitchBtnText}>Mode perso</Text>
             </TouchableOpacity>
           </View>
         </GlassCard>

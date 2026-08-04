@@ -34,9 +34,9 @@ export default function AppHeader({ routeName }) {
             </View>
             <View>
               <Text style={styles.title}>{title}</Text>
-              {appMode === 'university' && (
-                <Text style={[styles.modeSubtitle, { color: currentTheme.primary }]}>Mode EDT Universitaire</Text>
-              )}
+              <Text style={[styles.modeSubtitle, { color: currentTheme.primary }]}>
+                {appMode === 'university' ? 'Mode universitaire' : 'Mode perso'}
+              </Text>
             </View>
           </View>
 
