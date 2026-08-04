@@ -2,6 +2,7 @@ import React, { useContext, useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { TodoContext } from '../../ctx/TodoContext';
+import { ProfileContext } from '../../ctx/ProfileContext';
 import TasksItem from './TasksItem';
 import GlassCard from '../../components/GlassCard';
 import { COLORS } from '../../theme';
@@ -9,6 +10,7 @@ import { isTaskOverdue } from '../../config/constants';
 
 export default function Tasks() {
   const { tasks, folders, deleteFolder, rescheduleToToday } = useContext(TodoContext);
+  const { appMode, currentTheme, toggleAppMode } = useContext(ProfileContext);
   const [filterTab, setFilterTab] = useState('active'); // 'all', 'active', 'completed', 'overdue'
   const [selectedFolderId, setSelectedFolderId] = useState(null); // null = all folders
 
@@ -35,9 +37,20 @@ export default function Tasks() {
   };
 
   const folderTasks = useMemo(() => {
-    if (selectedFolderId === null) return tasks;
-    return tasks.filter((t) => t.folderId === selectedFolderId);
-  }, [tasks, selectedFolderId]);
+    let base = tasks;
+    if (appMode === 'university') {
+      // Filter for study-related tasks (folder title contains Etudes/Univ or task has tag/folder)
+      base = tasks.filter((t) => {
+        if (!t.folderId) return true;
+        const f = folders.find((folder) => folder.id === t.folderId);
+        if (!f) return true;
+        const lower = f.title.toLowerCase();
+        return lower.includes('étud') || lower.includes('etud') || lower.includes('univ') || lower.includes('cours') || lower.includes('devoir');
+      });
+    }
+    if (selectedFolderId === null) return base;
+    return base.filter((t) => t.folderId === selectedFolderId);
+  }, [tasks, selectedFolderId, appMode, folders]);
 
   const overdueTasks = useMemo(() => {
     return folderTasks.filter((t) => isTaskOverdue(t));
@@ -73,6 +86,26 @@ export default function Tasks() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
+      {/* Banner Mode EDT Universitaire */}
+      {appMode === 'university' && (
+        <GlassCard style={styles.univBannerCard}>
+          <View style={styles.univBannerInner}>
+            <Ionicons name="school" size={22} color={currentTheme.primary} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.univBannerTitle, { color: currentTheme.primary }]}>
+                Mode EDT Universitaire — Rendus & Devoirs
+              </Text>
+              <Text style={styles.univBannerSub}>
+                Affichage ciblé sur les devoirs, projets et rendus universitaires à rendre.
+              </Text>
+            </View>
+            <TouchableOpacity style={styles.univSwitchBtn} onPress={toggleAppMode}>
+              <Text style={styles.univSwitchBtnText}>Mode Perso</Text>
+            </TouchableOpacity>
+          </View>
+        </GlassCard>
+      )}
+
       {/* Banner alerte globale si des tâches sont en retard */}
       {overdueTasks.length > 0 && filterTab !== 'overdue' && (
         <GlassCard style={styles.alertBannerCard}>
@@ -98,7 +131,7 @@ export default function Tasks() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.alertBannerBtnReschedule}
+                style={[styles.alertBannerBtnReschedule, { backgroundColor: currentTheme.primary }]}
                 onPress={handleRescheduleAllOverdue}
               >
                 <Text style={styles.alertBannerBtnRescheduleText}>Tout reporter à aujourd'hui</Text>
@@ -115,7 +148,7 @@ export default function Tasks() {
             style={[styles.iosSegmentBtn, filterTab === 'active' && styles.iosSegmentBtnActive]}
             onPress={() => setFilterTab('active')}
           >
-            <Text style={[styles.iosSegmentText, filterTab === 'active' && styles.iosSegmentTextActive]}>
+            <Text style={[styles.iosSegmentText, filterTab === 'active' && { color: currentTheme.primary, fontWeight: '800' }]}>
               En cours ({folderTasks.filter((t) => t.status !== 'Réussi' && t.status !== 'Abandonné').length})
             </Text>
           </TouchableOpacity>
@@ -124,7 +157,7 @@ export default function Tasks() {
             style={[styles.iosSegmentBtn, filterTab === 'all' && styles.iosSegmentBtnActive]}
             onPress={() => setFilterTab('all')}
           >
-            <Text style={[styles.iosSegmentText, filterTab === 'all' && styles.iosSegmentTextActive]}>
+            <Text style={[styles.iosSegmentText, filterTab === 'all' && { color: currentTheme.primary, fontWeight: '800' }]}>
               Toutes ({folderTasks.length})
             </Text>
           </TouchableOpacity>
@@ -133,7 +166,7 @@ export default function Tasks() {
             style={[styles.iosSegmentBtn, filterTab === 'completed' && styles.iosSegmentBtnActive]}
             onPress={() => setFilterTab('completed')}
           >
-            <Text style={[styles.iosSegmentText, filterTab === 'completed' && styles.iosSegmentTextActive]}>
+            <Text style={[styles.iosSegmentText, filterTab === 'completed' && { color: currentTheme.primary, fontWeight: '800' }]}>
               Terminées ({folderTasks.filter((t) => t.status === 'Réussi' || t.status === 'Abandonné').length})
             </Text>
           </TouchableOpacity>
@@ -154,7 +187,7 @@ export default function Tasks() {
                   filterTab === 'overdue' && styles.iosSegmentTextActive,
                 ]}
               >
-                ⚠ En retard ({overdueTasks.length})
+                En retard ({overdueTasks.length})
               </Text>
             </TouchableOpacity>
           )}
@@ -167,7 +200,7 @@ export default function Tasks() {
               <TouchableOpacity
                 style={[
                   styles.folderFilterChip,
-                  selectedFolderId === null && styles.folderFilterChipActive,
+                  selectedFolderId === null && { backgroundColor: currentTheme.primary, borderColor: currentTheme.primary },
                 ]}
                 onPress={() => setSelectedFolderId(null)}
               >
@@ -227,12 +260,12 @@ export default function Tasks() {
           filtered.map((task) => <TasksItem key={task.id} task={task} />)
         ) : (
           <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>✨</Text>
+            <Ionicons name="checkbox-outline" size={36} color={COLORS.textMuted} style={{ marginBottom: 8 }} />
             <Text style={styles.emptyTitle}>
               {filterTab === 'completed'
                 ? 'Aucune tâche terminée'
                 : filterTab === 'overdue'
-                ? 'Aucune tâche en retard 🎉'
+                ? 'Aucune tâche en retard'
                 : 'Aucune tâche dans ce filtre'}
             </Text>
             <Text style={styles.emptySub}>
@@ -248,6 +281,23 @@ export default function Tasks() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 100 },
+
+  univBannerCard: {
+    marginBottom: 14,
+    padding: 12,
+    backgroundColor: 'rgba(216, 27, 96, 0.06)',
+    borderRadius: 18,
+  },
+  univBannerInner: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  univBannerTitle: { fontSize: 13, fontWeight: '800' },
+  univBannerSub: { fontSize: 11, color: COLORS.textMuted, marginTop: 1 },
+  univSwitchBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+  },
+  univSwitchBtnText: { fontSize: 10, fontWeight: '700', color: COLORS.text },
 
   alertBannerCard: {
     marginBottom: 14,

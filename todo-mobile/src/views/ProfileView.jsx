@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
-  TextInput,
   Modal,
   Platform,
   Alert,
@@ -15,7 +14,7 @@ import { PieChart } from 'react-native-chart-kit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ProfileContext } from '../ctx/ProfileContext';
+import { ProfileContext, THEMES } from '../ctx/ProfileContext';
 import { TodoContext } from '../ctx/TodoContext';
 import { ETATS } from '../config/constants';
 import { COLORS } from '../theme';
@@ -23,100 +22,41 @@ import GlassCard from '../components/GlassCard';
 
 const screenWidth = Dimensions.get('window').width;
 
-const CHART_COLORS = {
-  [ETATS.NOUVEAU]: COLORS.statusNew,
-  [ETATS.EN_COURS]: COLORS.statusProgress,
-  [ETATS.REUSSI]: COLORS.statusDone,
-  [ETATS.EN_ATTENTE]: COLORS.statusWaiting,
-  [ETATS.ABANDONNE]: COLORS.statusCancelled,
-};
-
-const chartConfig = {
-  color: (opacity = 1) => `rgba(216, 27, 96, ${opacity})`,
-  labelColor: (opacity = 1) => `rgba(28, 28, 30, ${opacity})`,
-};
-
 export default function ProfileView() {
   const {
     allowedProfiles,
     currentProfile,
-    isProfileCreated,
-    createProfile,
-    switchProfile,
-    logoutProfile,
+    bindDeviceProfile,
+    appMode,
+    toggleAppMode,
+    currentTheme,
+    themeKey,
+    changeTheme,
     visibleSchedules,
     toggleScheduleVisibility,
     canAccessSchedules,
   } = useContext(ProfileContext);
 
   const { tasks, folders } = useContext(TodoContext);
-
-  // Sub-tab inside Profile view: 'edt' vs 'stats'
-  const [subTab, setSubTab] = useState('stats');
-
-  // Modal State for Create / Switch
-  const [selectedTarget, setSelectedTarget] = useState(null); // profile object
-  const [modalMode, setModalMode] = useState(null); // 'create' or 'login'
-  const [pinInput, setPinInput] = useState('');
-  const [pinConfirm, setPinConfirm] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
-
   const fileInputRef = useRef(null);
 
-  const handleProfileClick = (profileObj) => {
-    setSelectedTarget(profileObj);
-    setPinInput('');
-    setPinConfirm('');
-    setErrorMsg('');
+  // Profile Binding Confirmation Modal
+  const [selectedTarget, setSelectedTarget] = useState(null);
 
-    if (isProfileCreated(profileObj.id)) {
-      setModalMode('login');
-    } else {
-      setModalMode('create');
-    }
+  const handleSelectClick = (p) => {
+    setSelectedTarget(p);
   };
 
-  const closeModal = () => {
-    setSelectedTarget(null);
-    setModalMode(null);
-    setPinInput('');
-    setPinConfirm('');
-    setErrorMsg('');
-  };
-
-  const handleModalSubmit = () => {
+  const confirmBinding = async () => {
     if (!selectedTarget) return;
-
-    if (modalMode === 'create') {
-      if (!pinInput || pinInput.length < 4) {
-        setErrorMsg('Le code PIN doit comporter au moins 4 chiffres.');
-        return;
-      }
-      if (pinInput !== pinConfirm) {
-        setErrorMsg('Les deux codes PIN ne correspondent pas.');
-        return;
-      }
-
-      const res = createProfile(selectedTarget.id, pinInput.trim());
-      if (res.success) {
-        closeModal();
-      } else {
-        setErrorMsg(res.error);
-      }
-    } else if (modalMode === 'login') {
-      const res = switchProfile(selectedTarget.id, pinInput.trim());
-      if (res.success) {
-        closeModal();
-      } else {
-        setErrorMsg(res.error);
-      }
-    }
+    await bindDeviceProfile(selectedTarget.id);
+    setSelectedTarget(null);
   };
 
-  // Export JSON Backup (Global tasks & folders)
+  // Export JSON Backup
   const handleExport = useCallback(() => {
     const backup = {
-      version: 2,
+      version: 3,
       exportDate: new Date().toISOString(),
       tasks,
       folders,
@@ -200,332 +140,305 @@ export default function ProfileView() {
     tasks.forEach((t) => {
       if (counts[t.status] !== undefined) counts[t.status]++;
     });
+
+    const CHART_COLORS = {
+      [ETATS.NOUVEAU]: currentTheme.primary,
+      [ETATS.EN_COURS]: '#ff9500',
+      [ETATS.REUSSI]: '#34c759',
+      [ETATS.EN_ATTENTE]: '#af52de',
+      [ETATS.ABANDONNE]: '#8e8e93',
+    };
+
     return Object.entries(counts)
       .filter(([, c]) => c > 0)
       .map(([status, count]) => ({
         name: status,
         population: count,
-        color: CHART_COLORS[status] || COLORS.pinkLight,
+        color: CHART_COLORS[status] || currentTheme.primary,
         legendFontColor: COLORS.text,
         legendFontSize: 13,
       }));
-  }, [tasks]);
+  }, [tasks, currentTheme]);
 
   const total = tasks.length;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      {/* BANNIÈRE PROFIL OU SÉLECTION */}
+      {/* CARD 1 : BASCULE DE MODE (PERSONNEL VS EDT UNIVERSITAIRE) */}
+      <GlassCard style={styles.modeCard}>
+        <View style={styles.modeHeaderRow}>
+          <Ionicons
+            name={appMode === 'university' ? 'school' : 'person'}
+            size={22}
+            color={currentTheme.primary}
+          />
+          <View style={{ flex: 1, marginLeft: 8 }}>
+            <Text style={[styles.modeTitle, { color: currentTheme.primary }]}>
+              {appMode === 'university' ? 'Mode EDT Universitaire' : 'Mode Personnel'}
+            </Text>
+            <Text style={styles.modeSub}>
+              {appMode === 'university'
+                ? 'Planning et Calendrier affichent les cours universitaires. L\'onglet Tâches est filtré pour les rendus d\'études.'
+                : 'Planning, Tâches et Calendrier affichent vos activités personnelles.'}
+            </Text>
+          </View>
+        </View>
+
+        <TouchableOpacity activeOpacity={0.8} onPress={toggleAppMode} style={{ marginTop: 14 }}>
+          <LinearGradient
+            colors={[currentTheme.primary, currentTheme.deep]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.switchModeBtn}
+          >
+            <Ionicons name="swap-horizontal-outline" size={18} color="#fff" />
+            <Text style={styles.switchModeBtnText}>
+              {appMode === 'university'
+                ? 'Basculer en Mode Personnel'
+                : 'Basculer en Mode EDT Universitaire'}
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </GlassCard>
+
+      {/* CARD 2 : MON PROFIL ET ASSIGNATION APPAREIL */}
       {currentProfile ? (
         <GlassCard style={styles.activeProfileCard}>
           <View style={styles.avatarRow}>
-            <View style={[styles.avatarCircle, { backgroundColor: currentProfile.color }]}>
-              <Text style={styles.avatarEmoji}>{currentProfile.avatar}</Text>
+            <View style={[styles.avatarCircle, { backgroundColor: currentTheme.primary }]}>
+              <Ionicons name="person" size={24} color="#fff" />
             </View>
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.profileName}>{currentProfile.name}</Text>
               <Text style={styles.profileRole}>
-                {currentProfile.role === 'full'
-                  ? 'Accès Emplois du Temps Universitaires'
-                  : 'Accès Liste de tâches uniquement'}
+                Profil défini pour cet appareil · {currentProfile.role === 'full' ? 'Accès EDT complet' : 'Accès Tâches uniquement'}
               </Text>
             </View>
-            <TouchableOpacity style={styles.logoutBtn} onPress={logoutProfile}>
-              <Ionicons name="log-out-outline" size={16} color={COLORS.pinkDark} />
-              <Text style={styles.logoutText}>Déconnexion</Text>
-            </TouchableOpacity>
+            <View style={[styles.boundBadge, { backgroundColor: currentTheme.tint }]}>
+              <Ionicons name="checkmark-done-circle" size={16} color={currentTheme.primary} />
+              <Text style={[styles.boundBadgeText, { color: currentTheme.primary }]}>Actif</Text>
+            </View>
           </View>
         </GlassCard>
       ) : (
-        <GlassCard style={styles.infoBanner}>
-          <View style={styles.infoBannerHeader}>
-            <Ionicons name="school-outline" size={22} color={COLORS.pinkDark} />
-            <Text style={styles.infoBannerTitle}>Accès Emplois du temps universitaires</Text>
+        <GlassCard style={styles.deviceSelectionCard}>
+          <View style={styles.warningBox}>
+            <Ionicons name="warning-outline" size={22} color="#d97706" />
+            <Text style={styles.warningTitle}>Attention : Choix définitif de profil</Text>
           </View>
-          <Text style={styles.infoBannerText}>
-            Pour accéder aux emplois du temps universitaires et superposer les cours, créez ou rejoignez votre profil (Claire, Alban, Clara ou Marielle) en définissant votre code PIN secret.
+          <Text style={styles.warningText}>
+            Pour accéder aux emplois du temps universitaires et personnaliser votre espace, sélectionnez votre prénom ci-dessous (**Claire, Alban, Clara ou Marielle**). Ce choix liera définitivement ce profil à cet appareil.
           </Text>
+
+          <Text style={styles.selectLabel}>Sélectionnez votre prénom :</Text>
+
+          <View style={styles.profilesGrid}>
+            {allowedProfiles.map((p) => (
+              <TouchableOpacity
+                key={p.id}
+                style={[styles.profileChoiceChip, { borderColor: p.defaultColor }]}
+                onPress={() => handleSelectClick(p)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="person-outline" size={18} color={p.defaultColor} />
+                <Text style={styles.choiceName}>{p.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </GlassCard>
       )}
 
-      {/* SÉLECTEUR / CRÉATION DE PROFIL */}
-      <GlassCard style={styles.profilesSectionCard}>
-        <Text style={styles.sectionTitleHeader}>
-          {currentProfile ? 'Changer de profil :' : 'Choisissez ou créez votre profil :'}
-        </Text>
+      {/* CARD 3 : THÈME DE COULEUR DE L'APPLICATION */}
+      <GlassCard style={styles.themeCard}>
+        <View style={styles.sectionHeaderRow}>
+          <Ionicons name="color-palette-outline" size={20} color={currentTheme.primary} />
+          <Text style={[styles.sectionTitleHeader, { color: currentTheme.primary }]}>Thème de couleur</Text>
+        </View>
+        <Text style={styles.sectionSubText}>Choisissez l'apparence et la couleur principale de l'interface :</Text>
 
-        <View style={styles.profilesGrid}>
-          {allowedProfiles.map((p) => {
-            const isCurrent = currentProfile?.id === p.id;
-            const created = isProfileCreated(p.id);
-
+        <View style={styles.themesRow}>
+          {Object.values(THEMES).map((t) => {
+            const isSelected = themeKey === t.key;
             return (
               <TouchableOpacity
-                key={p.id}
+                key={t.key}
                 style={[
-                  styles.profileCardChip,
-                  { borderColor: p.color },
-                  isCurrent && { backgroundColor: p.color },
+                  styles.themeChip,
+                  { borderColor: t.primary },
+                  isSelected && { backgroundColor: t.primary },
                 ]}
-                onPress={() => handleProfileClick(p)}
+                onPress={() => changeTheme(t.key)}
                 activeOpacity={0.8}
               >
-                <View style={styles.chipTopRow}>
-                  <Text style={styles.chipEmoji}>{p.avatar}</Text>
-                  <View style={[styles.statusDot, { backgroundColor: created ? '#34c759' : '#8e8e93' }]} />
-                </View>
-
-                <Text style={[styles.chipName, isCurrent && styles.chipTextWhite]}>{p.name}</Text>
-
-                <Text style={[styles.chipStatusText, isCurrent && styles.chipTextWhite]}>
-                  {created ? (isCurrent ? 'Profil actif' : 'Créé · PIN requis') : 'Non créé · Créer'}
-                </Text>
+                <View style={[styles.themeDot, { backgroundColor: isSelected ? '#fff' : t.primary }]} />
+                <Text style={[styles.themeChipText, isSelected && styles.textWhite]}>{t.name}</Text>
               </TouchableOpacity>
             );
           })}
         </View>
       </GlassCard>
 
-      {/* SÉLECTEUR DE SOUS-ONGLET (EDT UNIV vs STATS/SAUVEGARDE) */}
-      <View style={styles.subTabRow}>
-        <TouchableOpacity
-          style={[styles.subTabBtn, subTab === 'stats' && styles.subTabBtnActive]}
-          onPress={() => setSubTab('stats')}
-        >
-          <Ionicons name="pie-chart-outline" size={16} color={subTab === 'stats' ? '#fff' : COLORS.text} />
-          <Text style={[styles.subTabText, subTab === 'stats' && styles.subTabTextActive]}>
-            Stats & Sauvegarde
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.subTabBtn, subTab === 'edt' && styles.subTabBtnActive]}
-          onPress={() => setSubTab('edt')}
-        >
-          <Ionicons name="calendar-outline" size={16} color={subTab === 'edt' ? '#fff' : COLORS.text} />
-          <Text style={[styles.subTabText, subTab === 'edt' && styles.subTabTextActive]}>
-            EDT Universitaires (.ics)
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* SOUS-ONGLET 1 : STATS & SAUVEGARDE (Visible par tous) */}
-      {subTab === 'stats' && (
-        <>
-          {/* CARD STATISTIQUES DES TÂCHES (Global) */}
-          <GlassCard style={styles.chartCard}>
-            <Text style={styles.sectionTitleHeader}>Statistiques des tâches</Text>
-
-            {total === 0 ? (
-              <View style={styles.empty}>
-                <Text style={styles.emptyText}>Aucune tâche dans votre liste</Text>
-              </View>
-            ) : (
-              <>
-                <PieChart
-                  data={chartData}
-                  width={screenWidth - 80}
-                  height={190}
-                  chartConfig={chartConfig}
-                  accessor="population"
-                  backgroundColor="transparent"
-                  paddingLeft="10"
-                  hasLegend
-                  style={styles.chart}
-                />
-
-                <View style={styles.tableWrap}>
-                  {chartData.map((item) => {
-                    const percent = Math.round((item.population / total) * 100);
-                    return (
-                      <View key={item.name} style={styles.row}>
-                        <View style={[styles.dot, { backgroundColor: item.color }]} />
-                        <Text style={styles.rowLabel}>{item.name}</Text>
-                        <Text style={styles.rowCount}>{item.population}</Text>
-                        <Text style={styles.rowPercent}>{percent}%</Text>
-                      </View>
-                    );
-                  })}
-                  <View style={styles.totalRow}>
-                    <Text style={styles.totalLabel}>Total</Text>
-                    <Text style={styles.totalCount}>{total}</Text>
-                    <Text style={styles.totalPercent}>100%</Text>
-                  </View>
-                </View>
-              </>
-            )}
-          </GlassCard>
-
-          {/* CARD SAUVEGARDE & RESTAURATION (Global) */}
-          <GlassCard style={styles.backupCard}>
-            <Text style={styles.sectionTitleHeader}>Sauvegarde / Restauration de vos tâches</Text>
-            <Text style={styles.backupSub}>
-              {total} tâche{total !== 1 ? 's' : ''} · {folders.length} dossier{folders.length !== 1 ? 's' : ''} en local
+      {/* CARD 4 : SUPERPOSITION DES EMPLOIS DU TEMPS (.ICS) */}
+      {canAccessSchedules ? (
+        <GlassCard style={styles.scheduleCard}>
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name="calendar-outline" size={20} color={currentTheme.primary} />
+            <Text style={[styles.sectionTitleHeader, { color: currentTheme.primary }]}>
+              Superposition des Emplois du Temps (.ics)
             </Text>
-            <View style={styles.backupButtons}>
-              <TouchableOpacity activeOpacity={0.8} onPress={handleExport} style={{ flex: 1 }}>
-                <LinearGradient
-                  colors={[COLORS.pinkDark, COLORS.pinkDeep]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.backupBtn}
+          </View>
+          <Text style={styles.sectionSubText}>
+            Cochez les emplois du temps universitaires à faire apparaître dans la vue EDT :
+          </Text>
+
+          {allowedProfiles
+            .filter((p) => p.role === 'full')
+            .map((p) => {
+              const isChecked = !!visibleSchedules[p.id];
+              return (
+                <TouchableOpacity
+                  key={p.id}
+                  style={styles.scheduleToggleRow}
+                  onPress={() => toggleScheduleVisibility(p.id)}
+                  activeOpacity={0.7}
                 >
-                  <Ionicons name="download-outline" size={18} color="#fff" />
-                  <Text style={styles.backupBtnText}>Exporter JSON</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-              <TouchableOpacity activeOpacity={0.8} onPress={handleImport} style={[styles.restoreBtn, { flex: 1 }]}>
-                <Ionicons name="cloud-upload-outline" size={18} color={COLORS.pinkDark} />
-                <Text style={styles.restoreBtnText}>Restaurer JSON</Text>
-              </TouchableOpacity>
-            </View>
-          </GlassCard>
-
-          {/* Input hidden web import */}
-          {Platform.OS === 'web' && (
-            <View style={{ width: 0, height: 0, overflow: 'hidden' }}>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".json"
-                onChange={processImportFile}
-                style={{ display: 'none' }}
-              />
-            </View>
-          )}
-        </>
-      )}
-
-      {/* SOUS-ONGLET 2 : EMPLOIS DU TEMPS UNIVERSITAIRES (.ICS) */}
-      {subTab === 'edt' && (
-        <>
-          {!currentProfile ? (
-            <GlassCard style={styles.restrictedCard}>
-              <Ionicons name="lock-closed-outline" size={28} color={COLORS.pinkDark} />
-              <Text style={styles.restrictedTitle}>Profil requis</Text>
-              <Text style={styles.restrictedText}>
-                Veuillez sélectionner ou créer votre profil ci-dessus pour accéder à la vue des emplois du temps universitaires.
-              </Text>
-            </GlassCard>
-          ) : canAccessSchedules ? (
-            <GlassCard style={styles.scheduleCard}>
-              <View style={styles.sectionHeaderRow}>
-                <Ionicons name="school-outline" size={20} color={COLORS.pinkDark} />
-                <Text style={styles.sectionTitleHeader}>Emplois du Temps Universitaires Partagés (.ics)</Text>
-              </View>
-              <Text style={styles.sectionSubText}>
-                Superposez à la volée les emplois du temps universitaires de chacun :
-              </Text>
-
-              {allowedProfiles
-                .filter((p) => p.role === 'full')
-                .map((p) => {
-                  const isChecked = !!visibleSchedules[p.id];
-                  return (
-                    <TouchableOpacity
-                      key={p.id}
-                      style={styles.scheduleToggleRow}
-                      onPress={() => toggleScheduleVisibility(p.id)}
-                      activeOpacity={0.7}
-                    >
-                      <View style={[styles.colorIndicator, { backgroundColor: p.color }]} />
-                      <Text style={styles.scheduleName}>Emploi du temps universitaire de {p.name}</Text>
-                      <View
-                        style={[
-                          styles.toggleTrack,
-                          isChecked ? { backgroundColor: p.color } : styles.toggleTrackOff,
-                        ]}
-                      >
-                        <View
-                          style={[
-                            styles.toggleThumb,
-                            isChecked ? styles.toggleThumbOn : styles.toggleThumbOff,
-                          ]}
-                        />
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-
-              <View style={styles.icsNotice}>
-                <Ionicons name="cloud-download-outline" size={18} color={COLORS.pinkDark} />
-                <Text style={styles.icsNoticeText}>
-                  Gestion avancée des fichiers .ICS universitaires en cours d'intégration.
-                </Text>
-              </View>
-            </GlassCard>
-          ) : (
-            <GlassCard style={styles.restrictedCard}>
-              <Ionicons name="lock-closed-outline" size={28} color={COLORS.textMuted} />
-              <Text style={styles.restrictedTitle}>Accès restreint</Text>
-              <Text style={styles.restrictedText}>
-                Le profil Marielle a un accès uniquement réservé à la gestion des tâches. Les emplois du temps universitaires ne sont pas accessibles.
-              </Text>
-            </GlassCard>
-          )}
-        </>
-      )}
-
-      {/* MODAL SYSTEM (Création vs Connexion) */}
-      {selectedTarget && (
-        <Modal visible transparent animationType="fade" onRequestClose={closeModal}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.pinCard}>
-              <Text style={styles.pinTitle}>
-                {modalMode === 'create'
-                  ? `Création du profil ${selectedTarget.name}`
-                  : `Connexion au profil ${selectedTarget.name}`}
-              </Text>
-
-              <Text style={styles.pinSub}>
-                {modalMode === 'create'
-                  ? `Définissez votre code PIN secret (min. 4 chiffres). Personne d'autre ne pourra accéder au profil ${selectedTarget.name} sans ce code.`
-                  : `Le profil ${selectedTarget.name} est protégé. Entrez le code PIN défini par ${selectedTarget.name} pour y accéder :`}
-              </Text>
-
-              {/* Champ PIN 1 */}
-              <TextInput
-                style={styles.pinInput}
-                value={pinInput}
-                onChangeText={setPinInput}
-                placeholder={modalMode === 'create' ? 'Nouveau code PIN' : 'Code PIN secret'}
-                placeholderTextColor={COLORS.textMuted}
-                keyboardType="numeric"
-                secureTextEntry
-                maxLength={8}
-                autoFocus
-              />
-
-              {/* Champ Confirmation PIN si Création */}
-              {modalMode === 'create' && (
-                <TextInput
-                  style={styles.pinInput}
-                  value={pinConfirm}
-                  onChangeText={setPinConfirm}
-                  placeholder="Confirmer le code PIN"
-                  placeholderTextColor={COLORS.textMuted}
-                  keyboardType="numeric"
-                  secureTextEntry
-                  maxLength={8}
-                />
-              )}
-
-              {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
-
-              <View style={styles.pinButtons}>
-                <TouchableOpacity style={styles.pinCancelBtn} onPress={closeModal}>
-                  <Text style={styles.pinCancelText}>Annuler</Text>
+                  <View style={[styles.colorIndicator, { backgroundColor: p.defaultColor }]} />
+                  <Text style={styles.scheduleName}>Emploi du temps de {p.name}</Text>
+                  <View
+                    style={[
+                      styles.toggleTrack,
+                      isChecked ? { backgroundColor: currentTheme.primary } : styles.toggleTrackOff,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.toggleThumb,
+                        isChecked ? styles.toggleThumbOn : styles.toggleThumbOff,
+                      ]}
+                    />
+                  </View>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.pinConfirmBtn} onPress={handleModalSubmit}>
+              );
+            })}
+        </GlassCard>
+      ) : currentProfile ? (
+        <GlassCard style={styles.restrictedCard}>
+          <Ionicons name="lock-closed-outline" size={24} color={COLORS.textMuted} />
+          <Text style={styles.restrictedText}>
+            Le profil Marielle a un accès uniquement réservé à la liste des tâches. Les emplois du temps universitaires sont masqués.
+          </Text>
+        </GlassCard>
+      ) : null}
+
+      {/* CARD 5 : STATISTIQUES ET SAUVEGARDE */}
+      <GlassCard style={styles.chartCard}>
+        <Text style={[styles.sectionTitleHeader, { color: currentTheme.primary }]}>Statistiques des tâches</Text>
+
+        {total === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>Aucune tâche dans votre liste</Text>
+          </View>
+        ) : (
+          <>
+            <PieChart
+              data={chartData}
+              width={screenWidth - 80}
+              height={190}
+              chartConfig={{
+                color: (opacity = 1) => `${currentTheme.primary}`,
+                labelColor: (opacity = 1) => `rgba(28, 28, 30, ${opacity})`,
+              }}
+              accessor="population"
+              backgroundColor="transparent"
+              paddingLeft="10"
+              hasLegend
+              style={styles.chart}
+            />
+
+            <View style={styles.tableWrap}>
+              {chartData.map((item) => {
+                const percent = Math.round((item.population / total) * 100);
+                return (
+                  <View key={item.name} style={styles.row}>
+                    <View style={[styles.dot, { backgroundColor: item.color }]} />
+                    <Text style={styles.rowLabel}>{item.name}</Text>
+                    <Text style={styles.rowCount}>{item.population}</Text>
+                    <Text style={styles.rowPercent}>{percent}%</Text>
+                  </View>
+                );
+              })}
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>Total</Text>
+                <Text style={[styles.totalCount, { color: currentTheme.primary }]}>{total}</Text>
+                <Text style={[styles.totalPercent, { color: currentTheme.primary }]}>100%</Text>
+              </View>
+            </View>
+          </>
+        )}
+      </GlassCard>
+
+      {/* CARD 6 : SAUVEGARDE & RESTAURATION */}
+      <GlassCard style={styles.backupCard}>
+        <Text style={[styles.sectionTitleHeader, { color: currentTheme.primary }]}>Sauvegarde / Restauration</Text>
+        <Text style={styles.backupSub}>
+          {total} tâche{total !== 1 ? 's' : ''} · {folders.length} dossier{folders.length !== 1 ? 's' : ''} en local
+        </Text>
+        <View style={styles.backupButtons}>
+          <TouchableOpacity activeOpacity={0.8} onPress={handleExport} style={{ flex: 1 }}>
+            <LinearGradient
+              colors={[currentTheme.primary, currentTheme.deep]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.backupBtn}
+            >
+              <Ionicons name="download-outline" size={18} color="#fff" />
+              <Text style={styles.backupBtnText}>Exporter JSON</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          <TouchableOpacity activeOpacity={0.8} onPress={handleImport} style={[styles.restoreBtn, { flex: 1, borderColor: currentTheme.primary }]}>
+            <Ionicons name="cloud-upload-outline" size={18} color={currentTheme.primary} />
+            <Text style={[styles.restoreBtnText, { color: currentTheme.primary }]}>Restaurer JSON</Text>
+          </TouchableOpacity>
+        </View>
+      </GlassCard>
+
+      {/* Input hidden web import */}
+      {Platform.OS === 'web' && (
+        <View style={{ width: 0, height: 0, overflow: 'hidden' }}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            onChange={processImportFile}
+            style={{ display: 'none' }}
+          />
+        </View>
+      )}
+
+      {/* MODAL DE CONFIRMATION DE LIEN PROFIL DÉFINITIF */}
+      {selectedTarget && (
+        <Modal visible transparent animationType="fade" onRequestClose={() => setSelectedTarget(null)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.confirmCard}>
+              <Ionicons name="alert-circle" size={40} color="#d97706" style={{ marginBottom: 8 }} />
+              <Text style={styles.confirmTitle}>Confirmer le profil {selectedTarget.name}</Text>
+
+              <Text style={styles.confirmSub}>
+                Attention : ce choix liera définitivement l'appareil à <Text style={{ fontWeight: '800' }}>{selectedTarget.name}</Text>. Vous ne pourrez pas choisir un autre prénom par la suite sur cet appareil.
+              </Text>
+
+              <View style={styles.confirmButtons}>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => setSelectedTarget(null)}>
+                  <Text style={styles.cancelBtnText}>Annuler</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.confirmSubmitBtn} onPress={confirmBinding}>
                   <LinearGradient
-                    colors={[COLORS.pinkDark, COLORS.pinkDeep]}
+                    colors={[currentTheme.primary, currentTheme.deep]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    style={styles.pinConfirmGradient}
+                    style={styles.confirmGradient}
                   >
-                    <Text style={styles.pinConfirmText}>
-                      {modalMode === 'create' ? 'Créer le profil' : 'Se connecter'}
-                    </Text>
+                    <Text style={styles.confirmSubmitText}>Confirmer {selectedTarget.name}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
@@ -541,14 +454,23 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 40 },
 
-  // Info Banner
-  infoBanner: { padding: 14, marginBottom: 14, backgroundColor: 'rgba(216, 27, 96, 0.06)' },
-  infoBannerHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
-  infoBannerTitle: { fontSize: 14, fontWeight: '800', color: COLORS.pinkDark },
-  infoBannerText: { fontSize: 12, color: COLORS.textLight, lineHeight: 18 },
+  // Mode Switch Card
+  modeCard: { padding: 16, marginBottom: 16 },
+  modeHeaderRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  modeTitle: { fontSize: 16, fontWeight: '800', marginBottom: 2 },
+  modeSub: { fontSize: 12, color: COLORS.textMuted, lineHeight: 17 },
+  switchModeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 100,
+  },
+  switchModeBtnText: { color: '#fff', fontWeight: '800', fontSize: 13 },
 
   // Active Profile Card
-  activeProfileCard: { padding: 14, marginBottom: 14 },
+  activeProfileCard: { padding: 14, marginBottom: 16 },
   avatarRow: { flexDirection: 'row', alignItems: 'center' },
   avatarCircle: {
     width: 44,
@@ -557,42 +479,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarEmoji: { fontSize: 22 },
   profileName: { fontSize: 17, fontWeight: '800', color: COLORS.text },
   profileRole: { fontSize: 11, color: COLORS.textMuted, marginTop: 1 },
-  logoutBtn: {
+  boundBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: 'rgba(216, 27, 96, 0.1)',
   },
-  logoutText: { fontSize: 11, color: COLORS.pinkDark, fontWeight: '700' },
+  boundBadgeText: { fontSize: 11, fontWeight: '800' },
 
-  // Profiles Grid Section
-  profilesSectionCard: { padding: 16, marginBottom: 14 },
-  sectionTitleHeader: { fontSize: 15, fontWeight: '800', color: COLORS.pinkDark, marginBottom: 12 },
-  profilesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  profileCardChip: {
-    flex: 1,
-    minWidth: 135,
-    padding: 12,
-    borderRadius: 16,
+  // Device Selection Card
+  deviceSelectionCard: { padding: 16, marginBottom: 16 },
+  warningBox: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  warningTitle: { fontSize: 15, fontWeight: '800', color: '#d97706' },
+  warningText: { fontSize: 12, color: COLORS.textLight, lineHeight: 18, marginBottom: 14 },
+  selectLabel: { fontSize: 13, fontWeight: '700', color: COLORS.text, marginBottom: 10 },
+  profilesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  profileChoiceChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
     borderWidth: 1.5,
     backgroundColor: 'rgba(0,0,0,0.02)',
   },
-  chipTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  chipEmoji: { fontSize: 22 },
-  statusDot: { width: 8, height: 8, borderRadius: 4 },
-  chipName: { fontSize: 15, fontWeight: '800', color: COLORS.text },
-  chipStatusText: { fontSize: 10, color: COLORS.textMuted, marginTop: 2, fontWeight: '600' },
-  chipTextWhite: { color: '#fff' },
+  choiceName: { fontSize: 14, fontWeight: '700', color: COLORS.text },
 
-  // Sub Tab Navigation
-  subTabRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
-  subTabBtn: {
+  // Theme Card
+  themeCard: { padding: 16, marginBottom: 16 },
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  sectionTitleHeader: { fontSize: 15, fontWeight: '800' },
+  sectionSubText: { fontSize: 12, color: COLORS.textMuted, marginBottom: 12 },
+  themesRow: { flexDirection: 'row', gap: 8 },
+  themeChip: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
@@ -600,21 +524,15 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 10,
     borderRadius: 14,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderWidth: 1.5,
+    backgroundColor: 'rgba(0,0,0,0.02)',
   },
-  subTabBtnActive: {
-    backgroundColor: COLORS.pinkDark,
-    borderColor: COLORS.pinkDark,
-  },
-  subTabText: { fontSize: 12, fontWeight: '700', color: COLORS.text },
-  subTabTextActive: { color: '#fff' },
+  themeDot: { width: 10, height: 10, borderRadius: 5 },
+  themeChipText: { fontSize: 12, fontWeight: '700', color: COLORS.text },
+  textWhite: { color: '#fff' },
 
   // Schedule Card
   scheduleCard: { padding: 16, marginBottom: 16 },
-  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  sectionSubText: { fontSize: 12, color: COLORS.textMuted, marginBottom: 12 },
   scheduleToggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -646,20 +564,8 @@ const styles = StyleSheet.create({
   toggleThumbOn: { alignSelf: 'flex-end' },
   toggleThumbOff: { alignSelf: 'flex-start' },
 
-  icsNotice: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 14,
-    padding: 10,
-    borderRadius: 12,
-    backgroundColor: 'rgba(216, 27, 96, 0.06)',
-  },
-  icsNoticeText: { flex: 1, fontSize: 11, color: COLORS.pinkDark, fontWeight: '600' },
-
-  restrictedCard: { padding: 20, marginBottom: 16, alignItems: 'center', gap: 8 },
-  restrictedTitle: { fontSize: 16, fontWeight: '800', color: COLORS.pinkDark },
-  restrictedText: { fontSize: 13, color: COLORS.textMuted, textAlign: 'center', lineHeight: 18 },
+  restrictedCard: { padding: 16, marginBottom: 16, alignItems: 'center', gap: 8 },
+  restrictedText: { fontSize: 13, color: COLORS.textMuted, textAlign: 'center' },
 
   // Stats Card
   chartCard: { padding: 16, marginBottom: 16 },
@@ -680,8 +586,8 @@ const styles = StyleSheet.create({
   rowPercent: { fontSize: 12, color: COLORS.textMuted, minWidth: 40, textAlign: 'right' },
   totalRow: { flexDirection: 'row', alignItems: 'center', paddingTop: 10 },
   totalLabel: { flex: 1, fontSize: 13, fontWeight: '700', color: COLORS.text, paddingLeft: 20 },
-  totalCount: { fontSize: 13, fontWeight: '700', color: COLORS.pinkDark, marginRight: 16, minWidth: 24, textAlign: 'right' },
-  totalPercent: { fontSize: 12, fontWeight: '700', color: COLORS.pinkDark, minWidth: 40, textAlign: 'right' },
+  totalCount: { fontSize: 13, fontWeight: '700', marginRight: 16, minWidth: 24, textAlign: 'right' },
+  totalPercent: { fontSize: 12, fontWeight: '700', minWidth: 40, textAlign: 'right' },
 
   // Backup Card
   backupCard: { padding: 16, marginBottom: 16 },
@@ -703,13 +609,12 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 12,
     borderRadius: 100,
-    backgroundColor: 'rgba(216, 27, 96, 0.1)',
+    backgroundColor: 'rgba(0, 0, 0, 0.04)',
     borderWidth: 1,
-    borderColor: 'rgba(216, 27, 96, 0.25)',
   },
-  restoreBtnText: { color: COLORS.pinkDark, fontSize: 13, fontWeight: '700' },
+  restoreBtnText: { fontSize: 13, fontWeight: '700' },
 
-  // PIN Modal
+  // Confirm Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -717,7 +622,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 20,
   },
-  pinCard: {
+  confirmCard: {
     width: '100%',
     maxWidth: 340,
     backgroundColor: '#fff',
@@ -730,36 +635,22 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 10,
   },
-  pinTitle: { fontSize: 17, fontWeight: '800', color: COLORS.pinkDark, marginBottom: 6, textAlign: 'center' },
-  pinSub: { fontSize: 12, color: COLORS.textLight, textAlign: 'center', marginBottom: 16, lineHeight: 18 },
-  pinInput: {
-    width: '100%',
-    backgroundColor: 'rgba(118, 118, 128, 0.12)',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    fontWeight: '700',
-    textAlign: 'center',
-    letterSpacing: 3,
-    color: COLORS.text,
-    marginBottom: 10,
-  },
-  errorText: { color: COLORS.danger, fontSize: 12, fontWeight: '700', marginBottom: 10, textAlign: 'center' },
-  pinButtons: { flexDirection: 'row', gap: 10, width: '100%', marginTop: 6 },
-  pinCancelBtn: {
+  confirmTitle: { fontSize: 17, fontWeight: '800', color: COLORS.text, marginBottom: 8, textAlign: 'center' },
+  confirmSub: { fontSize: 13, color: COLORS.textLight, textAlign: 'center', marginBottom: 20, lineHeight: 18 },
+  confirmButtons: { flexDirection: 'row', gap: 10, width: '100%' },
+  cancelBtn: {
     flex: 1,
     paddingVertical: 12,
     borderRadius: 100,
     backgroundColor: 'rgba(120, 120, 128, 0.12)',
     alignItems: 'center',
   },
-  pinCancelText: { color: COLORS.text, fontWeight: '700', fontSize: 14 },
-  pinConfirmBtn: { flex: 1 },
-  pinConfirmGradient: {
+  cancelBtnText: { color: COLORS.text, fontWeight: '700', fontSize: 13 },
+  confirmSubmitBtn: { flex: 1 },
+  confirmGradient: {
     paddingVertical: 12,
     borderRadius: 100,
     alignItems: 'center',
   },
-  pinConfirmText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  confirmSubmitText: { color: '#fff', fontWeight: '700', fontSize: 13 },
 });

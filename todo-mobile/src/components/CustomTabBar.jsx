@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ModalContext } from '../ctx/ModalContext';
+import { ProfileContext } from '../ctx/ProfileContext';
 import { COLORS } from '../theme';
 
 const LEFT_TABS = [
@@ -18,6 +19,7 @@ const RIGHT_TABS = [
 export default function CustomTabBar({ state, navigation }) {
   const insets = useSafeAreaInsets();
   const { openModal } = useContext(ModalContext);
+  const { currentTheme } = useContext(ProfileContext);
   const currentRoute = state.routes[state.index].name;
   const go = (name) => navigation.navigate(name);
 
@@ -34,10 +36,12 @@ export default function CustomTabBar({ state, navigation }) {
           <Ionicons
             name={active ? iconActive : icon}
             size={22}
-            color={active ? COLORS.pinkDark : COLORS.textMuted}
+            color={active ? currentTheme.primary : COLORS.textMuted}
           />
         </View>
-        <Text style={[styles.label, active && styles.labelActive]}>{label}</Text>
+        <Text style={[styles.label, active && { color: currentTheme.primary, fontWeight: '800' }]}>
+          {label}
+        </Text>
       </TouchableOpacity>
     );
   };
@@ -49,20 +53,20 @@ export default function CustomTabBar({ state, navigation }) {
           <View style={styles.row}>
             {LEFT_TABS.map((t) => <TabItem key={t.routeName} {...t} />)}
 
-            {/* iOS Deep Pink Central + Action Button */}
+            {/* Central Action Button */}
             <TouchableOpacity
               style={styles.addTabItem}
               onPress={() => openModal('task')}
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={[COLORS.pinkDark, '#c2185b']}
+                colors={[currentTheme.primary, currentTheme.deep]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                 style={styles.addBtnCircle}
               >
                 <Ionicons name="add" size={24} color="#ffffff" />
               </LinearGradient>
-              <Text style={styles.addLabel}>Ajouter</Text>
+              <Text style={[styles.addLabel, { color: currentTheme.primary }]}>Ajouter</Text>
             </TouchableOpacity>
 
             {RIGHT_TABS.map((t) => <TabItem key={t.routeName} {...t} />)}

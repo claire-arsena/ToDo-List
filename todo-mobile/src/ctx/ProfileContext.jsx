@@ -2,21 +2,29 @@ import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const ALLOWED_PROFILES = [
-  { id: 'claire', name: 'Claire', role: 'full', color: '#d81b60', avatar: '👧' },
-  { id: 'alban', name: 'Alban', role: 'full', color: '#1e88e5', avatar: '👦' },
-  { id: 'clara', name: 'Clara', role: 'full', color: '#8e24aa', avatar: '👩' },
-  { id: 'marielle', name: 'Marielle', role: 'restricted', color: '#ff9800', avatar: '👩‍💼' },
+  { id: 'claire', name: 'Claire', role: 'full', defaultColor: '#d81b60' },
+  { id: 'alban', name: 'Alban', role: 'full', defaultColor: '#1e88e5' },
+  { id: 'clara', name: 'Clara', role: 'full', defaultColor: '#8e24aa' },
+  { id: 'marielle', name: 'Marielle', role: 'restricted', defaultColor: '#ff9800' },
 ];
 
-const ACTIVE_PROFILE_KEY = '@todo_active_profile_v2';
-const CREATED_PROFILES_KEY = '@todo_created_profiles_v2';
-const VISIBLE_SCHEDULES_KEY = '@todo_visible_schedules_v2';
+export const THEMES = {
+  rose: { key: 'rose', name: 'Rose iOS', primary: '#d81b60', deep: '#c2185b', tint: 'rgba(216, 27, 96, 0.12)' },
+  blue: { key: 'blue', name: 'Bleu Ocean', primary: '#1e88e5', deep: '#1565c0', tint: 'rgba(30, 136, 229, 0.12)' },
+  green: { key: 'green', name: 'Vert Émeraude', primary: '#2ecc71', deep: '#27ae60', tint: 'rgba(46, 204, 113, 0.12)' },
+};
+
+const DEVICE_PROFILE_KEY = '@todo_device_profile_id_v3';
+const APP_MODE_KEY = '@todo_app_mode_v3';
+const THEME_KEY = '@todo_theme_color_v3';
+const VISIBLE_SCHEDULES_KEY = '@todo_visible_schedules_v3';
 
 export const ProfileContext = createContext();
 
 export function ProfileContextProvider({ children }) {
-  const [activeProfileId, setActiveProfileId] = useState(null);
-  const [createdProfiles, setCreatedProfiles] = useState({}); // { claire: { pin: '1234' }, ... }
+  const [deviceProfileId, setDeviceProfileId] = useState(null); // Locked profile on this device
+  const [appMode, setAppMode] = useState('personal'); // 'personal' | 'university'
+  const [themeKey, setThemeKey] = useState('rose'); // 'rose' | 'blue' | 'green'
   const [visibleSchedules, setVisibleSchedules] = useState({
     claire: true,
     alban: true,
@@ -24,20 +32,23 @@ export function ProfileContextProvider({ children }) {
   });
   const [isProfileLoaded, setIsProfileLoaded] = useState(false);
 
-  // Load from storage
+  // Load configuration from storage
   useEffect(() => {
     (async () => {
       try {
-        const savedCreated = await AsyncStorage.getItem(CREATED_PROFILES_KEY);
-        let parsedCreated = {};
-        if (savedCreated) {
-          parsedCreated = JSON.parse(savedCreated);
-          setCreatedProfiles(parsedCreated);
+        const savedDeviceProfile = await AsyncStorage.getItem(DEVICE_PROFILE_KEY);
+        if (savedDeviceProfile && ALLOWED_PROFILES.some((p) => p.id === savedDeviceProfile)) {
+          setDeviceProfileId(savedDeviceProfile);
         }
 
-        const savedActive = await AsyncStorage.getItem(ACTIVE_PROFILE_KEY);
-        if (savedActive && parsedCreated[savedActive]) {
-          setActiveProfileId(savedActive);
+        const savedMode = await AsyncStorage.getItem(APP_MODE_KEY);
+        if (savedMode && (savedMode === 'personal' || savedMode === 'university')) {
+          setAppMode(savedMode);
+        }
+
+        const savedTheme = await AsyncStorage.getItem(THEME_KEY);
+        if (savedTheme && THEMES[savedTheme]) {
+          setThemeKey(savedTheme);
         }
 
         const savedSchedules = await AsyncStorage.getItem(VISIBLE_SCHEDULES_KEY);
@@ -52,94 +63,59 @@ export function ProfileContextProvider({ children }) {
     })();
   }, []);
 
-  // Persist active profile
-  useEffect(() => {
-    if (isProfileLoaded) {
-      if (activeProfileId) {
-        AsyncStorage.setItem(ACTIVE_PROFILE_KEY, activeProfileId);
-      } else {
-        AsyncStorage.removeItem(ACTIVE_PROFILE_KEY);
-      }
-    }
-  }, [activeProfileId, isProfileLoaded]);
-
-  // Persist created profiles
-  useEffect(() => {
-    if (isProfileLoaded) {
-      AsyncStorage.setItem(CREATED_PROFILES_KEY, JSON.stringify(createdProfiles));
-    }
-  }, [createdProfiles, isProfileLoaded]);
-
-  // Persist visible schedules
-  useEffect(() => {
-    if (isProfileLoaded) {
-      AsyncStorage.setItem(VISIBLE_SCHEDULES_KEY, JSON.stringify(visibleSchedules));
-    }
-  }, [visibleSchedules, isProfileLoaded]);
-
-  const currentProfile = ALLOWED_PROFILES.find((p) => p.id === activeProfileId) || null;
-
-  const isProfileCreated = (profileId) => {
-    return !!createdProfiles[profileId];
-  };
-
-  const createProfile = (profileId, pinCode) => {
-    const found = ALLOWED_PROFILES.find((p) => p.id === profileId || p.name.toLowerCase() === profileId.toLowerCase());
+  // Bind profile permanently to this device
+  const bindDeviceProfile = async (profileId, pinCode) => {
+    const found = ALLOWED_PROFILES.find((p) => p.id === profileId);
     if (!found) {
-      return { success: false, error: 'Prénom non autorisé. Seuls Claire, Alban, Clara et Marielle peuvent créer un profil.' };
+      return { success: false, error: 'Prénom non autorisé.' };
     }
-    if (!pinCode || pinCode.length < 4) {
-      return { success: false, error: 'Veuillez définir un code PIN d\'au moins 4 chiffres.' };
-    }
+    setDeviceProfileId(found.id);
+    await AsyncStorage.setItem(DEVICE_PROFILE_KEY, found.id);
+    return { success: true };
+  };
 
-    const newCreated = {
-      ...createdProfiles,
-      [found.id]: { pin: pinCode, createdAt: new Date().toISOString() },
+  // Toggle App Mode ('personal' vs 'university')
+  const toggleAppMode = async () => {
+    const nextMode = appMode === 'personal' ? 'university' : 'personal';
+    setAppMode(nextMode);
+    await AsyncStorage.setItem(APP_MODE_KEY, nextMode);
+  };
+
+  // Change Theme Color
+  const changeTheme = async (key) => {
+    if (THEMES[key]) {
+      setThemeKey(key);
+      await AsyncStorage.setItem(THEME_KEY, key);
+    }
+  };
+
+  const toggleScheduleVisibility = async (profileId) => {
+    const updated = {
+      ...visibleSchedules,
+      [profileId]: !visibleSchedules[profileId],
     };
-    setCreatedProfiles(newCreated);
-    setActiveProfileId(found.id);
-    return { success: true };
+    setVisibleSchedules(updated);
+    await AsyncStorage.setItem(VISIBLE_SCHEDULES_KEY, JSON.stringify(updated));
   };
 
-  const switchProfile = (profileId, pinInput) => {
-    const target = createdProfiles[profileId];
-    if (!target) {
-      return { success: false, error: 'Profil non encore créé.' };
-    }
-    if (target.pin !== pinInput.trim()) {
-      return { success: false, error: 'Code PIN incorrect. Seul le propriétaire du profil peut y accéder.' };
-    }
-
-    setActiveProfileId(profileId);
-    return { success: true };
-  };
-
-  const logoutProfile = () => {
-    setActiveProfileId(null);
-  };
-
-  const toggleScheduleVisibility = (profileId) => {
-    setVisibleSchedules((prev) => ({
-      ...prev,
-      [profileId]: !prev[profileId],
-    }));
-  };
-
+  const currentProfile = ALLOWED_PROFILES.find((p) => p.id === deviceProfileId) || null;
+  const currentTheme = THEMES[themeKey] || THEMES.rose;
   const canAccessSchedules = currentProfile && currentProfile.role === 'full';
 
   return (
     <ProfileContext.Provider
       value={{
         allowedProfiles: ALLOWED_PROFILES,
-        createdProfiles,
-        activeProfileId,
+        deviceProfileId,
         currentProfile,
+        appMode,
+        currentTheme,
+        themeKey,
         visibleSchedules,
         isProfileLoaded,
-        isProfileCreated,
-        createProfile,
-        switchProfile,
-        logoutProfile,
+        bindDeviceProfile,
+        toggleAppMode,
+        changeTheme,
         toggleScheduleVisibility,
         canAccessSchedules,
       }}
