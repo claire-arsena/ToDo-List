@@ -2,6 +2,7 @@ import React, { useContext, useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { TodoContext } from '../ctx/TodoContext';
+import { ProfileContext } from '../ctx/ProfileContext';
 import GlassCard from '../components/GlassCard';
 import { COLORS } from '../theme';
 
@@ -25,7 +26,22 @@ const formatLocalDate = (d) =>
 
 export default function Planning() {
   const { tasks, folders, toggleTaskDone } = useContext(TodoContext);
+  const { canAccessSchedules, currentProfile } = useContext(ProfileContext);
   const [selectedDate, setSelectedDate] = useState(new Date());
+
+  if (!canAccessSchedules) {
+    return (
+      <View style={styles.restrictedContainer}>
+        <GlassCard style={styles.restrictedCard}>
+          <Ionicons name="lock-closed" size={48} color={COLORS.pinkDark} />
+          <Text style={styles.restrictedTitle}>Accès restreint</Text>
+          <Text style={styles.restrictedSub}>
+            Le profil <Text style={{ fontWeight: '800' }}>{currentProfile.name}</Text> a un accès uniquement réservé à la liste des tâches. Le planning est masqué.
+          </Text>
+        </GlassCard>
+      </View>
+    );
+  }
 
   const dateStr = formatLocalDate(selectedDate);
   const todayStr = formatLocalDate(new Date());
@@ -390,4 +406,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emptyText: { marginTop: 6, fontSize: 12, color: COLORS.textMuted, fontWeight: '600' },
+  restrictedContainer: { flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center' },
+  restrictedCard: { padding: 30, alignItems: 'center', gap: 12, width: '100%', maxWidth: 400 },
+  restrictedTitle: { fontSize: 20, fontWeight: '800', color: COLORS.pinkDark },
+  restrictedSub: { fontSize: 14, color: COLORS.textMuted, textAlign: 'center', lineHeight: 20 },
 });
