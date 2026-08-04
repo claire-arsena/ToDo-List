@@ -104,7 +104,7 @@ export default function TaskFormModal() {
           isRegular: modalData.isRegular !== undefined ? modalData.isRegular : true,
         });
       } else {
-        setHasDate(false);
+        setHasDate(true);
         setForm({ ...EMPTY, startDate: getToday(), endDate: getToday(), status: ETATS.NOUVEAU });
       }
     }
