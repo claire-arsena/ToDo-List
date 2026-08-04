@@ -1,0 +1,18 @@
+{
+  "claire": {
+    "isCreated": true,
+    "pin": "1234"
+  },
+  "alban": {
+    "isCreated": false,
+    "pin": null
+  },
+  "clara": {
+    "isCreated": false,
+    "pin": null
+  },
+  "marielle": {
+    "isCreated": false,
+    "pin": null
+  }
+}

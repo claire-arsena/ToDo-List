@@ -32,6 +32,8 @@ export default function ProfileView() {
   const {
     allowedProfiles,
     currentProfile,
+    isProfileRegistered,
+    registerProfile,
     loginProfile,
     logoutProfile,
     appMode,
@@ -50,42 +52,72 @@ export default function ProfileView() {
   // Active Sub-modal state: null | 'preferences' | 'stats' | 'backup'
   const [activeModal, setActiveModal] = useState(null);
 
-  // PIN Authentication Modal State
+  // PIN Authentication / Profile Registration Modal State
   const [targetProfile, setTargetProfile] = useState(null);
+  const [authMode, setAuthMode] = useState(null); // 'register' or 'login'
   const [pinInput, setPinInput] = useState('');
+  const [pinConfirm, setPinConfirm] = useState('');
   const [pinError, setPinError] = useState('');
 
   const handleProfileClick = (profileObj) => {
     setTargetProfile(profileObj);
     setPinInput('');
+    setPinConfirm('');
     setPinError('');
+
+    if (isProfileRegistered(profileObj.id)) {
+      setAuthMode('login');
+    } else {
+      setAuthMode('register');
+    }
   };
 
   const closeAuthModal = () => {
     setTargetProfile(null);
+    setAuthMode(null);
     setPinInput('');
+    setPinConfirm('');
     setPinError('');
   };
 
   const handleAuthSubmit = async () => {
     if (!targetProfile) return;
-    if (!pinInput.trim()) {
-      setPinError('Veuillez entrer votre code PIN.');
-      return;
-    }
 
-    const res = await loginProfile(targetProfile.id, pinInput.trim());
-    if (res.success) {
-      closeAuthModal();
-    } else {
-      setPinError(res.error);
+    if (authMode === 'register') {
+      if (!pinInput || pinInput.length < 4) {
+        setPinError('Le code PIN doit comporter au moins 4 chiffres.');
+        return;
+      }
+      if (pinInput !== pinConfirm) {
+        setPinError('Les deux codes PIN ne correspondent pas.');
+        return;
+      }
+
+      const res = await registerProfile(targetProfile.id, pinInput.trim());
+      if (res.success) {
+        closeAuthModal();
+      } else {
+        setPinError(res.error);
+      }
+    } else if (authMode === 'login') {
+      if (!pinInput) {
+        setPinError('Veuillez entrer votre code PIN secret.');
+        return;
+      }
+
+      const res = await loginProfile(targetProfile.id, pinInput.trim());
+      if (res.success) {
+        closeAuthModal();
+      } else {
+        setPinError(res.error);
+      }
     }
   };
 
   // Export JSON Backup
   const handleExport = useCallback(() => {
     const backup = {
-      version: 5,
+      version: 6,
       profileId: currentProfile?.id || 'global',
       exportDate: new Date().toISOString(),
       tasks,
@@ -244,7 +276,7 @@ export default function ProfileView() {
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.profileName}>{currentProfile.name}</Text>
               <Text style={styles.profileRole}>
-                Profil authentifié · {currentProfile.role === 'full' ? 'Accès EDT complet' : 'Accès Tâches uniquement'}
+                Profil authentifié avec code PIN · {currentProfile.role === 'full' ? 'Accès EDT complet' : 'Accès Tâches uniquement'}
               </Text>
             </View>
             <TouchableOpacity style={styles.logoutBtn} onPress={logoutProfile}>
@@ -260,26 +292,29 @@ export default function ProfileView() {
             <Text style={[styles.warningTitle, { color: currentTheme.primary }]}>Authentification Sécurisée par Code PIN</Text>
           </View>
           <Text style={styles.warningText}>
-            Pour accéder à votre espace personnel et à vos emplois du temps universitaires, sélectionnez votre prénom ci-dessous et entrez votre code PIN secret :
+            Pour accéder à votre espace personnel et à vos emplois du temps universitaires, sélectionnez votre prénom ci-dessous. Si votre profil est déjà créé, votre code PIN secret vous sera demandé. Sinon, vous pourrez définir votre propre code PIN.
           </Text>
 
           <Text style={styles.selectLabel}>Sélectionnez votre profil :</Text>
 
           <View style={styles.profilesGrid}>
-            {allowedProfiles.map((p) => (
-              <TouchableOpacity
-                key={p.id}
-                style={[styles.profileChoiceChip, { borderColor: p.defaultColor }]}
-                onPress={() => handleProfileClick(p)}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="lock-closed" size={18} color={p.defaultColor} />
-                <View>
-                  <Text style={styles.choiceName}>{p.name}</Text>
-                  <Text style={styles.choiceStatus}>Code PIN requis</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
+            {allowedProfiles.map((p) => {
+              const isReg = isProfileRegistered(p.id);
+              return (
+                <TouchableOpacity
+                  key={p.id}
+                  style={[styles.profileChoiceChip, { borderColor: p.defaultColor }]}
+                  onPress={() => handleProfileClick(p)}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name={isReg ? "lock-closed" : "person-add-outline"} size={18} color={p.defaultColor} />
+                  <View>
+                    <Text style={styles.choiceName}>{p.name}</Text>
+                    <Text style={styles.choiceStatus}>{isReg ? 'PIN requis' : 'Créer profil'}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </GlassCard>
       )}
@@ -567,26 +602,30 @@ export default function ProfileView() {
         </View>
       </Modal>
 
-      {/* MODAL DE SÉCURITÉ CODE PIN */}
+      {/* MODAL DE SÉCURITÉ CODE PIN (Connexion vs Création) */}
       {targetProfile && (
         <Modal visible transparent animationType="fade" onRequestClose={closeAuthModal}>
           <View style={styles.modalOverlay}>
             <View style={styles.pinCard}>
               <Ionicons name="shield-checkmark" size={36} color={currentTheme.primary} style={{ marginBottom: 6 }} />
               <Text style={styles.pinTitle}>
-                Connexion au profil {targetProfile.name}
+                {authMode === 'register'
+                  ? `Création du profil ${targetProfile.name}`
+                  : `Connexion au profil ${targetProfile.name}`}
               </Text>
 
               <Text style={styles.pinSub}>
-                Entrez le code PIN secret de {targetProfile.name} pour accéder à votre espace :
+                {authMode === 'register'
+                  ? `Définissez votre code PIN secret (min. 4 chiffres). Ce code vous sera demandé pour vous connecter sur tout autre appareil.`
+                  : `Le profil ${targetProfile.name} est protégé par votre code PIN secret. Entrez votre code PIN pour y accéder :`}
               </Text>
 
-              {/* Champ PIN */}
+              {/* Champ PIN 1 */}
               <TextInput
                 style={styles.pinInput}
                 value={pinInput}
                 onChangeText={setPinInput}
-                placeholder="Code PIN secret"
+                placeholder={authMode === 'register' ? 'Nouveau code PIN (ex: 1234)' : 'Code PIN secret'}
                 placeholderTextColor={COLORS.textMuted}
                 keyboardType="numeric"
                 secureTextEntry
@@ -594,9 +633,21 @@ export default function ProfileView() {
                 autoFocus
               />
 
-              {pinError ? <Text style={styles.errorText}>{pinError}</Text> : null}
+              {/* Champ Confirmation PIN si Création */}
+              {authMode === 'register' && (
+                <TextInput
+                  style={styles.pinInput}
+                  value={pinConfirm}
+                  onChangeText={setPinConfirm}
+                  placeholder="Confirmer le code PIN"
+                  placeholderTextColor={COLORS.textMuted}
+                  keyboardType="numeric"
+                  secureTextEntry
+                  maxLength={8}
+                />
+              )}
 
-              <Text style={styles.pinHint}>Code par défaut : {targetProfile.defaultPin}</Text>
+              {pinError ? <Text style={styles.errorText}>{pinError}</Text> : null}
 
               <View style={styles.pinButtons}>
                 <TouchableOpacity style={styles.pinCancelBtn} onPress={closeAuthModal}>
@@ -609,7 +660,9 @@ export default function ProfileView() {
                     end={{ x: 1, y: 1 }}
                     style={styles.pinConfirmGradient}
                   >
-                    <Text style={styles.pinConfirmText}>Se connecter</Text>
+                    <Text style={styles.pinConfirmText}>
+                      {authMode === 'register' ? 'Créer le profil' : 'Se connecter'}
+                    </Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
@@ -846,7 +899,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   errorText: { color: COLORS.danger, fontSize: 12, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
-  pinHint: { fontSize: 11, color: COLORS.textMuted, fontStyle: 'italic', marginBottom: 16 },
   pinButtons: { flexDirection: 'row', gap: 10, width: '100%', marginTop: 6 },
   pinCancelBtn: {
     flex: 1,

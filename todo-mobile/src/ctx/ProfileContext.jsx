@@ -1,11 +1,12 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import defaultProfilesDb from '../config/profiles_db.json';
 
 export const ALLOWED_PROFILES = [
-  { id: 'claire', name: 'Claire', role: 'full', defaultColor: '#d81b60', defaultPin: '1234' },
-  { id: 'alban', name: 'Alban', role: 'full', defaultColor: '#1e88e5', defaultPin: '5678' },
-  { id: 'clara', name: 'Clara', role: 'full', defaultColor: '#8e24aa', defaultPin: '4321' },
-  { id: 'marielle', name: 'Marielle', role: 'restricted', defaultColor: '#ff9800', defaultPin: '0000' },
+  { id: 'claire', name: 'Claire', role: 'full', defaultColor: '#d81b60' },
+  { id: 'alban', name: 'Alban', role: 'full', defaultColor: '#1e88e5' },
+  { id: 'clara', name: 'Clara', role: 'full', defaultColor: '#8e24aa' },
+  { id: 'marielle', name: 'Marielle', role: 'restricted', defaultColor: '#ff9800' },
 ];
 
 export const THEMES = {
@@ -14,22 +15,17 @@ export const THEMES = {
   green: { key: 'green', name: 'Vert', primary: '#2ecc71', deep: '#27ae60', tint: 'rgba(46, 204, 113, 0.12)' },
 };
 
-const ACTIVE_PROFILE_KEY = '@todo_active_profile_v5';
-const PINS_KEY = '@todo_profile_pins_v5';
-const APP_MODE_KEY = '@todo_app_mode_v5';
-const THEME_KEY = '@todo_theme_color_v5';
-const VISIBLE_SCHEDULES_KEY = '@todo_visible_schedules_v5';
+const ACTIVE_PROFILE_KEY = '@todo_active_profile_v6';
+const REGISTERED_PROFILES_KEY = '@todo_registered_profiles_v6';
+const APP_MODE_KEY = '@todo_app_mode_v6';
+const THEME_KEY = '@todo_theme_color_v6';
+const VISIBLE_SCHEDULES_KEY = '@todo_visible_schedules_v6';
 
 export const ProfileContext = createContext();
 
 export function ProfileContextProvider({ children }) {
   const [activeProfileId, setActiveProfileId] = useState(null);
-  const [pins, setPins] = useState({
-    claire: '1234',
-    alban: '5678',
-    clara: '4321',
-    marielle: '0000',
-  });
+  const [registeredProfiles, setRegisteredProfiles] = useState(defaultProfilesDb);
   const [appMode, setAppMode] = useState('personal'); // 'personal' | 'university'
   const [themeKey, setThemeKey] = useState('rose'); // 'rose' | 'blue' | 'green'
   const [visibleSchedules, setVisibleSchedules] = useState({
@@ -43,9 +39,10 @@ export function ProfileContextProvider({ children }) {
   useEffect(() => {
     (async () => {
       try {
-        const savedPins = await AsyncStorage.getItem(PINS_KEY);
-        if (savedPins) {
-          setPins(JSON.parse(savedPins));
+        const savedReg = await AsyncStorage.getItem(REGISTERED_PROFILES_KEY);
+        if (savedReg) {
+          const parsed = JSON.parse(savedReg);
+          setRegisteredProfiles((prev) => ({ ...prev, ...parsed }));
         }
 
         const savedActive = await AsyncStorage.getItem(ACTIVE_PROFILE_KEY);
@@ -75,30 +72,50 @@ export function ProfileContextProvider({ children }) {
     })();
   }, []);
 
-  // Authenticate login into profile with PIN
+  // Check if profile is created/registered
+  const isProfileRegistered = (profileId) => {
+    return !!registeredProfiles[profileId]?.isCreated;
+  };
+
+  // Register & Create Profile with Secret PIN
+  const registerProfile = async (profileId, pinCode) => {
+    const found = ALLOWED_PROFILES.find((p) => p.id === profileId);
+    if (!found) {
+      return { success: false, error: 'Prénom non autorisé.' };
+    }
+    if (!pinCode || pinCode.trim().length < 4) {
+      return { success: false, error: 'Le code PIN doit comporter au moins 4 chiffres.' };
+    }
+
+    const updated = {
+      ...registeredProfiles,
+      [found.id]: {
+        isCreated: true,
+        pin: pinCode.trim(),
+        createdAt: new Date().toISOString(),
+      },
+    };
+
+    setRegisteredProfiles(updated);
+    setActiveProfileId(found.id);
+
+    await AsyncStorage.setItem(REGISTERED_PROFILES_KEY, JSON.stringify(updated));
+    await AsyncStorage.setItem(ACTIVE_PROFILE_KEY, found.id);
+    return { success: true };
+  };
+
+  // Authenticate Login with Secret PIN
   const loginProfile = async (profileId, pinInput) => {
-    const correctPin = pins[profileId] || ALLOWED_PROFILES.find((p) => p.id === profileId)?.defaultPin;
-    if (pinInput.trim() !== correctPin) {
+    const target = registeredProfiles[profileId];
+    if (!target || !target.isCreated) {
+      return { success: false, error: 'Ce profil n\'a pas encore été créé.' };
+    }
+    if (target.pin !== pinInput.trim()) {
       return { success: false, error: 'Code PIN incorrect ! Accès refusé à ce profil.' };
     }
 
     setActiveProfileId(profileId);
     await AsyncStorage.setItem(ACTIVE_PROFILE_KEY, profileId);
-    return { success: true };
-  };
-
-  const updateProfilePin = async (profileId, oldPin, newPin) => {
-    const correctPin = pins[profileId] || ALLOWED_PROFILES.find((p) => p.id === profileId)?.defaultPin;
-    if (oldPin.trim() !== correctPin) {
-      return { success: false, error: 'Ancien code PIN incorrect.' };
-    }
-    if (!newPin || newPin.trim().length < 4) {
-      return { success: false, error: 'Le nouveau code PIN doit comporter au moins 4 chiffres.' };
-    }
-
-    const updatedPins = { ...pins, [profileId]: newPin.trim() };
-    setPins(updatedPins);
-    await AsyncStorage.setItem(PINS_KEY, JSON.stringify(updatedPins));
     return { success: true };
   };
 
@@ -139,16 +156,17 @@ export function ProfileContextProvider({ children }) {
     <ProfileContext.Provider
       value={{
         allowedProfiles: ALLOWED_PROFILES,
+        registeredProfiles,
         activeProfileId,
         currentProfile,
-        pins,
         appMode,
         currentTheme,
         themeKey,
         visibleSchedules,
         isProfileLoaded,
+        isProfileRegistered,
+        registerProfile,
         loginProfile,
-        updateProfilePin,
         logoutProfile,
         toggleAppMode,
         changeTheme,
