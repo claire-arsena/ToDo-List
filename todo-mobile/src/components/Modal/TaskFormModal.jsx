@@ -10,6 +10,7 @@ import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
 import { TodoContext } from '../../ctx/TodoContext';
 import { ModalContext } from '../../ctx/ModalContext';
+import { ProfileContext } from '../../ctx/ProfileContext';
 import { ETATS } from '../../config/constants';
 import DatePickerInput from '../DatePickerInput';
 import TimePickerInput from '../TimePickerInput';
@@ -258,7 +259,7 @@ export default function TaskFormModal() {
             </View>
 
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
+              <Text style={[styles.modalTitle, { color: currentTheme.primary }]}>
                 {modalData ? 'Modifier la tâche' : 'Nouvelle tâche'}
               </Text>
               <TouchableOpacity onPress={closeModal} style={styles.closeBtn}>
@@ -288,7 +289,7 @@ export default function TaskFormModal() {
                 <View style={styles.labelRow}>
                   <Text style={styles.label}>Dossier (Optionnel)</Text>
                   <TouchableOpacity onPress={() => setShowNewFolderForm(!showNewFolderForm)}>
-                    <Text style={styles.addFolderBtnText}>
+                    <Text style={[styles.addFolderBtnText, { color: currentTheme.primary }]}>
                       {showNewFolderForm ? 'Fermer' : '+ Nouveau dossier'}
                     </Text>
                   </TouchableOpacity>
@@ -321,7 +322,7 @@ export default function TaskFormModal() {
                     </ScrollView>
 
                     <TouchableOpacity
-                      style={[styles.createFolderSubmit, !newFolderTitle.trim() && { opacity: 0.5 }]}
+                      style={[styles.createFolderSubmit, { backgroundColor: currentTheme.primary }, !newFolderTitle.trim() && { opacity: 0.5 }]}
                       onPress={handleCreateFolder}
                       disabled={!newFolderTitle.trim()}
                     >
@@ -332,7 +333,7 @@ export default function TaskFormModal() {
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 4 }}>
                     <View style={styles.folderChipRow}>
                       <TouchableOpacity
-                        style={[styles.folderChip, !form.folderId && styles.folderChipActive]}
+                        style={[styles.folderChip, !form.folderId && { backgroundColor: currentTheme.primary, borderColor: currentTheme.primary }]}
                         onPress={() => set('folderId', null)}
                       >
                         <Text style={[styles.folderChipText, !form.folderId && styles.folderChipTextActive]}>
@@ -395,11 +396,11 @@ export default function TaskFormModal() {
               </View>
 
               {/* Toggle Ajouter une date */}
-              <View style={styles.regularCard}>
+              <View style={[styles.regularCard, { backgroundColor: currentTheme.tint, borderColor: currentTheme.primary + '33' }]}>
                 <View style={styles.regularTextRow}>
-                  <Ionicons name="calendar-outline" size={20} color={COLORS.pinkDark} />
+                  <Ionicons name="calendar-outline" size={20} color={currentTheme.primary} />
                   <View style={{ flex: 1, marginLeft: 8 }}>
-                    <Text style={styles.regularTitle}>Ajouter une date</Text>
+                    <Text style={[styles.regularTitle, { color: currentTheme.primary }]}>Ajouter une date</Text>
                     <Text style={styles.regularSub}>
                       {hasDate ? 'La tâche sera planifiée avec des dates' : 'Tâche rapide sans date d\'échéance'}
                     </Text>
@@ -409,7 +410,7 @@ export default function TaskFormModal() {
                     onPress={() => setHasDate(!hasDate)}
                     style={[
                       styles.customToggleTrack,
-                      hasDate ? styles.customToggleTrackActive : styles.customToggleTrackInactive,
+                      hasDate ? { backgroundColor: currentTheme.primary } : styles.customToggleTrackInactive,
                     ]}
                   >
                     <View
@@ -465,11 +466,11 @@ export default function TaskFormModal() {
               )}
 
               {/* Option Tâche Régulière */}
-              <View style={styles.regularCard}>
+              <View style={[styles.regularCard, { backgroundColor: currentTheme.tint, borderColor: currentTheme.primary + '33' }]}>
                 <View style={styles.regularTextRow}>
-                  <Ionicons name="repeat-outline" size={20} color={COLORS.pinkDark} />
+                  <Ionicons name="repeat-outline" size={20} color={currentTheme.primary} />
                   <View style={{ flex: 1, marginLeft: 8 }}>
-                    <Text style={styles.regularTitle}>Tâche régulière quotidienne</Text>
+                    <Text style={[styles.regularTitle, { color: currentTheme.primary }]}>Tâche régulière quotidienne</Text>
                     <Text style={styles.regularSub}>
                       {isMultiDay
                         ? `Appliquer le créneau (${form.startTime || '09:00'} → ${form.endTime || '10:00'}) sur chacun des jours`
@@ -481,7 +482,7 @@ export default function TaskFormModal() {
                     onPress={() => set('isRegular', !form.isRegular)}
                     style={[
                       styles.customToggleTrack,
-                      form.isRegular ? styles.customToggleTrackActive : styles.customToggleTrackInactive,
+                      form.isRegular ? { backgroundColor: currentTheme.primary } : styles.customToggleTrackInactive,
                     ]}
                   >
                     <View
@@ -510,7 +511,7 @@ export default function TaskFormModal() {
 
               <View style={styles.buttons}>
                 <TouchableOpacity style={styles.btnSecondary} onPress={closeModal}>
-                  <Text style={styles.btnSecondaryText}>Annuler</Text>
+                  <Text style={[styles.btnSecondaryText, { color: currentTheme.primary }]}>Annuler</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.submitBtn, !form.title.trim() && styles.btnDisabled]}
@@ -518,7 +519,7 @@ export default function TaskFormModal() {
                   disabled={!form.title.trim()}
                 >
                   <LinearGradient
-                    colors={[COLORS.pinkDark, COLORS.pinkDeep]}
+                    colors={[currentTheme.primary, currentTheme.deep]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.btnPrimary}

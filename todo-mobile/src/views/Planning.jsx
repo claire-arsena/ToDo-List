@@ -2,11 +2,12 @@ import React, { useContext, useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { TodoContext } from '../ctx/TodoContext';
+import { ProfileContext } from '../ctx/ProfileContext';
 import GlassCard from '../components/GlassCard';
 import { COLORS } from '../theme';
 
 const STATUS_COLORS = {
-  'Nouveau': COLORS.pinkDark || '#ff66b3',
+  'Nouveau': '#ff66b3',
   'En cours': '#3498db',
   'Réussi': '#2ecc71',
   'En attente': '#f1c40f',
@@ -25,7 +26,22 @@ const formatLocalDate = (d) =>
 
 export default function Planning() {
   const { tasks, folders, toggleTaskDone } = useContext(TodoContext);
+  const { appMode, currentTheme } = useContext(ProfileContext);
   const [selectedDate, setSelectedDate] = useState(new Date());
+
+  if (appMode === 'university') {
+    return (
+      <View style={styles.univContainer}>
+        <GlassCard style={styles.univEmptyCard}>
+          <Ionicons name="school-outline" size={48} color={currentTheme.primary} />
+          <Text style={[styles.univEmptyTitle, { color: currentTheme.primary }]}>EDT Universitaire</Text>
+          <Text style={styles.univEmptySub}>
+            Aucune donnée d'emploi du temps universitaire disponible. Les fichiers .ics seront intégrés prochainement.
+          </Text>
+        </GlassCard>
+      </View>
+    );
+  }
 
   const dateStr = formatLocalDate(selectedDate);
   const todayStr = formatLocalDate(new Date());
@@ -390,8 +406,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emptyText: { marginTop: 6, fontSize: 12, color: COLORS.textMuted, fontWeight: '600' },
-  restrictedContainer: { flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center' },
-  restrictedCard: { padding: 30, alignItems: 'center', gap: 12, width: '100%', maxWidth: 400 },
-  restrictedTitle: { fontSize: 20, fontWeight: '800', color: COLORS.pinkDark },
-  restrictedSub: { fontSize: 14, color: COLORS.textMuted, textAlign: 'center', lineHeight: 20 },
+  univContainer: { flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center' },
+  univEmptyCard: { padding: 30, alignItems: 'center', gap: 12, width: '100%', maxWidth: 400 },
+  univEmptyTitle: { fontSize: 20, fontWeight: '800' },
+  univEmptySub: { fontSize: 13, color: COLORS.textMuted, textAlign: 'center', lineHeight: 20 },
 });

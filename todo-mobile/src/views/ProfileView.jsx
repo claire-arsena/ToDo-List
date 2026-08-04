@@ -14,7 +14,7 @@ import { PieChart } from 'react-native-chart-kit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ProfileContext, THEMES } from '../ctx/ProfileContext';
+import { ProfileContext } from '../ctx/ProfileContext';
 import { TodoContext } from '../ctx/TodoContext';
 import { ETATS } from '../config/constants';
 import { COLORS } from '../theme';
@@ -162,46 +162,15 @@ export default function ProfileView() {
 
   const total = tasks.length;
 
+  const themeOptions = [
+    { key: 'rose', name: 'Rose', color: '#d81b60' },
+    { key: 'blue', name: 'Bleu', color: '#1e88e5' },
+    { key: 'green', name: 'Vert', color: '#2ecc71' },
+  ];
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      {/* CARD 1 : BASCULE DE MODE (PERSONNEL VS EDT UNIVERSITAIRE) */}
-      <GlassCard style={styles.modeCard}>
-        <View style={styles.modeHeaderRow}>
-          <Ionicons
-            name={appMode === 'university' ? 'school' : 'person'}
-            size={22}
-            color={currentTheme.primary}
-          />
-          <View style={{ flex: 1, marginLeft: 8 }}>
-            <Text style={[styles.modeTitle, { color: currentTheme.primary }]}>
-              {appMode === 'university' ? 'Mode EDT Universitaire' : 'Mode Personnel'}
-            </Text>
-            <Text style={styles.modeSub}>
-              {appMode === 'university'
-                ? 'Planning et Calendrier affichent les cours universitaires. L\'onglet Tâches est filtré pour les rendus d\'études.'
-                : 'Planning, Tâches et Calendrier affichent vos activités personnelles.'}
-            </Text>
-          </View>
-        </View>
-
-        <TouchableOpacity activeOpacity={0.8} onPress={toggleAppMode} style={{ marginTop: 14 }}>
-          <LinearGradient
-            colors={[currentTheme.primary, currentTheme.deep]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.switchModeBtn}
-          >
-            <Ionicons name="swap-horizontal-outline" size={18} color="#fff" />
-            <Text style={styles.switchModeBtnText}>
-              {appMode === 'university'
-                ? 'Basculer en Mode Personnel'
-                : 'Basculer en Mode EDT Universitaire'}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      </GlassCard>
-
-      {/* CARD 2 : MON PROFIL ET ASSIGNATION APPAREIL */}
+      {/* POSITION 1 : MON PROFIL ET ASSIGNATION APPAREIL */}
       {currentProfile ? (
         <GlassCard style={styles.activeProfileCard}>
           <View style={styles.avatarRow}>
@@ -248,29 +217,66 @@ export default function ProfileView() {
         </GlassCard>
       )}
 
+      {/* POSITION 2 : BASCULE DE MODE (MODE TODO-LIST VS MODE EDT UNIVERSITAIRE) */}
+      <GlassCard style={styles.modeCard}>
+        <View style={styles.modeHeaderRow}>
+          <Ionicons
+            name={appMode === 'university' ? 'school' : 'checkbox'}
+            size={22}
+            color={currentTheme.primary}
+          />
+          <View style={{ flex: 1, marginLeft: 8 }}>
+            <Text style={[styles.modeTitle, { color: currentTheme.primary }]}>
+              {appMode === 'university' ? 'Mode EDT Universitaire' : 'Mode ToDo-List'}
+            </Text>
+            <Text style={styles.modeSub}>
+              {appMode === 'university'
+                ? 'Planning et Calendrier affichent les cours universitaires. L\'onglet Tâches est ciblés sur les devoirs d\'études.'
+                : 'Planning, Tâches et Calendrier affichent vos activités personnelles ToDo-List.'}
+            </Text>
+          </View>
+        </View>
+
+        <TouchableOpacity activeOpacity={0.8} onPress={toggleAppMode} style={{ marginTop: 14 }}>
+          <LinearGradient
+            colors={[currentTheme.primary, currentTheme.deep]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.switchModeBtn}
+          >
+            <Ionicons name="swap-horizontal-outline" size={18} color="#fff" />
+            <Text style={styles.switchModeBtnText}>
+              {appMode === 'university'
+                ? 'Basculer en Mode ToDo-List'
+                : 'Basculer en Mode EDT Universitaire'}
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </GlassCard>
+
       {/* CARD 3 : THÈME DE COULEUR DE L'APPLICATION */}
       <GlassCard style={styles.themeCard}>
         <View style={styles.sectionHeaderRow}>
           <Ionicons name="color-palette-outline" size={20} color={currentTheme.primary} />
           <Text style={[styles.sectionTitleHeader, { color: currentTheme.primary }]}>Thème de couleur</Text>
         </View>
-        <Text style={styles.sectionSubText}>Choisissez l'apparence et la couleur principale de l'interface :</Text>
+        <Text style={styles.sectionSubText}>Choisissez la couleur principale de l'interface :</Text>
 
         <View style={styles.themesRow}>
-          {Object.values(THEMES).map((t) => {
+          {themeOptions.map((t) => {
             const isSelected = themeKey === t.key;
             return (
               <TouchableOpacity
                 key={t.key}
                 style={[
                   styles.themeChip,
-                  { borderColor: t.primary },
-                  isSelected && { backgroundColor: t.primary },
+                  { borderColor: t.color },
+                  isSelected && { backgroundColor: t.color },
                 ]}
                 onPress={() => changeTheme(t.key)}
                 activeOpacity={0.8}
               >
-                <View style={[styles.themeDot, { backgroundColor: isSelected ? '#fff' : t.primary }]} />
+                <View style={[styles.themeDot, { backgroundColor: isSelected ? '#fff' : t.color }]} />
                 <Text style={[styles.themeChipText, isSelected && styles.textWhite]}>{t.name}</Text>
               </TouchableOpacity>
             );
@@ -278,57 +284,59 @@ export default function ProfileView() {
         </View>
       </GlassCard>
 
-      {/* CARD 4 : SUPERPOSITION DES EMPLOIS DU TEMPS (.ICS) */}
-      {canAccessSchedules ? (
-        <GlassCard style={styles.scheduleCard}>
-          <View style={styles.sectionHeaderRow}>
-            <Ionicons name="calendar-outline" size={20} color={currentTheme.primary} />
-            <Text style={[styles.sectionTitleHeader, { color: currentTheme.primary }]}>
-              Superposition des Emplois du Temps (.ics)
+      {/* CARD 4 : SUPERPOSITION DES EMPLOIS DU TEMPS — UNIQUEMENT EN MODE EDT UNIVERSITAIRE */}
+      {appMode === 'university' && (
+        canAccessSchedules ? (
+          <GlassCard style={styles.scheduleCard}>
+            <View style={styles.sectionHeaderRow}>
+              <Ionicons name="calendar-outline" size={20} color={currentTheme.primary} />
+              <Text style={[styles.sectionTitleHeader, { color: currentTheme.primary }]}>
+                Superposition des Emplois du Temps
+              </Text>
+            </View>
+            <Text style={styles.sectionSubText}>
+              Cochez les emplois du temps universitaires à faire apparaître dans la vue EDT :
             </Text>
-          </View>
-          <Text style={styles.sectionSubText}>
-            Cochez les emplois du temps universitaires à faire apparaître dans la vue EDT :
-          </Text>
 
-          {allowedProfiles
-            .filter((p) => p.role === 'full')
-            .map((p) => {
-              const isChecked = !!visibleSchedules[p.id];
-              return (
-                <TouchableOpacity
-                  key={p.id}
-                  style={styles.scheduleToggleRow}
-                  onPress={() => toggleScheduleVisibility(p.id)}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.colorIndicator, { backgroundColor: p.defaultColor }]} />
-                  <Text style={styles.scheduleName}>Emploi du temps de {p.name}</Text>
-                  <View
-                    style={[
-                      styles.toggleTrack,
-                      isChecked ? { backgroundColor: currentTheme.primary } : styles.toggleTrackOff,
-                    ]}
+            {allowedProfiles
+              .filter((p) => p.role === 'full')
+              .map((p) => {
+                const isChecked = !!visibleSchedules[p.id];
+                return (
+                  <TouchableOpacity
+                    key={p.id}
+                    style={styles.scheduleToggleRow}
+                    onPress={() => toggleScheduleVisibility(p.id)}
+                    activeOpacity={0.7}
                   >
+                    <View style={[styles.colorIndicator, { backgroundColor: p.defaultColor }]} />
+                    <Text style={styles.scheduleName}>Emploi du temps de {p.name}</Text>
                     <View
                       style={[
-                        styles.toggleThumb,
-                        isChecked ? styles.toggleThumbOn : styles.toggleThumbOff,
+                        styles.toggleTrack,
+                        isChecked ? { backgroundColor: currentTheme.primary } : styles.toggleTrackOff,
                       ]}
-                    />
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-        </GlassCard>
-      ) : currentProfile ? (
-        <GlassCard style={styles.restrictedCard}>
-          <Ionicons name="lock-closed-outline" size={24} color={COLORS.textMuted} />
-          <Text style={styles.restrictedText}>
-            Le profil Marielle a un accès uniquement réservé à la liste des tâches. Les emplois du temps universitaires sont masqués.
-          </Text>
-        </GlassCard>
-      ) : null}
+                    >
+                      <View
+                        style={[
+                          styles.toggleThumb,
+                          isChecked ? styles.toggleThumbOn : styles.toggleThumbOff,
+                        ]}
+                      />
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+          </GlassCard>
+        ) : currentProfile ? (
+          <GlassCard style={styles.restrictedCard}>
+            <Ionicons name="lock-closed-outline" size={24} color={COLORS.textMuted} />
+            <Text style={styles.restrictedText}>
+              Le profil Marielle a un accès uniquement réservé à la liste des tâches. Les emplois du temps universitaires sont masqués.
+            </Text>
+          </GlassCard>
+        ) : null
+      )}
 
       {/* CARD 5 : STATISTIQUES ET SAUVEGARDE */}
       <GlassCard style={styles.chartCard}>
@@ -392,12 +400,12 @@ export default function ProfileView() {
               style={styles.backupBtn}
             >
               <Ionicons name="download-outline" size={18} color="#fff" />
-              <Text style={styles.backupBtnText}>Exporter JSON</Text>
+              <Text style={styles.backupBtnText}>Exporter la sauvegarde</Text>
             </LinearGradient>
           </TouchableOpacity>
           <TouchableOpacity activeOpacity={0.8} onPress={handleImport} style={[styles.restoreBtn, { flex: 1, borderColor: currentTheme.primary }]}>
             <Ionicons name="cloud-upload-outline" size={18} color={currentTheme.primary} />
-            <Text style={[styles.restoreBtnText, { color: currentTheme.primary }]}>Restaurer JSON</Text>
+            <Text style={[styles.restoreBtnText, { color: currentTheme.primary }]}>Restaurer la sauvegarde</Text>
           </TouchableOpacity>
         </View>
       </GlassCard>
@@ -601,7 +609,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 100,
   },
-  backupBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  backupBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   restoreBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -612,7 +620,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.04)',
     borderWidth: 1,
   },
-  restoreBtnText: { fontSize: 13, fontWeight: '700' },
+  restoreBtnText: { fontSize: 12, fontWeight: '700' },
 
   // Confirm Modal
   modalOverlay: {

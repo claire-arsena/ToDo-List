@@ -1,19 +1,24 @@
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { TodoContext } from '../ctx/TodoContext';
+import { ProfileContext } from '../ctx/ProfileContext';
 import { COLORS } from '../theme';
 
 const ROUTE_TITLES = {
   Tasks: 'Tâches',
   Planning: 'Planning',
   Agenda: 'Calendrier',
+  Profile: 'Profil',
   Dashboard: 'Tableau de bord',
 };
 
 export default function AppHeader({ routeName }) {
   const insets = useSafeAreaInsets();
   const { tasks, getActiveTasks } = useContext(TodoContext);
+  const { currentTheme, appMode } = useContext(ProfileContext);
+
   const title = ROUTE_TITLES[routeName] || 'Ma Liste';
   const totalTasks = tasks.length;
   const activeTasksCount = getActiveTasks().length;
@@ -22,10 +27,23 @@ export default function AppHeader({ routeName }) {
     <View style={[styles.wrapper, { paddingTop: insets.top + 8 }]}>
       <View style={styles.iosBar}>
         <View style={styles.inner}>
-          <Text style={styles.title}>{title}</Text>
-          <View style={styles.iosPillBadge}>
+          {/* Logo App + Titre */}
+          <View style={styles.titleRow}>
+            <View style={[styles.logoIconBg, { backgroundColor: currentTheme.tint }]}>
+              <Ionicons name="checkbox" size={22} color={currentTheme.primary} />
+            </View>
+            <View>
+              <Text style={styles.title}>{title}</Text>
+              {appMode === 'university' && (
+                <Text style={[styles.modeSubtitle, { color: currentTheme.primary }]}>Mode EDT Universitaire</Text>
+              )}
+            </View>
+          </View>
+
+          {/* Badge Compteur Tâches */}
+          <View style={[styles.iosPillBadge, { backgroundColor: currentTheme.tint, borderColor: currentTheme.primary + '33' }]}>
             <Text style={styles.badgeText}>
-              <Text style={styles.badgeHighlight}>{activeTasksCount}</Text> en cours / <Text style={styles.badgeHighlight}>{totalTasks}</Text> total
+              <Text style={[styles.badgeHighlight, { color: currentTheme.primary }]}>{activeTasksCount}</Text> / <Text style={[styles.badgeHighlight, { color: currentTheme.primary }]}>{totalTasks}</Text>
             </Text>
           </View>
         </View>
@@ -56,23 +74,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  logoIconBg: {
+    width: 38,
+    height: 38,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '800',
     color: '#1c1c1e',
-    letterSpacing: -0.5,
+    letterSpacing: -0.4,
+  },
+  modeSubtitle: {
+    fontSize: 10,
+    fontWeight: '800',
+    marginTop: -2,
   },
   iosPillBadge: {
-    backgroundColor: 'rgba(216, 27, 96, 0.08)',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 100,
     borderWidth: 1,
-    borderColor: 'rgba(216, 27, 96, 0.2)',
   },
   badgeText: { fontSize: 12, fontWeight: '600', color: COLORS.textLight },
-  badgeHighlight: { fontWeight: '800', color: COLORS.pinkDark },
+  badgeHighlight: { fontWeight: '800' },
 });

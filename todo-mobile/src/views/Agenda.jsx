@@ -1,7 +1,9 @@
 import React, { useContext, useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { TodoContext } from '../ctx/TodoContext';
+import { ProfileContext } from '../ctx/ProfileContext';
 import { COLORS, STATUS_COLORS } from '../theme';
 import GlassCard from '../components/GlassCard';
 import { getTodayStr, normalizeDateStr } from '../config/constants';
@@ -11,10 +13,25 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
 
 export default function Agenda() {
   const { tasks, folders } = useContext(TodoContext);
+  const { appMode, currentTheme } = useContext(ProfileContext);
   const [current, setCurrent] = useState(new Date());
   const year = current.getFullYear();
   const month = current.getMonth();
   const today = getTodayStr();
+
+  if (appMode === 'university') {
+    return (
+      <View style={styles.univContainer}>
+        <GlassCard style={styles.univEmptyCard}>
+          <Ionicons name="calendar-outline" size={48} color={currentTheme.primary} />
+          <Text style={[styles.univEmptyTitle, { color: currentTheme.primary }]}>Calendrier EDT Universitaire</Text>
+          <Text style={styles.univEmptySub}>
+            Aucune donnée d'emploi du temps universitaire disponible. Les fichiers .ics seront intégrés prochainement.
+          </Text>
+        </GlassCard>
+      </View>
+    );
+  }
 
   const getTaskColor = (t) => {
     if (t.folderId) {
@@ -95,7 +112,7 @@ export default function Agenda() {
           <Text style={styles.navBtnText}>▶</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setCurrent(new Date())}>
-          <LinearGradient colors={[COLORS.pinkDark, COLORS.pinkDeep]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.todayBtn}>
+          <LinearGradient colors={[currentTheme.primary, currentTheme.deep]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.todayBtn}>
             <Text style={styles.todayBtnText}>Aujourd'hui</Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -104,7 +121,7 @@ export default function Agenda() {
       {/* Tâches sans date */}
       {undatedTasks.length > 0 && (
         <GlassCard style={styles.undatedSection}>
-          <Text style={styles.undatedTitle}>Sans date</Text>
+          <Text style={[styles.undatedTitle, { color: currentTheme.primary }]}>Sans date</Text>
           {undatedTasks.map((t) => {
             const taskColor = getTaskColor(t);
             return (
@@ -121,8 +138,8 @@ export default function Agenda() {
         {/* En-têtes jours */}
         <View style={styles.weekRow}>
           {DAYS.map((d) => (
-            <View key={d} style={styles.dayHeader}>
-              <Text style={styles.dayHeaderText}>{d}</Text>
+            <View key={d} style={[styles.dayHeader, { backgroundColor: currentTheme.tint }]}>
+              <Text style={[styles.dayHeaderText, { color: currentTheme.primary }]}>{d}</Text>
             </View>
           ))}
         </View>
@@ -133,8 +150,8 @@ export default function Agenda() {
               const isToday = cell.date === today;
               const cellTasks = cell.date ? tasksByDate.get(cell.date) || [] : [];
               return (
-                <View key={ci} style={[styles.cell, cell.out && styles.cellOut, isToday && styles.cellToday]}>
-                  <Text style={[styles.cellDay, cell.out && styles.cellDayOut, isToday && styles.cellDayToday]}>
+                <View key={ci} style={[styles.cell, cell.out && styles.cellOut, isToday && { backgroundColor: currentTheme.tint }]}>
+                  <Text style={[styles.cellDay, cell.out && styles.cellDayOut, isToday && { color: currentTheme.primary, fontWeight: '900' }]}>
                     {cell.day}
                   </Text>
                   {cellTasks.slice(0, 2).map((t) => {
@@ -186,9 +203,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingVertical: 8,
-    backgroundColor: 'rgba(216, 27, 96, 0.08)',
   },
-  dayHeaderText: { fontSize: 11, fontWeight: '800', color: COLORS.pinkDark, textTransform: 'uppercase' },
+  dayHeaderText: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
   cell: {
     flex: 1,
     minHeight: 70,
@@ -198,21 +214,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   cellOut: { backgroundColor: 'rgba(0,0,0,0.03)' },
-  cellToday: {
-    backgroundColor: 'rgba(216, 27, 96, 0.06)',
-  },
   cellDay: { fontSize: 11, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
   cellDayOut: { color: COLORS.textMuted, fontWeight: '400' },
-  cellDayToday: { color: COLORS.pinkDark, fontWeight: '900' },
   taskDot: { borderRadius: 6, paddingHorizontal: 4, paddingVertical: 2, marginBottom: 2 },
   taskDotText: { fontSize: 9, color: '#fff', fontWeight: '800' },
   moreTasks: { fontSize: 8, color: COLORS.textMuted, fontWeight: '700' },
   undatedSection: { padding: 12, marginBottom: 12, gap: 8 },
-  undatedTitle: { fontSize: 14, fontWeight: '800', color: COLORS.pinkDark, marginBottom: 4 },
+  undatedTitle: { fontSize: 14, fontWeight: '800', marginBottom: 4 },
   undatedChip: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 4 },
   undatedChipText: { fontSize: 13, color: '#fff', fontWeight: '700' },
-  restrictedContainer: { flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center' },
-  restrictedCard: { padding: 30, alignItems: 'center', gap: 12, width: '100%', maxWidth: 400 },
-  restrictedTitle: { fontSize: 20, fontWeight: '800', color: COLORS.pinkDark },
-  restrictedSub: { fontSize: 14, color: COLORS.textMuted, textAlign: 'center', lineHeight: 20 },
+  univContainer: { flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center' },
+  univEmptyCard: { padding: 30, alignItems: 'center', gap: 12, width: '100%', maxWidth: 400 },
+  univEmptyTitle: { fontSize: 20, fontWeight: '800' },
+  univEmptySub: { fontSize: 13, color: COLORS.textMuted, textAlign: 'center', lineHeight: 20 },
 });
