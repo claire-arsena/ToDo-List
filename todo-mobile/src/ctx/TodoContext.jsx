@@ -23,14 +23,7 @@ export function TodoContextProvider({ children }) {
     (async () => {
       try {
         let rawTasks = await AsyncStorage.getItem(STORAGE_KEY);
-        // Restauration automatique : si le profil actif n'a pas encore de tâches, récupérer depuis le stockage global
-        if (!rawTasks) rawTasks = await AsyncStorage.getItem('@todo_tasks_v2');
-        if (!rawTasks) rawTasks = await AsyncStorage.getItem('@todo_tasks');
-        if (!rawTasks) rawTasks = await AsyncStorage.getItem('@todo_data');
-
         let rawFolders = await AsyncStorage.getItem(FOLDERS_KEY);
-        if (!rawFolders) rawFolders = await AsyncStorage.getItem('@todo_folders_v2');
-        if (!rawFolders) rawFolders = await AsyncStorage.getItem('@todo_folders');
 
         if (isMounted) {
           if (rawTasks) {
@@ -48,13 +41,19 @@ export function TodoContextProvider({ children }) {
           }
           
           if (initialFolders.length === 0) {
-            initialFolders = [
-              { id: 'etudes', title: 'Études', color: '#3b82f6' },
-              { id: 'perso', title: 'Perso', color: '#10b981' },
-              { id: 'sport', title: 'Sport', color: '#f59e0b' },
-              { id: 'courses', title: 'Courses', color: '#8b5cf6' },
-              { id: 'vacances', title: 'Vacances', color: '#ec4899' },
-            ];
+            if (activeProfileId === 'univ') {
+              initialFolders = [
+                { id: 'etudes', title: 'Études', color: '#3b82f6' },
+              ];
+            } else {
+              initialFolders = [
+                { id: 'etudes', title: 'Études', color: '#3b82f6' },
+                { id: 'perso', title: 'Perso', color: '#10b981' },
+                { id: 'sport', title: 'Sport', color: '#f59e0b' },
+                { id: 'courses', title: 'Courses', color: '#8b5cf6' },
+                { id: 'vacances', title: 'Vacances', color: '#ec4899' },
+              ];
+            }
           }
           setFolders(initialFolders);
         }
@@ -62,7 +61,9 @@ export function TodoContextProvider({ children }) {
         console.error('Erreur chargement AsyncStorage', e);
         if (isMounted) {
           setTasks([]);
-          setFolders([
+          setFolders(activeProfileId === 'univ' ? [
+            { id: 'etudes', title: 'Études', color: '#3b82f6' }
+          ] : [
             { id: 'etudes', title: 'Études', color: '#3b82f6' },
             { id: 'perso', title: 'Perso', color: '#10b981' },
             { id: 'sport', title: 'Sport', color: '#f59e0b' },
@@ -80,18 +81,16 @@ export function TodoContextProvider({ children }) {
     };
   }, [activeProfileId]);
 
-  // Sauvegarder automatiquement dans le stockage du profil actif + miroir de secours
+  // Sauvegarder automatiquement dans le stockage du profil actif
   useEffect(() => {
     if (isLoaded) {
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-      AsyncStorage.setItem('@todo_tasks_v2', JSON.stringify(tasks)); // Miroir global de secours
     }
   }, [tasks, isLoaded, STORAGE_KEY]);
 
   useEffect(() => {
     if (isLoaded) {
       AsyncStorage.setItem(FOLDERS_KEY, JSON.stringify(folders));
-      AsyncStorage.setItem('@todo_folders_v2', JSON.stringify(folders));
     }
   }, [folders, isLoaded, FOLDERS_KEY]);
 
