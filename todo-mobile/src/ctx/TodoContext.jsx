@@ -5,6 +5,14 @@ import { ProfileContext } from './ProfileContext';
 
 export const TodoContext = createContext();
 
+// Un dossier sans 'visibility' explicite (dossiers créés avant cette fonctionnalité)
+// est considéré visible partout, pour ne rien masquer rétroactivement.
+export function isFolderVisibleInMode(folder, appMode) {
+  const visibility = folder?.visibility || 'both';
+  if (visibility === 'both') return true;
+  return appMode === 'university' ? visibility === 'univ' : visibility === 'perso';
+}
+
 export function TodoContextProvider({ children }) {
   const { activeProfileId } = useContext(ProfileContext);
   const [tasks, setTasks] = useState([]);
@@ -64,15 +72,15 @@ export function TodoContextProvider({ children }) {
           if (initialFolders.length === 0) {
             if (activeProfileId === 'univ') {
               initialFolders = [
-                { id: 'etudes', title: 'Études', color: '#3b82f6' },
+                { id: 'etudes', title: 'Études', color: '#3b82f6', visibility: 'both' },
               ];
             } else {
               initialFolders = [
-                { id: 'etudes', title: 'Études', color: '#3b82f6' },
-                { id: 'perso', title: 'Perso', color: '#10b981' },
-                { id: 'sport', title: 'Sport', color: '#f59e0b' },
-                { id: 'courses', title: 'Courses', color: '#8b5cf6' },
-                { id: 'vacances', title: 'Vacances', color: '#ec4899' },
+                { id: 'etudes', title: 'Études', color: '#3b82f6', visibility: 'both' },
+                { id: 'perso', title: 'Perso', color: '#10b981', visibility: 'both' },
+                { id: 'sport', title: 'Sport', color: '#f59e0b', visibility: 'both' },
+                { id: 'courses', title: 'Courses', color: '#8b5cf6', visibility: 'both' },
+                { id: 'vacances', title: 'Vacances', color: '#ec4899', visibility: 'both' },
               ];
             }
           }
@@ -97,13 +105,13 @@ export function TodoContextProvider({ children }) {
         if (isMounted) {
           setTasks([]);
           setFolders(activeProfileId === 'univ' ? [
-            { id: 'etudes', title: 'Études', color: '#3b82f6' }
+            { id: 'etudes', title: 'Études', color: '#3b82f6', visibility: 'both' }
           ] : [
-            { id: 'etudes', title: 'Études', color: '#3b82f6' },
-            { id: 'perso', title: 'Perso', color: '#10b981' },
-            { id: 'sport', title: 'Sport', color: '#f59e0b' },
-            { id: 'courses', title: 'Courses', color: '#8b5cf6' },
-            { id: 'vacances', title: 'Vacances', color: '#ec4899' },
+            { id: 'etudes', title: 'Études', color: '#3b82f6', visibility: 'both' },
+            { id: 'perso', title: 'Perso', color: '#10b981', visibility: 'both' },
+            { id: 'sport', title: 'Sport', color: '#f59e0b', visibility: 'both' },
+            { id: 'courses', title: 'Courses', color: '#8b5cf6', visibility: 'both' },
+            { id: 'vacances', title: 'Vacances', color: '#ec4899', visibility: 'both' },
           ]);
         }
       } finally {
@@ -263,9 +271,16 @@ export function TodoContextProvider({ children }) {
       id: Date.now().toString(),
       title: folderData.title || 'Nouveau dossier',
       color: folderData.color || '#d81b60',
+      visibility: folderData.visibility || 'both',
     };
     setFolders((prev) => [...prev, newFolder]);
     return newFolder;
+  };
+
+  const updateFolder = (folderId, fields) => {
+    setFolders((prev) =>
+      prev.map((f) => (f.id === folderId ? { ...f, ...fields } : f))
+    );
   };
 
   const deleteFolder = (folderId) => {
@@ -296,6 +311,7 @@ export function TodoContextProvider({ children }) {
         rescheduleByDays,
         cancelTask,
         addFolder,
+        updateFolder,
         deleteFolder,
         getActiveTasks,
         getCompletedTasks,

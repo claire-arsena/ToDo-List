@@ -8,7 +8,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
-import { TodoContext } from '../../ctx/TodoContext';
+import { TodoContext, isFolderVisibleInMode } from '../../ctx/TodoContext';
 import { ModalContext } from '../../ctx/ModalContext';
 import { ProfileContext } from '../../ctx/ProfileContext';
 import { ETATS } from '../../config/constants';
@@ -57,7 +57,8 @@ const EMPTY = {
 export default function TaskFormModal() {
   const { addTask, updateTask, folders, addFolder, deleteFolder } = useContext(TodoContext);
   const { isModalOpen, modalType, modalData, closeModal } = useContext(ModalContext);
-  const { currentTheme } = useContext(ProfileContext);
+  const { currentTheme, appMode } = useContext(ProfileContext);
+  const visibleFolders = folders.filter((f) => isFolderVisibleInMode(f, appMode));
   const [form, setForm] = useState(EMPTY);
   const [dateMode, setDateMode] = useState('PERIOD'); // 'NONE' | 'DEADLINE' | 'PERIOD'
   const [hasChecklist, setHasChecklist] = useState(false);
@@ -185,7 +186,11 @@ export default function TaskFormModal() {
 
   const handleCreateFolder = () => {
     if (!newFolderTitle.trim()) return;
-    const created = addFolder({ title: newFolderTitle.trim(), color: newFolderColor });
+    const created = addFolder({
+      title: newFolderTitle.trim(),
+      color: newFolderColor,
+      visibility: appMode === 'university' ? 'univ' : 'perso',
+    });
     set('folderId', created.id);
     setNewFolderTitle('');
     setShowNewFolderForm(false);
@@ -393,7 +398,7 @@ export default function TaskFormModal() {
                         </Text>
                       </TouchableOpacity>
 
-                      {folders.map((f) => {
+                      {visibleFolders.map((f) => {
                         const isSelected = form.folderId === f.id;
                         return (
                           <View

@@ -1,7 +1,7 @@
-import React, { useContext, useState, useMemo } from 'react';
+import React, { useContext, useState, useMemo, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { TodoContext } from '../../ctx/TodoContext';
+import { TodoContext, isFolderVisibleInMode } from '../../ctx/TodoContext';
 import { ProfileContext } from '../../ctx/ProfileContext';
 import TasksItem from './TasksItem';
 import GlassCard from '../../components/GlassCard';
@@ -36,18 +36,28 @@ export default function Tasks() {
     }
   };
 
-  const folderTasks = useMemo(() => {
-    let base = tasks;
-    if (appMode === 'university') {
-      // Filter for study-related tasks (folder title contains Etudes/Univ or task has tag/folder)
-      base = tasks.filter((t) => {
-        if (!t.folderId) return true;
-        const f = folders.find((folder) => folder.id === t.folderId);
-        if (!f) return true;
-        const lower = f.title.toLowerCase();
-        return lower.includes('étud') || lower.includes('etud') || lower.includes('univ') || lower.includes('cours') || lower.includes('devoir');
-      });
+  const visibleFolders = useMemo(
+    () => folders.filter((f) => isFolderVisibleInMode(f, appMode)),
+    [folders, appMode]
+  );
+
+  // Si le dossier sélectionné disparaît du mode courant (visibilité changée,
+  // ou changement de mode perso/univ), on revient au filtre "Tous les dossiers".
+  useEffect(() => {
+    if (selectedFolderId && !visibleFolders.some((f) => f.id === selectedFolderId)) {
+      setSelectedFolderId(null);
     }
+  }, [selectedFolderId, visibleFolders]);
+
+  const folderTasks = useMemo(() => {
+    // Une tâche sans dossier reste toujours visible ; une tâche dans un dossier
+    // masqué pour ce mode (perso/univ) disparaît de la liste.
+    const base = tasks.filter((t) => {
+      if (!t.folderId) return true;
+      const f = folders.find((folder) => folder.id === t.folderId);
+      if (!f) return true;
+      return isFolderVisibleInMode(f, appMode);
+    });
     if (selectedFolderId === null) return base;
     return base.filter((t) => t.folderId === selectedFolderId);
   }, [tasks, selectedFolderId, appMode, folders]);
@@ -194,7 +204,7 @@ export default function Tasks() {
         </View>
 
         {/* Filtre par Dossier (iOS Chips style) */}
-        {folders.length > 0 && (
+        {visibleFolders.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
             <View style={styles.folderFilterRow}>
               <TouchableOpacity
@@ -214,7 +224,7 @@ export default function Tasks() {
                 </Text>
               </TouchableOpacity>
 
-              {folders.map((f) => {
+              {visibleFolders.map((f) => {
                 const active = selectedFolderId === f.id;
                 return (
                   <View

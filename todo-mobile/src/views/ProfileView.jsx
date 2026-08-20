@@ -23,6 +23,12 @@ import GlassCard from '../components/GlassCard';
 
 const screenWidth = Dimensions.get('window').width;
 
+const VISIBILITY_OPTIONS = [
+  { key: 'perso', label: 'Perso' },
+  { key: 'univ', label: 'Univ' },
+  { key: 'both', label: 'Les deux' },
+];
+
 const MONTHS_FR = [
   'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
@@ -46,7 +52,7 @@ export default function ProfileView() {
     canAccessSchedules,
   } = useContext(ProfileContext);
 
-  const { tasks, folders } = useContext(TodoContext);
+  const { tasks, folders, updateFolder } = useContext(TodoContext);
   const fileInputRef = useRef(null);
 
   // Active Sub-modal state: null | 'preferences' | 'stats' | 'backup'
@@ -526,6 +532,55 @@ export default function ProfileView() {
                 })}
               </View>
 
+              {/* Visibilité des dossiers selon le mode perso / universitaire */}
+              <View style={{ marginTop: 20 }}>
+                <Text style={styles.modalSectionLabel}>Visibilité des dossiers</Text>
+                <Text style={styles.modalSectionSub}>
+                  Choisissez dans quel mode chaque dossier doit apparaître :
+                </Text>
+
+                {folders.length === 0 ? (
+                  <Text style={styles.restrictedText}>Aucun dossier pour le moment.</Text>
+                ) : (
+                  folders.map((f) => {
+                    const currentVisibility = f.visibility || 'both';
+                    return (
+                      <View key={f.id} style={styles.folderVisibilityRow}>
+                        <View style={styles.folderVisibilityLabelRow}>
+                          <View style={[styles.colorIndicator, { backgroundColor: f.color }]} />
+                          <Text style={styles.scheduleName} numberOfLines={1}>{f.title}</Text>
+                        </View>
+                        <View style={styles.visibilitySegmented}>
+                          {VISIBILITY_OPTIONS.map((opt) => {
+                            const isActive = currentVisibility === opt.key;
+                            return (
+                              <TouchableOpacity
+                                key={opt.key}
+                                style={[
+                                  styles.visibilitySegmentBtn,
+                                  isActive && { backgroundColor: currentTheme.primary },
+                                ]}
+                                onPress={() => updateFolder(f.id, { visibility: opt.key })}
+                                activeOpacity={0.75}
+                              >
+                                <Text
+                                  style={[
+                                    styles.visibilitySegmentText,
+                                    isActive && styles.textWhite,
+                                  ]}
+                                >
+                                  {opt.label}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      </View>
+                    );
+                  })
+                )}
+              </View>
+
               {/* Superposition des emplois du temps (visible si Mode universitaire) */}
               {appMode === 'university' && (
                 <View style={{ marginTop: 20 }}>
@@ -927,6 +982,28 @@ const styles = StyleSheet.create({
   toggleThumbOn: { alignSelf: 'flex-end' },
   toggleThumbOff: { alignSelf: 'flex-start' },
   restrictedText: { fontSize: 12, color: COLORS.textMuted, fontStyle: 'italic', marginTop: 6 },
+
+  folderVisibilityRow: {
+    paddingVertical: 10,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0,0,0,0.06)',
+  },
+  folderVisibilityLabelRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  visibilitySegmented: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(120, 120, 128, 0.12)',
+    borderRadius: 10,
+    padding: 3,
+    gap: 3,
+  },
+  visibilitySegmentBtn: {
+    flex: 1,
+    paddingVertical: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+  },
+  visibilitySegmentText: { fontSize: 11, fontWeight: '700', color: COLORS.textMuted },
 
   // KPI Grid
   kpiGrid: { flexDirection: 'row', gap: 10, marginBottom: 10 },
