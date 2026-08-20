@@ -9,7 +9,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffd5df"
+      "backgroundColor": "#eef1fb"
     },
     "ios": {
       "supportsTablet": false,
@@ -19,7 +19,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffd5df"
+        "backgroundColor": "#eef1fb"
       },
       "package": "com.claire.todolist"
     },
@@ -30,8 +30,8 @@
       "shortName": "Ma Liste",
       "description": "Gère tes tâches depuis n'importe où",
       "lang": "fr",
-      "backgroundColor": "#ffd5df",
-      "themeColor": "#ff66b3",
+      "backgroundColor": "#eef1fb",
+      "themeColor": "#5b6bd8",
       "display": "standalone",
       "orientation": "portrait",
       "scope": "/",
