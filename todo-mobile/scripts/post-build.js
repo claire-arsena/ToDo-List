@@ -61,7 +61,7 @@ const manifest = {
   display: "standalone",
   orientation: "portrait",
   background_color: "#f2f2f7",
-  theme_color: "#d81b60",
+  theme_color: "#5b6bd8",
   icons: [
     { src: "/apple-touch-icon.png", sizes: "180x180", type: "image/png", purpose: "any maskable" },
     { src: "/apple-touch-icon-180x180.png", sizes: "180x180", type: "image/png", purpose: "any maskable" },
