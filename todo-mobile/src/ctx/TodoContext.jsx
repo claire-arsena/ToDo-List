@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ETATS, ETAT_TERMINE, getTodayStr } from '../config/constants';
 import { ProfileContext } from './ProfileContext';
@@ -10,6 +10,9 @@ export function TodoContextProvider({ children }) {
   const [tasks, setTasks] = useState([]);
   const [folders, setFolders] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  // Ref (mise à jour de façon synchrone, contrairement à isLoaded) pour bloquer
+  // toute sauvegarde tant que les données du profil actif ne sont pas chargées.
+  const readyRef = useRef(false);
 
   // Profile-scoped or global storage keys
   const SHARED_ETUDES_KEY = '@todo_tasks_shared_etudes';
@@ -30,6 +33,7 @@ export function TodoContextProvider({ children }) {
   // Charger et restaurer automatiquement les tâches
   useEffect(() => {
     let isMounted = true;
+    readyRef.current = false;
     setIsLoaded(false);
 
     (async () => {
@@ -103,7 +107,10 @@ export function TodoContextProvider({ children }) {
           ]);
         }
       } finally {
-        if (isMounted) setIsLoaded(true);
+        if (isMounted) {
+          readyRef.current = true;
+          setIsLoaded(true);
+        }
       }
     })();
 
@@ -114,7 +121,12 @@ export function TodoContextProvider({ children }) {
 
   // Sauvegarder séparément les tâches "Études" (partagées) et les tâches spécifiques au profil
   useEffect(() => {
-    if (isLoaded) {
+    // readyRef est mis à jour de façon synchrone (contrairement à isLoaded, dont la
+    // mise à jour n'est visible qu'au rendu suivant) : cela évite d'écraser les
+    // données du profil qui vient de devenir actif avec celles de l'ancien profil,
+    // pendant le court instant où activeProfileId a changé mais où le chargement
+    // du nouveau profil n'est pas encore terminé.
+    if (isLoaded && readyRef.current) {
       const etudesTasks = tasks.filter((t) => isEtudesTask(t, folders));
       const profileSpecificTasks = tasks.filter((t) => !isEtudesTask(t, folders));
 
@@ -124,7 +136,7 @@ export function TodoContextProvider({ children }) {
   }, [tasks, isLoaded, STORAGE_KEY, folders]);
 
   useEffect(() => {
-    if (isLoaded) {
+    if (isLoaded && readyRef.current) {
       AsyncStorage.setItem(FOLDERS_KEY, JSON.stringify(folders));
     }
   }, [folders, isLoaded, FOLDERS_KEY]);
