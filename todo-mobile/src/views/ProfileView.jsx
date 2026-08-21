@@ -537,7 +537,10 @@ export default function ProfileView() {
               <View style={{ marginTop: 20 }}>
                 <TouchableOpacity
                   style={styles.subSettingRow}
-                  onPress={() => setShowFolderVisibility(true)}
+                  onPress={() => {
+                    setActiveModal(null);
+                    setShowFolderVisibility(true);
+                  }}
                   activeOpacity={0.7}
                 >
                   <View style={{ flex: 1 }}>
