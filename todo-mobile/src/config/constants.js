@@ -11,6 +11,23 @@ export const ETAT_TERMINE = [
   ETATS.ABANDONNE,
 ];
 
+export const FOLDER_COLORS = [
+  '#d81b60', // iOS Deep Pink
+  '#34c759', // iOS Green
+  '#af52de', // iOS Purple
+  '#ff9500', // iOS Orange
+  '#ff3b30', // iOS Red
+  '#ff66b3', // Rose Bonbon
+  '#00c7be', // iOS Teal
+  '#ffcc00', // iOS Yellow
+  '#e84393', // Magenta
+  '#30b0c7', // Cyan iOS
+  '#5856d6', // Indigo iOS
+  '#fd79a8', // Rose Pastel
+  '#00b894', // Vert Menthe
+  '#fdcb6e', // Or Doux
+];
+
 export const getTodayStr = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
