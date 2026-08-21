@@ -57,6 +57,7 @@ export default function ProfileView() {
 
   // Active Sub-modal state: null | 'preferences' | 'stats' | 'backup'
   const [activeModal, setActiveModal] = useState(null);
+  const [showFolderVisibility, setShowFolderVisibility] = useState(false);
 
   // PIN Authentication / Profile Registration Modal State
   const [targetProfile, setTargetProfile] = useState(null);
@@ -534,51 +535,19 @@ export default function ProfileView() {
 
               {/* Visibilité des dossiers selon le mode perso / universitaire */}
               <View style={{ marginTop: 20 }}>
-                <Text style={styles.modalSectionLabel}>Visibilité des dossiers</Text>
-                <Text style={styles.modalSectionSub}>
-                  Choisissez dans quel mode chaque dossier doit apparaître :
-                </Text>
-
-                {folders.length === 0 ? (
-                  <Text style={styles.restrictedText}>Aucun dossier pour le moment.</Text>
-                ) : (
-                  folders.map((f) => {
-                    const currentVisibility = f.visibility || 'both';
-                    return (
-                      <View key={f.id} style={styles.folderVisibilityRow}>
-                        <View style={styles.folderVisibilityLabelRow}>
-                          <View style={[styles.colorIndicator, { backgroundColor: f.color }]} />
-                          <Text style={styles.scheduleName} numberOfLines={1}>{f.title}</Text>
-                        </View>
-                        <View style={styles.visibilitySegmented}>
-                          {VISIBILITY_OPTIONS.map((opt) => {
-                            const isActive = currentVisibility === opt.key;
-                            return (
-                              <TouchableOpacity
-                                key={opt.key}
-                                style={[
-                                  styles.visibilitySegmentBtn,
-                                  isActive && { backgroundColor: currentTheme.primary },
-                                ]}
-                                onPress={() => updateFolder(f.id, { visibility: opt.key })}
-                                activeOpacity={0.75}
-                              >
-                                <Text
-                                  style={[
-                                    styles.visibilitySegmentText,
-                                    isActive && styles.textWhite,
-                                  ]}
-                                >
-                                  {opt.label}
-                                </Text>
-                              </TouchableOpacity>
-                            );
-                          })}
-                        </View>
-                      </View>
-                    );
-                  })
-                )}
+                <TouchableOpacity
+                  style={styles.subSettingRow}
+                  onPress={() => setShowFolderVisibility(true)}
+                  activeOpacity={0.7}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.modalSectionLabel}>Visibilité des dossiers</Text>
+                    <Text style={styles.modalSectionSub}>
+                      Choisissez dans quel mode chaque dossier doit apparaître
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+                </TouchableOpacity>
               </View>
 
               {/* Superposition des emplois du temps (visible si Mode universitaire) */}
@@ -623,6 +592,68 @@ export default function ProfileView() {
                     </Text>
                   )}
                 </View>
+              )}
+            </ScrollView>
+          </GlassCard>
+        </View>
+      </Modal>
+
+      {/* SOUS-MODAL : VISIBILITÉ DES DOSSIERS */}
+      <Modal visible={showFolderVisibility} transparent animationType="slide" onRequestClose={() => setShowFolderVisibility(false)}>
+        <View style={styles.modalOverlay}>
+          <GlassCard style={styles.modalContentCard}>
+            <View style={styles.modalHeaderRow}>
+              <Ionicons name="folder-outline" size={22} color={currentTheme.primary} />
+              <Text style={[styles.modalHeaderTitle, { color: currentTheme.primary }]}>Visibilité des dossiers</Text>
+              <TouchableOpacity onPress={() => setShowFolderVisibility(false)} style={styles.modalCloseBtn}>
+                <Ionicons name="close" size={20} color={COLORS.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalSectionSub}>
+              Choisissez dans quel mode chaque dossier doit apparaître :
+            </Text>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420, marginTop: 8 }}>
+              {folders.length === 0 ? (
+                <Text style={styles.restrictedText}>Aucun dossier pour le moment.</Text>
+              ) : (
+                folders.map((f) => {
+                  const currentVisibility = f.visibility || 'both';
+                  return (
+                    <View key={f.id} style={styles.folderVisibilityRow}>
+                      <View style={styles.folderVisibilityLabelRow}>
+                        <View style={[styles.colorIndicator, { backgroundColor: f.color }]} />
+                        <Text style={styles.scheduleName} numberOfLines={1}>{f.title}</Text>
+                      </View>
+                      <View style={styles.visibilitySegmented}>
+                        {VISIBILITY_OPTIONS.map((opt) => {
+                          const isActive = currentVisibility === opt.key;
+                          return (
+                            <TouchableOpacity
+                              key={opt.key}
+                              style={[
+                                styles.visibilitySegmentBtn,
+                                isActive && { backgroundColor: currentTheme.primary },
+                              ]}
+                              onPress={() => updateFolder(f.id, { visibility: opt.key })}
+                              activeOpacity={0.75}
+                            >
+                              <Text
+                                style={[
+                                  styles.visibilitySegmentText,
+                                  isActive && styles.textWhite,
+                                ]}
+                              >
+                                {opt.label}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  );
+                })
               )}
             </ScrollView>
           </GlassCard>
@@ -983,6 +1014,11 @@ const styles = StyleSheet.create({
   toggleThumbOff: { alignSelf: 'flex-start' },
   restrictedText: { fontSize: 12, color: COLORS.textMuted, fontStyle: 'italic', marginTop: 6 },
 
+  subSettingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   folderVisibilityRow: {
     paddingVertical: 10,
     borderBottomWidth: 0.5,
