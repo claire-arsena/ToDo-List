@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ProfileContext } from '../ctx/ProfileContext';
 import { TodoContext } from '../ctx/TodoContext';
-import { ETATS } from '../config/constants';
+import { ETATS, FOLDER_COLORS } from '../config/constants';
 import { COLORS } from '../theme';
 import GlassCard from '../components/GlassCard';
 
@@ -55,9 +55,11 @@ export default function ProfileView() {
   const { tasks, folders, updateFolder } = useContext(TodoContext);
   const fileInputRef = useRef(null);
 
-  // Active Sub-modal state: null | 'preferences' | 'stats' | 'backup'
+  // Active Sub-modal state: null | 'preferences' | 'stats' | 'backup' | 'folders'
   const [activeModal, setActiveModal] = useState(null);
   const [showFolderVisibility, setShowFolderVisibility] = useState(false);
+  const [showFolderManager, setShowFolderManager] = useState(false);
+  const [folderTitleDrafts, setFolderTitleDrafts] = useState({});
 
   // PIN Authentication / Profile Registration Modal State
   const [targetProfile, setTargetProfile] = useState(null);
@@ -454,6 +456,20 @@ export default function ProfileView() {
           </GlassCard>
         </TouchableOpacity>
 
+        {/* BOUTON DOSSIERS */}
+        <TouchableOpacity activeOpacity={0.8} onPress={() => setActiveModal('folders')}>
+          <GlassCard style={styles.menuButtonCard}>
+            <View style={[styles.menuIconCircle, { backgroundColor: currentTheme.tint }]}>
+              <Ionicons name="folder-outline" size={24} color={currentTheme.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.menuButtonTitle}>Dossiers</Text>
+              <Text style={styles.menuButtonSub}>Visibilité par mode et gestion des dossiers</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.textMuted} />
+          </GlassCard>
+        </TouchableOpacity>
+
         {/* BOUTON STATISTIQUES */}
         <TouchableOpacity activeOpacity={0.8} onPress={() => setActiveModal('stats')}>
           <GlassCard style={styles.menuButtonCard}>
@@ -533,26 +549,6 @@ export default function ProfileView() {
                 })}
               </View>
 
-              {/* Visibilité des dossiers selon le mode perso / universitaire */}
-              <View style={{ marginTop: 20 }}>
-                <TouchableOpacity
-                  style={styles.subSettingRow}
-                  onPress={() => {
-                    setActiveModal(null);
-                    setShowFolderVisibility(true);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.modalSectionLabel}>Visibilité des dossiers</Text>
-                    <Text style={styles.modalSectionSub}>
-                      Choisissez dans quel mode chaque dossier doit apparaître
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
-                </TouchableOpacity>
-              </View>
-
               {/* Superposition des emplois du temps (visible si Mode universitaire) */}
               {appMode === 'university' && (
                 <View style={{ marginTop: 20 }}>
@@ -601,12 +597,61 @@ export default function ProfileView() {
         </View>
       </Modal>
 
+      {/* MODAL DOSSIERS (hub) */}
+      <Modal visible={activeModal === 'folders'} transparent animationType="slide" onRequestClose={() => setActiveModal(null)}>
+        <View style={styles.modalOverlay}>
+          <GlassCard style={styles.modalContentCard}>
+            <View style={styles.modalHeaderRow}>
+              <Ionicons name="folder-outline" size={22} color={currentTheme.primary} />
+              <Text style={[styles.modalHeaderTitle, { color: currentTheme.primary }]}>Dossiers</Text>
+              <TouchableOpacity onPress={() => setActiveModal(null)} style={styles.modalCloseBtn}>
+                <Ionicons name="close" size={20} color={COLORS.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.subSettingRow}
+              onPress={() => {
+                setActiveModal(null);
+                setShowFolderVisibility(true);
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={styles.modalSectionLabel}>Visibilité des dossiers</Text>
+                <Text style={styles.modalSectionSub}>
+                  Choisissez dans quel mode chaque dossier doit apparaître
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.subSettingRow, { marginTop: 16 }]}
+              onPress={() => {
+                setActiveModal(null);
+                setShowFolderManager(true);
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={styles.modalSectionLabel}>Gestionnaire des dossiers</Text>
+                <Text style={styles.modalSectionSub}>
+                  Modifiez le nom et la couleur de chaque dossier
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+            </TouchableOpacity>
+          </GlassCard>
+        </View>
+      </Modal>
+
       {/* SOUS-MODAL : VISIBILITÉ DES DOSSIERS */}
       <Modal visible={showFolderVisibility} transparent animationType="slide" onRequestClose={() => setShowFolderVisibility(false)}>
         <View style={styles.modalOverlay}>
           <GlassCard style={styles.modalContentCard}>
             <View style={styles.modalHeaderRow}>
-              <Ionicons name="folder-outline" size={22} color={currentTheme.primary} />
+              <Ionicons name="eye-outline" size={22} color={currentTheme.primary} />
               <Text style={[styles.modalHeaderTitle, { color: currentTheme.primary }]}>Visibilité des dossiers</Text>
               <TouchableOpacity onPress={() => setShowFolderVisibility(false)} style={styles.modalCloseBtn}>
                 <Ionicons name="close" size={20} color={COLORS.textMuted} />
@@ -653,6 +698,80 @@ export default function ProfileView() {
                             </TouchableOpacity>
                           );
                         })}
+                      </View>
+                    </View>
+                  );
+                })
+              )}
+            </ScrollView>
+          </GlassCard>
+        </View>
+      </Modal>
+
+      {/* SOUS-MODAL : GESTIONNAIRE DES DOSSIERS */}
+      <Modal
+        visible={showFolderManager}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowFolderManager(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <GlassCard style={styles.modalContentCard}>
+            <View style={styles.modalHeaderRow}>
+              <Ionicons name="pencil-outline" size={22} color={currentTheme.primary} />
+              <Text style={[styles.modalHeaderTitle, { color: currentTheme.primary }]}>Gestionnaire des dossiers</Text>
+              <TouchableOpacity onPress={() => setShowFolderManager(false)} style={styles.modalCloseBtn}>
+                <Ionicons name="close" size={20} color={COLORS.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalSectionSub}>
+              Modifiez le nom et la couleur de chaque dossier :
+            </Text>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420, marginTop: 8 }}>
+              {folders.length === 0 ? (
+                <Text style={styles.restrictedText}>Aucun dossier pour le moment.</Text>
+              ) : (
+                folders.map((f) => {
+                  const draftTitle = folderTitleDrafts[f.id] ?? f.title;
+                  const commitTitle = () => {
+                    const trimmed = draftTitle.trim();
+                    if (trimmed && trimmed !== f.title) {
+                      updateFolder(f.id, { title: trimmed });
+                    } else {
+                      setFolderTitleDrafts((prev) => ({ ...prev, [f.id]: f.title }));
+                    }
+                  };
+                  return (
+                    <View key={f.id} style={styles.folderManagerRow}>
+                      <View style={[styles.colorIndicator, { backgroundColor: f.color, marginTop: 12 }]} />
+                      <View style={{ flex: 1 }}>
+                        <TextInput
+                          style={styles.folderNameInput}
+                          value={draftTitle}
+                          onChangeText={(v) => setFolderTitleDrafts((prev) => ({ ...prev, [f.id]: v }))}
+                          onBlur={commitTitle}
+                          onSubmitEditing={commitTitle}
+                          placeholder="Nom du dossier"
+                          placeholderTextColor={COLORS.textMuted}
+                        />
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
+                          <View style={styles.colorPickerRow}>
+                            {FOLDER_COLORS.map((c) => (
+                              <TouchableOpacity
+                                key={c}
+                                style={[
+                                  styles.colorDot,
+                                  { backgroundColor: c },
+                                  f.color === c && styles.colorDotActive,
+                                ]}
+                                onPress={() => updateFolder(f.id, { color: c })}
+                                activeOpacity={0.75}
+                              />
+                            ))}
+                          </View>
+                        </ScrollView>
                       </View>
                     </View>
                   );
@@ -1043,6 +1162,35 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   visibilitySegmentText: { fontSize: 11, fontWeight: '700', color: COLORS.textMuted },
+
+  folderManagerRow: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingVertical: 12,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0,0,0,0.06)',
+  },
+  folderNameInput: {
+    backgroundColor: 'rgba(118, 118, 128, 0.08)',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+    minHeight: 40,
+  },
+  colorPickerRow: { flexDirection: 'row', gap: 8, paddingVertical: 2 },
+  colorDot: { width: 26, height: 26, borderRadius: 13 },
+  colorDotActive: {
+    borderWidth: 3,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 3,
+  },
 
   // KPI Grid
   kpiGrid: { flexDirection: 'row', gap: 10, marginBottom: 10 },

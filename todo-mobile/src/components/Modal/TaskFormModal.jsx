@@ -11,27 +11,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { TodoContext, isFolderVisibleInMode } from '../../ctx/TodoContext';
 import { ModalContext } from '../../ctx/ModalContext';
 import { ProfileContext } from '../../ctx/ProfileContext';
-import { ETATS } from '../../config/constants';
+import { ETATS, FOLDER_COLORS } from '../../config/constants';
 import DatePickerInput from '../DatePickerInput';
 import TimePickerInput from '../TimePickerInput';
 import { COLORS, SHADOWS } from '../../theme';
-
-const FOLDER_COLORS = [
-  '#d81b60', // iOS Deep Pink
-  '#34c759', // iOS Green
-  '#af52de', // iOS Purple
-  '#ff9500', // iOS Orange
-  '#ff3b30', // iOS Red
-  '#ff66b3', // Rose Bonbon
-  '#00c7be', // iOS Teal
-  '#ffcc00', // iOS Yellow
-  '#e84393', // Magenta
-  '#30b0c7', // Cyan iOS
-  '#5856d6', // Indigo iOS
-  '#fd79a8', // Rose Pastel
-  '#00b894', // Vert Menthe
-  '#fdcb6e', // Or Doux
-];
 
 const HEIGHT_STORAGE_KEY = '@todo_modal_sheet_height';
 const DEFAULT_HEIGHT = 540;
