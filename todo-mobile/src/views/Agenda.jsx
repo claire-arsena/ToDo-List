@@ -1,9 +1,9 @@
 import React, { useContext, useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import { TodoContext } from '../ctx/TodoContext';
 import { ProfileContext } from '../ctx/ProfileContext';
+import { getMergedSchedule } from '../config/schedules';
 import { COLORS, STATUS_COLORS } from '../theme';
 import GlassCard from '../components/GlassCard';
 import { getTodayStr, normalizeDateStr } from '../config/constants';
@@ -11,27 +11,32 @@ import { getTodayStr, normalizeDateStr } from '../config/constants';
 const DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
+const formatLocalDate = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
 export default function Agenda() {
   const { tasks, folders } = useContext(TodoContext);
-  const { appMode, currentTheme } = useContext(ProfileContext);
+  const { appMode, currentTheme, visibleSchedules } = useContext(ProfileContext);
   const [current, setCurrent] = useState(new Date());
   const year = current.getFullYear();
   const month = current.getMonth();
   const today = getTodayStr();
+  const isUniv = appMode === 'university';
 
-  if (appMode === 'university') {
-    return (
-      <View style={styles.univContainer}>
-        <GlassCard style={styles.univEmptyCard}>
-          <Ionicons name="calendar-outline" size={48} color={currentTheme.primary} />
-          <Text style={[styles.univEmptyTitle, { color: currentTheme.primary }]}>Calendrier EDT Universitaire</Text>
-          <Text style={styles.univEmptySub}>
-            Aucune donnée d'emploi du temps universitaire disponible. Les fichiers .ics seront intégrés prochainement.
-          </Text>
-        </GlassCard>
-      </View>
-    );
-  }
+  const scheduleEvents = useMemo(
+    () => (isUniv ? getMergedSchedule(visibleSchedules) : []),
+    [isUniv, visibleSchedules]
+  );
+
+  const scheduleByDate = useMemo(() => {
+    const map = new Map();
+    scheduleEvents.forEach((evt) => {
+      const dStr = formatLocalDate(new Date(evt.start));
+      if (!map.has(dStr)) map.set(dStr, []);
+      map.get(dStr).push(evt);
+    });
+    return map;
+  }, [scheduleEvents]);
 
   const getTaskColor = (t) => {
     if (t.folderId) {
@@ -118,8 +123,19 @@ export default function Agenda() {
         </TouchableOpacity>
       </GlassCard>
 
+      {/* Aucun flux d'emploi du temps relié (Mode universitaire) */}
+      {isUniv && scheduleEvents.length === 0 && (
+        <GlassCard style={styles.undatedSection}>
+          <Text style={[styles.undatedTitle, { color: currentTheme.primary }]}>Aucun emploi du temps</Text>
+          <Text style={styles.univEmptySub}>
+            Aucun flux d'emploi du temps universitaire n'est encore relié à un profil actuellement
+            superposé. Ajoutez un lien .ics dans Profil → Préférences → Superposition des Emplois du Temps.
+          </Text>
+        </GlassCard>
+      )}
+
       {/* Tâches sans date */}
-      {undatedTasks.length > 0 && (
+      {!isUniv && undatedTasks.length > 0 && (
         <GlassCard style={styles.undatedSection}>
           <Text style={[styles.undatedTitle, { color: currentTheme.primary }]}>Sans date</Text>
           {undatedTasks.map((t) => {
@@ -148,21 +164,23 @@ export default function Agenda() {
           <View key={wi} style={styles.weekRow}>
             {week.map((cell, ci) => {
               const isToday = cell.date === today;
-              const cellTasks = cell.date ? tasksByDate.get(cell.date) || [] : [];
+              const cellItems = cell.date
+                ? (isUniv ? scheduleByDate.get(cell.date) : tasksByDate.get(cell.date)) || []
+                : [];
               return (
                 <View key={ci} style={[styles.cell, cell.out && styles.cellOut, isToday && { backgroundColor: currentTheme.tint }]}>
                   <Text style={[styles.cellDay, cell.out && styles.cellDayOut, isToday && { color: currentTheme.primary, fontWeight: '900' }]}>
                     {cell.day}
                   </Text>
-                  {cellTasks.slice(0, 2).map((t) => {
-                    const taskColor = getTaskColor(t);
+                  {cellItems.slice(0, 2).map((item) => {
+                    const itemColor = isUniv ? item.color : getTaskColor(item);
                     return (
-                      <View key={t.id} style={[styles.taskDot, { backgroundColor: taskColor }]}>
-                        <Text style={styles.taskDotText} numberOfLines={1}>{t.title}</Text>
+                      <View key={item.id} style={[styles.taskDot, { backgroundColor: itemColor }]}>
+                        <Text style={styles.taskDotText} numberOfLines={1}>{item.title}</Text>
                       </View>
                     );
                   })}
-                  {cellTasks.length > 2 && <Text style={styles.moreTasks}>+{cellTasks.length - 2}</Text>}
+                  {cellItems.length > 2 && <Text style={styles.moreTasks}>+{cellItems.length - 2}</Text>}
                 </View>
               );
             })}
@@ -223,8 +241,5 @@ const styles = StyleSheet.create({
   undatedTitle: { fontSize: 14, fontWeight: '800', marginBottom: 4 },
   undatedChip: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 4 },
   undatedChipText: { fontSize: 13, color: '#fff', fontWeight: '700' },
-  univContainer: { flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center' },
-  univEmptyCard: { padding: 30, alignItems: 'center', gap: 12, width: '100%', maxWidth: 400 },
-  univEmptyTitle: { fontSize: 20, fontWeight: '800' },
-  univEmptySub: { fontSize: 13, color: COLORS.textMuted, textAlign: 'center', lineHeight: 20 },
+  univEmptySub: { fontSize: 12, color: COLORS.textMuted, lineHeight: 18, marginTop: 2 },
 });
