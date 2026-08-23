@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { TodoContext } from '../ctx/TodoContext';
 import { ProfileContext } from '../ctx/ProfileContext';
+import { getMergedSchedule } from '../config/schedules';
 import GlassCard from '../components/GlassCard';
 import { COLORS } from '../theme';
 
@@ -24,24 +25,23 @@ const MONTHS_FR = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juill
 const formatLocalDate = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
+const formatHM = (iso) => {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+};
+
+const getPosition = (startH, startM, endH, endM) => {
+  const top = Math.max(0, (startH - START_HOUR) * HOUR_HEIGHT + (startM / 60) * HOUR_HEIGHT);
+  const bottom = (endH - START_HOUR) * HOUR_HEIGHT + (endM / 60) * HOUR_HEIGHT;
+  const height = Math.max(36, bottom - top);
+  return { top, height };
+};
+
 export default function Planning() {
   const { tasks, folders, toggleTaskDone } = useContext(TodoContext);
-  const { appMode, currentTheme } = useContext(ProfileContext);
+  const { appMode, currentTheme, visibleSchedules } = useContext(ProfileContext);
   const [selectedDate, setSelectedDate] = useState(new Date());
-
-  if (appMode === 'university') {
-    return (
-      <View style={styles.univContainer}>
-        <GlassCard style={styles.univEmptyCard}>
-          <Ionicons name="school-outline" size={48} color={currentTheme.primary} />
-          <Text style={[styles.univEmptyTitle, { color: currentTheme.primary }]}>EDT Universitaire</Text>
-          <Text style={styles.univEmptySub}>
-            Aucune donnée d'emploi du temps universitaire disponible. Les fichiers .ics seront intégrés prochainement.
-          </Text>
-        </GlassCard>
-      </View>
-    );
-  }
+  const isUniv = appMode === 'university';
 
   const dateStr = formatLocalDate(selectedDate);
   const todayStr = formatLocalDate(new Date());
@@ -87,14 +87,22 @@ export default function Planning() {
     });
   }, [tasks, dateStr]);
 
-  // Timed vs All-day tasks
-  const timedTasks = useMemo(() => {
-    return dayTasks.filter((t) => !!t.startTime);
-  }, [dayTasks]);
+  const timedTasks = useMemo(() => dayTasks.filter((t) => !!t.startTime), [dayTasks]);
+  const allDayTasks = useMemo(() => dayTasks.filter((t) => !t.startTime), [dayTasks]);
 
-  const allDayTasks = useMemo(() => {
-    return dayTasks.filter((t) => !t.startTime);
-  }, [dayTasks]);
+  // Emploi du temps universitaire (flux .ics), superposé selon les profils cochés
+  const scheduleEvents = useMemo(
+    () => (isUniv ? getMergedSchedule(visibleSchedules) : []),
+    [isUniv, visibleSchedules]
+  );
+
+  const dayScheduleEvents = useMemo(
+    () => scheduleEvents.filter((e) => formatLocalDate(new Date(e.start)) === dateStr),
+    [scheduleEvents, dateStr]
+  );
+
+  const timedSchedule = useMemo(() => dayScheduleEvents.filter((e) => !e.allDay), [dayScheduleEvents]);
+  const allDaySchedule = useMemo(() => dayScheduleEvents.filter((e) => e.allDay), [dayScheduleEvents]);
 
   const getTaskPosition = (task) => {
     let startH = START_HOUR, startM = 0, endH = END_HOUR, endM = 0;
@@ -114,12 +122,17 @@ export default function Planning() {
       endM = startM;
     }
 
-    const top = Math.max(0, (startH - START_HOUR) * HOUR_HEIGHT + (startM / 60) * HOUR_HEIGHT);
-    const bottom = (endH - START_HOUR) * HOUR_HEIGHT + (endM / 60) * HOUR_HEIGHT;
-    const height = Math.max(36, bottom - top);
-
-    return { top, height };
+    return getPosition(startH, startM, endH, endM);
   };
+
+  const getEventPosition = (evt) => {
+    const s = new Date(evt.start);
+    const e = new Date(evt.end || evt.start);
+    return getPosition(s.getHours(), s.getMinutes(), e.getHours(), e.getMinutes());
+  };
+
+  const allDayItems = isUniv ? allDaySchedule : allDayTasks;
+  const timedItems = isUniv ? timedSchedule : timedTasks;
 
   // Current time line
   const now = new Date();
@@ -167,48 +180,66 @@ export default function Planning() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Tâches Toute la journée */}
-        {allDayTasks.length > 0 && (
+        {isUniv && scheduleEvents.length === 0 && (
+          <GlassCard style={styles.univEmptyCard}>
+            <Ionicons name="school-outline" size={40} color={currentTheme.primary} />
+            <Text style={[styles.univEmptyTitle, { color: currentTheme.primary }]}>Aucun emploi du temps</Text>
+            <Text style={styles.univEmptySub}>
+              Aucun flux d'emploi du temps universitaire n'est encore relié à un profil actuellement
+              superposé. Ajoutez un lien .ics dans Profil → Préférences → Superposition des Emplois du Temps.
+            </Text>
+          </GlassCard>
+        )}
+
+        {/* Toute la journée */}
+        {allDayItems.length > 0 && (
           <GlassCard style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Toute la journée ({allDayTasks.length})</Text>
+            <Text style={styles.sectionTitle}>Toute la journée ({allDayItems.length})</Text>
             <View style={styles.allDayList}>
-              {allDayTasks.map((t) => {
-                const isDone = t.status === 'Réussi';
-                const color = getTaskColor(t);
-                const folderName = getFolderName(t);
-                return (
-                  <TouchableOpacity
-                    key={t.id}
-                    style={[styles.allDayItem, { borderLeftColor: color }]}
-                    onPress={() => toggleTaskDone(t.id)}
-                  >
-                    <Ionicons
-                      name={isDone ? 'checkbox' : 'square-outline'}
-                      size={20}
-                      color={isDone ? '#2ecc71' : color}
-                      style={{ marginRight: 8 }}
-                    />
-                    <Text style={[styles.allDayText, isDone && styles.doneText]}>{t.title}</Text>
-                    {folderName && (
-                      <View style={[styles.folderBadge, { backgroundColor: color + '22', borderColor: color }]}>
-                        <Text style={[styles.folderBadgeText, { color }]}>{folderName}</Text>
-                      </View>
-                    )}
-                    {t.startDate && t.endDate && t.startDate !== t.endDate && (
-                      <Text style={styles.rangeText}>
-                        {t.startDate.slice(5)} → {t.endDate.slice(5)}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
+              {isUniv
+                ? allDayItems.map((evt) => (
+                    <View key={evt.id} style={[styles.allDayItem, { borderLeftColor: evt.color }]}>
+                      <Ionicons name="school-outline" size={18} color={evt.color} style={{ marginRight: 8 }} />
+                      <Text style={styles.allDayText} numberOfLines={1}>{evt.title}</Text>
+                    </View>
+                  ))
+                : allDayItems.map((t) => {
+                    const isDone = t.status === 'Réussi';
+                    const color = getTaskColor(t);
+                    const folderName = getFolderName(t);
+                    return (
+                      <TouchableOpacity
+                        key={t.id}
+                        style={[styles.allDayItem, { borderLeftColor: color }]}
+                        onPress={() => toggleTaskDone(t.id)}
+                      >
+                        <Ionicons
+                          name={isDone ? 'checkbox' : 'square-outline'}
+                          size={20}
+                          color={isDone ? '#2ecc71' : color}
+                          style={{ marginRight: 8 }}
+                        />
+                        <Text style={[styles.allDayText, isDone && styles.doneText]}>{t.title}</Text>
+                        {folderName && (
+                          <View style={[styles.folderBadge, { backgroundColor: color + '22', borderColor: color }]}>
+                            <Text style={[styles.folderBadgeText, { color }]}>{folderName}</Text>
+                          </View>
+                        )}
+                        {t.startDate && t.endDate && t.startDate !== t.endDate && (
+                          <Text style={styles.rangeText}>
+                            {t.startDate.slice(5)} → {t.endDate.slice(5)}
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
             </View>
           </GlassCard>
         )}
 
         {/* Timeline des heures */}
         <GlassCard style={styles.timelineCard}>
-          <Text style={styles.sectionTitle}>Emploi du temps par heure</Text>
+          <Text style={styles.sectionTitle}>{isUniv ? 'Cours de la journée' : 'Emploi du temps par heure'}</Text>
           <View style={styles.timelineArea}>
             {/* Lignes d'heures */}
             {Array.from({ length: TOTAL_HOURS }, (_, i) => {
@@ -230,58 +261,95 @@ export default function Planning() {
 
             {/* Événements */}
             <View style={styles.eventsOverlay}>
-              {timedTasks.map((t) => {
-                const pos = getTaskPosition(t);
-                const isDone = t.status === 'Réussi';
-                const color = getTaskColor(t);
-                const folderName = getFolderName(t);
-                const isMultiDay = t.startDate && t.endDate && t.startDate !== t.endDate;
-                return (
-                  <TouchableOpacity
-                    key={t.id}
-                    style={[
-                      styles.eventBlock,
-                      {
-                        top: pos.top,
-                        height: pos.height,
-                        backgroundColor: color + '22',
-                        borderColor: color,
-                      },
-                    ]}
-                    onPress={() => toggleTaskDone(t.id)}
-                  >
-                    <View style={styles.eventHeaderRow}>
-                      <Text style={[styles.eventTitle, { color }, isDone && styles.doneText]}>
-                        {t.title}
-                      </Text>
-                      {folderName && (
-                        <View style={[styles.folderBadge, { backgroundColor: color, borderColor: color }]}>
-                          <Text style={[styles.folderBadgeText, { color: '#fff' }]}>{folderName}</Text>
+              {isUniv
+                ? timedItems.map((evt) => {
+                    const pos = getEventPosition(evt);
+                    return (
+                      <View
+                        key={evt.id}
+                        style={[
+                          styles.eventBlock,
+                          {
+                            top: pos.top,
+                            height: pos.height,
+                            backgroundColor: evt.color + '22',
+                            borderColor: evt.color,
+                          },
+                        ]}
+                      >
+                        <View style={styles.eventHeaderRow}>
+                          <Text style={[styles.eventTitle, { color: evt.color }]} numberOfLines={1}>
+                            {evt.title}
+                          </Text>
                         </View>
-                      )}
-                    </View>
 
-                    {pos.height > 38 && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 }}>
-                        <Text style={styles.eventTime}>
-                          ⏰ {t.startTime || ''}
-                          {t.startTime && t.endTime ? ' → ' : ''}
-                          {t.endTime || ''}
-                        </Text>
-                        {isMultiDay && (
-                          <Text style={styles.regularBadgeText}>🔁 Régulier</Text>
+                        {pos.height > 38 && (
+                          <View style={{ gap: 1, marginTop: 1 }}>
+                            <Text style={styles.eventTime}>
+                              ⏰ {formatHM(evt.start)} → {formatHM(evt.end)}
+                            </Text>
+                            {!!evt.location && (
+                              <Text style={styles.eventTime} numberOfLines={1}>📍 {evt.location}</Text>
+                            )}
+                          </View>
                         )}
                       </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
+                    );
+                  })
+                : timedItems.map((t) => {
+                    const pos = getTaskPosition(t);
+                    const isDone = t.status === 'Réussi';
+                    const color = getTaskColor(t);
+                    const folderName = getFolderName(t);
+                    const isMultiDay = t.startDate && t.endDate && t.startDate !== t.endDate;
+                    return (
+                      <TouchableOpacity
+                        key={t.id}
+                        style={[
+                          styles.eventBlock,
+                          {
+                            top: pos.top,
+                            height: pos.height,
+                            backgroundColor: color + '22',
+                            borderColor: color,
+                          },
+                        ]}
+                        onPress={() => toggleTaskDone(t.id)}
+                      >
+                        <View style={styles.eventHeaderRow}>
+                          <Text style={[styles.eventTitle, { color }, isDone && styles.doneText]}>
+                            {t.title}
+                          </Text>
+                          {folderName && (
+                            <View style={[styles.folderBadge, { backgroundColor: color, borderColor: color }]}>
+                              <Text style={[styles.folderBadgeText, { color: '#fff' }]}>{folderName}</Text>
+                            </View>
+                          )}
+                        </View>
+
+                        {pos.height > 38 && (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 }}>
+                            <Text style={styles.eventTime}>
+                              ⏰ {t.startTime || ''}
+                              {t.startTime && t.endTime ? ' → ' : ''}
+                              {t.endTime || ''}
+                            </Text>
+                            {isMultiDay && (
+                              <Text style={styles.regularBadgeText}>🔁 Régulier</Text>
+                            )}
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
             </View>
 
-            {timedTasks.length === 0 && allDayTasks.length === 0 && (
+            {timedItems.length === 0 && allDayItems.length === 0 && (
               <View style={styles.emptyWrap}>
                 <Ionicons name="calendar-clear-outline" size={36} color={COLORS.textMuted} />
-                <Text style={styles.emptyText}>Aucune tâche prévue ce jour</Text>
+                <Text style={styles.emptyText}>
+                  {isUniv ? 'Aucun cours prévu ce jour' : 'Aucune tâche prévue ce jour'}
+                </Text>
               </View>
             )}
           </View>
@@ -406,8 +474,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emptyText: { marginTop: 6, fontSize: 12, color: COLORS.textMuted, fontWeight: '600' },
-  univContainer: { flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center' },
-  univEmptyCard: { padding: 30, alignItems: 'center', gap: 12, width: '100%', maxWidth: 400 },
-  univEmptyTitle: { fontSize: 20, fontWeight: '800' },
-  univEmptySub: { fontSize: 13, color: COLORS.textMuted, textAlign: 'center', lineHeight: 20 },
+  univEmptyCard: { padding: 24, alignItems: 'center', gap: 10, marginBottom: 14 },
+  univEmptyTitle: { fontSize: 16, fontWeight: '800' },
+  univEmptySub: { fontSize: 12, color: COLORS.textMuted, textAlign: 'center', lineHeight: 18 },
 });
