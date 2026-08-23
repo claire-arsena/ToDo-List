@@ -152,6 +152,19 @@ export function ProfileContextProvider({ children }) {
   const currentTheme = THEMES[themeKey] || THEMES.rose;
   const canAccessSchedules = currentProfile && currentProfile.role === 'full';
 
+  // Le mode universitaire n'a de sens que pour un profil ayant accès aux emplois du
+  // temps (Claire, Alban, Clara) : si Marielle se connecte, ou si personne n'est
+  // connecté, on repasse automatiquement en mode perso. Attend la fin du chargement
+  // initial pour ne pas écraser un mode université sauvegardé le temps que le profil
+  // actif soit restauré depuis le stockage.
+  useEffect(() => {
+    if (!isProfileLoaded) return;
+    if (appMode === 'university' && !canAccessSchedules) {
+      setAppMode('personal');
+      AsyncStorage.setItem(APP_MODE_KEY, 'personal');
+    }
+  }, [isProfileLoaded, canAccessSchedules, appMode]);
+
   return (
     <ProfileContext.Provider
       value={{

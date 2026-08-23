@@ -421,21 +421,23 @@ export default function ProfileView() {
           </View>
         </View>
 
-        <TouchableOpacity activeOpacity={0.8} onPress={toggleAppMode} style={{ marginTop: 14 }}>
-          <LinearGradient
-            colors={[currentTheme.primary, currentTheme.deep]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.switchModeBtn}
-          >
-            <Ionicons name="swap-horizontal-outline" size={18} color="#fff" />
-            <Text style={styles.switchModeBtnText}>
-              {appMode === 'university'
-                ? 'Basculer en Mode perso'
-                : 'Basculer en Mode universitaire'}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
+        {(appMode === 'university' || canAccessSchedules) && (
+          <TouchableOpacity activeOpacity={0.8} onPress={toggleAppMode} style={{ marginTop: 14 }}>
+            <LinearGradient
+              colors={[currentTheme.primary, currentTheme.deep]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.switchModeBtn}
+            >
+              <Ionicons name="swap-horizontal-outline" size={18} color="#fff" />
+              <Text style={styles.switchModeBtnText}>
+                {appMode === 'university'
+                  ? 'Basculer en Mode perso'
+                  : 'Basculer en Mode universitaire'}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
       </GlassCard>
 
       {/* 3. MENU DES CARTES-BOUTONS (PRÉFÉRENCES, STATS, SAUVEGARDE) */}
@@ -549,47 +551,42 @@ export default function ProfileView() {
                 })}
               </View>
 
-              {/* Superposition des emplois du temps (visible si Mode universitaire) */}
-              {appMode === 'university' && (
+              {/* Superposition des emplois du temps (visible uniquement si Mode universitaire
+                  et profil autorisé : Claire, Alban, Clara) */}
+              {appMode === 'university' && canAccessSchedules && (
                 <View style={{ marginTop: 20 }}>
                   <Text style={styles.modalSectionLabel}>Superposition des Emplois du Temps</Text>
                   <Text style={styles.modalSectionSub}>Cochez les emplois du temps à afficher dans la vue EDT :</Text>
 
-                  {canAccessSchedules ? (
-                    allowedProfiles
-                      .filter((p) => p.role === 'full')
-                      .map((p) => {
-                        const isChecked = !!visibleSchedules[p.id];
-                        return (
-                          <TouchableOpacity
-                            key={p.id}
-                            style={styles.scheduleToggleRow}
-                            onPress={() => toggleScheduleVisibility(p.id)}
-                            activeOpacity={0.7}
+                  {allowedProfiles
+                    .filter((p) => p.role === 'full')
+                    .map((p) => {
+                      const isChecked = !!visibleSchedules[p.id];
+                      return (
+                        <TouchableOpacity
+                          key={p.id}
+                          style={styles.scheduleToggleRow}
+                          onPress={() => toggleScheduleVisibility(p.id)}
+                          activeOpacity={0.7}
+                        >
+                          <View style={[styles.colorIndicator, { backgroundColor: p.defaultColor }]} />
+                          <Text style={styles.scheduleName}>Emploi du temps de {p.name}</Text>
+                          <View
+                            style={[
+                              styles.toggleTrack,
+                              isChecked ? { backgroundColor: currentTheme.primary } : styles.toggleTrackOff,
+                            ]}
                           >
-                            <View style={[styles.colorIndicator, { backgroundColor: p.defaultColor }]} />
-                            <Text style={styles.scheduleName}>Emploi du temps de {p.name}</Text>
                             <View
                               style={[
-                                styles.toggleTrack,
-                                isChecked ? { backgroundColor: currentTheme.primary } : styles.toggleTrackOff,
+                                styles.toggleThumb,
+                                isChecked ? styles.toggleThumbOn : styles.toggleThumbOff,
                               ]}
-                            >
-                              <View
-                                style={[
-                                  styles.toggleThumb,
-                                  isChecked ? styles.toggleThumbOn : styles.toggleThumbOff,
-                                ]}
-                              />
-                            </View>
-                          </TouchableOpacity>
-                        );
-                      })
-                  ) : (
-                    <Text style={styles.restrictedText}>
-                      Le profil Marielle n'a pas accès à la superposition des emplois du temps universitaires.
-                    </Text>
-                  )}
+                            />
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
                 </View>
               )}
             </ScrollView>
