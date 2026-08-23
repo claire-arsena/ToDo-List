@@ -141,9 +141,21 @@ async function fetchSchedule(profileId, url) {
   const outPath = path.join(OUT_DIR, `${profileId}.json`);
   try {
     const res = await fetch(url, { headers: { Accept: 'text/calendar' } });
+    const contentType = res.headers.get('content-type') || '(inconnu)';
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const raw = await res.text();
     const events = parseIcs(raw);
+
+    // Diagnostic : si 0 créneaux malgré une réponse HTTP OK, on affiche de quoi
+    // comprendre pourquoi (mauvais format, page d'erreur déguisée en 200, etc.)
+    // sans avoir à re-déboguer à l'aveugle depuis un environnement qui n'a pas
+    // accès à ce flux.
+    if (events.length === 0) {
+      const veventCount = (raw.match(/BEGIN:VEVENT/g) || []).length;
+      console.log(`   ↳ Diagnostic ${profileId} : HTTP ${res.status}, Content-Type: ${contentType}, taille ${raw.length} octets, ${veventCount} "BEGIN:VEVENT" trouvés dans la réponse brute.`);
+      console.log(`   ↳ Aperçu des 300 premiers caractères :\n${raw.slice(0, 300).replace(/\n/g, '\\n')}`);
+    }
+
     fs.writeFileSync(outPath, JSON.stringify(events, null, 2));
     console.log(`✅  Emploi du temps de ${profileId} mis à jour (${events.length} créneaux).`);
   } catch (e) {
