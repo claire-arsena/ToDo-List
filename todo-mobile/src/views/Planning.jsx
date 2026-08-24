@@ -77,9 +77,11 @@ export default function Planning() {
     return null;
   };
 
-  // Filter tasks that fall on the selected day
+  // Filter tasks that fall on the selected day (les rappels ont leur propre
+  // onglet dans Tâches et ne se mélangent pas au Planning)
   const dayTasks = useMemo(() => {
     return tasks.filter((t) => {
+      if (t.isReminder) return false;
       const start = t.startDate || t.dueDate || t.endDate;
       const end = t.endDate || t.startDate || t.dueDate;
       if (!start && !end) return false;

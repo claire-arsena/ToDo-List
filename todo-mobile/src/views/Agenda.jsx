@@ -48,7 +48,7 @@ export default function Agenda() {
 
   const tasksByDate = useMemo(() => {
     const map = new Map();
-    tasks.forEach((t) => {
+    tasks.filter((t) => !t.isReminder).forEach((t) => {
       const start = normalizeDateStr(t.startDate || t.dueDate);
       const end = normalizeDateStr(t.endDate || t.dueDate || start);
       if (!start) return;
@@ -79,7 +79,10 @@ export default function Agenda() {
     return map;
   }, [tasks]);
 
-  const undatedTasks = useMemo(() => tasks.filter((t) => !t.startDate && !t.endDate && !t.dueDate), [tasks]);
+  const undatedTasks = useMemo(
+    () => tasks.filter((t) => !t.isReminder && !t.startDate && !t.endDate && !t.dueDate),
+    [tasks]
+  );
 
   const days = useMemo(() => {
     const firstDayObj = new Date(year, month, 1);

@@ -13,6 +13,7 @@ export default function Tasks() {
   const { appMode, currentTheme, toggleAppMode } = useContext(ProfileContext);
   const [filterTab, setFilterTab] = useState('active'); // 'all', 'active', 'completed', 'overdue'
   const [selectedFolderId, setSelectedFolderId] = useState(null); // null = all folders
+  const [viewMode, setViewMode] = useState('tasks'); // 'tasks' | 'reminders'
 
   const handleDeleteFolder = (folderId, folderTitle) => {
     const doDelete = () => {
@@ -49,10 +50,15 @@ export default function Tasks() {
     }
   }, [selectedFolderId, visibleFolders]);
 
+  const remindersCount = useMemo(() => tasks.filter((t) => t.isReminder).length, [tasks]);
+
   const folderTasks = useMemo(() => {
+    // Les rappels vivent dans leur propre onglet, complètement séparés des tâches.
+    const byMode = tasks.filter((t) => !!t.isReminder === (viewMode === 'reminders'));
+
     // Une tâche sans dossier reste toujours visible ; une tâche dans un dossier
     // masqué pour ce mode (perso/univ) disparaît de la liste.
-    const base = tasks.filter((t) => {
+    const base = byMode.filter((t) => {
       if (!t.folderId) return true;
       const f = folders.find((folder) => folder.id === t.folderId);
       if (!f) return true;
@@ -60,7 +66,7 @@ export default function Tasks() {
     });
     if (selectedFolderId === null) return base;
     return base.filter((t) => t.folderId === selectedFolderId);
-  }, [tasks, selectedFolderId, appMode, folders]);
+  }, [tasks, selectedFolderId, appMode, folders, viewMode]);
 
   const overdueTasks = useMemo(() => {
     return folderTasks.filter((t) => isTaskOverdue(t));
@@ -96,8 +102,41 @@ export default function Tasks() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
+      {/* Bascule Tâches / Rappels */}
+      <GlassCard style={styles.viewModeCard}>
+        <View style={styles.viewModeTrack}>
+          <TouchableOpacity
+            style={[styles.viewModeBtn, viewMode === 'tasks' && styles.viewModeBtnActive]}
+            onPress={() => setViewMode('tasks')}
+          >
+            <Ionicons
+              name="checkbox-outline"
+              size={15}
+              color={viewMode === 'tasks' ? currentTheme.primary : COLORS.textMuted}
+            />
+            <Text style={[styles.viewModeText, viewMode === 'tasks' && { color: currentTheme.primary, fontWeight: '800' }]}>
+              Tâches
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.viewModeBtn, viewMode === 'reminders' && styles.viewModeBtnActive]}
+            onPress={() => setViewMode('reminders')}
+          >
+            <Ionicons
+              name="notifications-outline"
+              size={15}
+              color={viewMode === 'reminders' ? currentTheme.primary : COLORS.textMuted}
+            />
+            <Text style={[styles.viewModeText, viewMode === 'reminders' && { color: currentTheme.primary, fontWeight: '800' }]}>
+              Rappels {remindersCount > 0 ? `(${remindersCount})` : ''}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </GlassCard>
+
       {/* Banner Mode Universitaire */}
-      {appMode === 'university' && (
+      {viewMode === 'tasks' && appMode === 'university' && (
         <GlassCard style={styles.univBannerCard}>
           <View style={styles.univBannerInner}>
             <Ionicons name="school" size={22} color={currentTheme.primary} />
@@ -270,16 +309,31 @@ export default function Tasks() {
           filtered.map((task) => <TasksItem key={task.id} task={task} />)
         ) : (
           <View style={styles.empty}>
-            <Ionicons name="checkbox-outline" size={36} color={COLORS.textMuted} style={{ marginBottom: 8 }} />
+            <Ionicons
+              name={viewMode === 'reminders' ? 'notifications-outline' : 'checkbox-outline'}
+              size={36}
+              color={COLORS.textMuted}
+              style={{ marginBottom: 8 }}
+            />
             <Text style={styles.emptyTitle}>
-              {filterTab === 'completed'
-                ? 'Aucune tâche terminée'
-                : filterTab === 'overdue'
-                ? 'Aucune tâche en retard'
-                : 'Aucune tâche dans ce filtre'}
+              {viewMode === 'reminders'
+                ? (filterTab === 'completed'
+                    ? 'Aucun rappel terminé'
+                    : filterTab === 'overdue'
+                    ? 'Aucun rappel en retard'
+                    : 'Aucun rappel dans ce filtre')
+                : (filterTab === 'completed'
+                    ? 'Aucune tâche terminée'
+                    : filterTab === 'overdue'
+                    ? 'Aucune tâche en retard'
+                    : 'Aucune tâche dans ce filtre')}
             </Text>
             <Text style={styles.emptySub}>
-              {filterTab === 'active' ? 'Appuyez sur + pour ajouter votre première tâche !' : ''}
+              {filterTab === 'active'
+                ? (viewMode === 'reminders'
+                    ? 'Appuyez sur + et activez "Ceci est un rappel" pour en ajouter un !'
+                    : 'Appuyez sur + pour ajouter votre première tâche !')
+                : ''}
             </Text>
           </View>
         )}
@@ -316,6 +370,33 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,59,48,0.06)',
     borderRadius: 20,
   },
+  viewModeCard: { padding: 4, marginBottom: 14, borderRadius: 14 },
+  viewModeTrack: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(120, 120, 128, 0.12)',
+    borderRadius: 11,
+    padding: 3,
+    gap: 3,
+  },
+  viewModeBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    borderRadius: 8,
+  },
+  viewModeBtnActive: {
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  viewModeText: { fontSize: 13, fontWeight: '600', color: COLORS.textMuted },
+
   alertBannerInner: { padding: 14 },
   alertBannerTextRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   alertBannerTitle: { fontSize: 14, fontWeight: '800', color: '#ff3b30' },

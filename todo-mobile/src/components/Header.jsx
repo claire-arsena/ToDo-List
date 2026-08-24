@@ -20,7 +20,7 @@ export default function AppHeader({ routeName }) {
   const { currentTheme, appMode } = useContext(ProfileContext);
 
   const title = ROUTE_TITLES[routeName] || 'Ma Liste';
-  const totalTasks = tasks.length;
+  const totalTasks = tasks.filter((t) => !t.isReminder).length;
   const activeTasksCount = getActiveTasks().length;
 
   return (
