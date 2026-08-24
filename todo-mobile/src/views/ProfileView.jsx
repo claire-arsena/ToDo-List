@@ -205,12 +205,13 @@ export default function ProfileView() {
     if (e.target) e.target.value = '';
   }, [currentProfile]);
 
-  // Advanced Stats Computations
+  // Advanced Stats Computations (les rappels ne comptent pas dans les stats de productivité)
   const stats = useMemo(() => {
-    const total = tasks.length;
-    const completedTasks = tasks.filter((t) => t.status === ETATS.REUSSI);
+    const tasksOnly = tasks.filter((t) => !t.isReminder);
+    const total = tasksOnly.length;
+    const completedTasks = tasksOnly.filter((t) => t.status === ETATS.REUSSI);
     const completed = completedTasks.length;
-    const inProgress = tasks.filter((t) => t.status === ETATS.EN_COURS).length;
+    const inProgress = tasksOnly.filter((t) => t.status === ETATS.EN_COURS).length;
     const successRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
     const now = new Date();
@@ -220,7 +221,7 @@ export default function ProfileView() {
     let thisWeekCount = 0;
     let lastWeekCount = 0;
 
-    tasks.forEach((t) => {
+    tasksOnly.forEach((t) => {
       if (t.status === ETATS.REUSSI) {
         const dateStr = t.endDate || t.dueDate || t.startDate || t.creationDate;
         if (dateStr) {
@@ -270,7 +271,7 @@ export default function ProfileView() {
     // 3. Taux de réussite des checklists (sous-tâches)
     let totalSubtasks = 0;
     let completedSubtasks = 0;
-    tasks.forEach((t) => {
+    tasksOnly.forEach((t) => {
       if (t.subtasks && t.subtasks.length > 0) {
         totalSubtasks += t.subtasks.length;
         completedSubtasks += t.subtasks.filter((st) => st.isDone).length;
@@ -303,7 +304,7 @@ export default function ProfileView() {
     // Chart Data
     const counts = {};
     Object.values(ETATS).forEach((s) => { counts[s] = 0; });
-    tasks.forEach((t) => { if (counts[t.status] !== undefined) counts[t.status]++; });
+    tasksOnly.forEach((t) => { if (counts[t.status] !== undefined) counts[t.status]++; });
 
     const CHART_COLORS = {
       [ETATS.NOUVEAU]: currentTheme.primary,

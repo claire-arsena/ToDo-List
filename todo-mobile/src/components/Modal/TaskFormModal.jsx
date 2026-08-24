@@ -34,6 +34,7 @@ const EMPTY = {
   status: ETATS.NOUVEAU,
   folderId: null,
   isRegular: true,
+  isReminder: false,
   subtasks: [],
 };
 
@@ -101,6 +102,7 @@ export default function TaskFormModal() {
           status: modalData.status || ETATS.NOUVEAU,
           folderId: modalData.folderId || null,
           isRegular: modalData.isRegular !== undefined ? modalData.isRegular : true,
+          isReminder: !!modalData.isReminder,
           subtasks: Array.isArray(modalData.subtasks) ? modalData.subtasks : [],
         });
         setHasChecklist(Array.isArray(modalData.subtasks) && modalData.subtasks.length > 0);
@@ -253,6 +255,7 @@ export default function TaskFormModal() {
       status: modalData ? form.status : ETATS.NOUVEAU,
       folderId: form.folderId,
       isRegular: form.isRegular,
+      isReminder: form.isReminder,
       subtasks: hasChecklist ? (form.subtasks || []) : [],
     };
     modalData ? updateTask(modalData.id, payload) : addTask(payload);
@@ -322,6 +325,36 @@ export default function TaskFormModal() {
                   placeholder="Ex : Rédaction du rapport, Cours de sport..."
                   placeholderTextColor={COLORS.textMuted}
                 />
+              </View>
+
+              {/* Toggle Rappel (séparé des tâches classiques) */}
+              <View style={[styles.regularCard, { backgroundColor: currentTheme.tint, borderColor: currentTheme.primary + '33' }]}>
+                <View style={styles.regularTextRow}>
+                  <Ionicons name="notifications-outline" size={20} color={currentTheme.primary} />
+                  <View style={{ flex: 1, marginLeft: 8 }}>
+                    <Text style={[styles.regularTitle, { color: currentTheme.primary }]}>Ceci est un rappel</Text>
+                    <Text style={styles.regularSub}>
+                      {form.isReminder
+                        ? 'Rangé dans l\'onglet Rappels, séparé de vos tâches'
+                        : 'Une tâche classique, mélangée avec vos autres tâches'}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => set('isReminder', !form.isReminder)}
+                    style={[
+                      styles.customToggleTrack,
+                      form.isReminder ? { backgroundColor: currentTheme.primary } : styles.customToggleTrackInactive,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.customToggleThumb,
+                        form.isReminder ? styles.customToggleThumbActive : styles.customToggleThumbInactive,
+                      ]}
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
 
               {/* Choix du Dossier */}

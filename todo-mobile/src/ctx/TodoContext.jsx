@@ -163,6 +163,7 @@ export function TodoContextProvider({ children }) {
       status: ETATS.NOUVEAU,
       folderId: taskData.folderId || null,
       isRegular: taskData.isRegular !== undefined ? taskData.isRegular : true,
+      isReminder: !!taskData.isReminder,
       subtasks: Array.isArray(taskData.subtasks) ? taskData.subtasks : [],
       creationDate: today,
       profileId: activeProfileId || null,
@@ -291,10 +292,10 @@ export function TodoContextProvider({ children }) {
   };
 
   const getActiveTasks = () =>
-    tasks.filter((t) => !ETAT_TERMINE.includes(t.status));
+    tasks.filter((t) => !t.isReminder && !ETAT_TERMINE.includes(t.status));
 
   const getCompletedTasks = () =>
-    tasks.filter((t) => ETAT_TERMINE.includes(t.status));
+    tasks.filter((t) => !t.isReminder && ETAT_TERMINE.includes(t.status));
 
   return (
     <TodoContext.Provider
