@@ -11,6 +11,10 @@ export const ETAT_TERMINE = [
   ETATS.ABANDONNE,
 ];
 
+// Largeur à partir de laquelle le web bascule en mise en page "PC"
+// (Planning en vue semaine au lieu de la timeline jour par jour mobile).
+export const DESKTOP_BREAKPOINT = 900;
+
 export const FOLDER_COLORS = [
   '#d81b60', // iOS Deep Pink
   '#34c759', // iOS Green

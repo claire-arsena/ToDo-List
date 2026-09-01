@@ -1,4 +1,5 @@
 import React from 'react';
+import { useWindowDimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -15,10 +16,17 @@ import Tasks from './src/views/Tasks/Tasks';
 import Planning from './src/views/Planning';
 import Agenda from './src/views/Agenda';
 import ProfileView from './src/views/ProfileView';
+import { DESKTOP_BREAKPOINT } from './src/config/constants';
 
 const Tab = createBottomTabNavigator();
 
 function AppNavigator() {
+  // Sur PC (fenêtre large), on ouvre directement sur le Planning plutôt que
+  // sur les Tâches — c'est ce qu'on vient consulter en premier depuis un
+  // ordinateur (emploi du temps de la semaine).
+  const { width } = useWindowDimensions();
+  const initialRouteName = width >= DESKTOP_BREAKPOINT ? 'Planning' : 'Tasks';
+
   return (
     <NavigationContainer>
       <Tab.Navigator
@@ -28,7 +36,7 @@ function AppNavigator() {
           tabBarStyle: { backgroundColor: 'transparent', borderTopWidth: 0, elevation: 0, overflow: 'visible' },
           contentStyle: { backgroundColor: 'transparent' },
         }}
-        initialRouteName="Tasks"
+        initialRouteName={initialRouteName}
       >
         <Tab.Screen name="Tasks" component={Tasks} options={{ title: 'Tâches' }} />
         <Tab.Screen name="Planning" component={Planning} options={{ title: 'Planning' }} />

@@ -1,11 +1,22 @@
 import React, { useContext, useState, useMemo } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { TodoContext } from '../ctx/TodoContext';
 import { ProfileContext } from '../ctx/ProfileContext';
-import { getMergedSchedule } from '../config/schedules';
+import { getMergedSchedule, isCarpoolPossible } from '../config/schedules';
+import { DESKTOP_BREAKPOINT } from '../config/constants';
 import GlassCard from '../components/GlassCard';
+import PlanningWeekView from '../components/PlanningWeekView';
 import { COLORS } from '../theme';
+import {
+  HOUR_HEIGHT,
+  START_HOUR,
+  END_HOUR,
+  TOTAL_HOURS,
+  formatLocalDate,
+  formatHM,
+  getPosition,
+} from '../utils/planningTime';
 
 const STATUS_COLORS = {
   'Nouveau': '#ff66b3',
@@ -15,32 +26,15 @@ const STATUS_COLORS = {
   'Abandonné': '#95a5a6',
 };
 
-const HOUR_HEIGHT = 56;
-const START_HOUR = 6;
-const END_HOUR = 23;
-const TOTAL_HOURS = END_HOUR - START_HOUR;
 const DAYS_FR = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
 const MONTHS_FR = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-
-const formatLocalDate = (d) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-
-const formatHM = (iso) => {
-  const d = new Date(iso);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-};
-
-const getPosition = (startH, startM, endH, endM) => {
-  const top = Math.max(0, (startH - START_HOUR) * HOUR_HEIGHT + (startM / 60) * HOUR_HEIGHT);
-  const bottom = (endH - START_HOUR) * HOUR_HEIGHT + (endM / 60) * HOUR_HEIGHT;
-  const height = Math.max(36, bottom - top);
-  return { top, height };
-};
 
 export default function Planning() {
   const { tasks, folders, toggleTaskDone } = useContext(TodoContext);
   const { appMode, currentTheme, visibleSchedules } = useContext(ProfileContext);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= DESKTOP_BREAKPOINT;
   const isUniv = appMode === 'university';
 
   const dateStr = formatLocalDate(selectedDate);
@@ -106,6 +100,13 @@ export default function Planning() {
   const timedSchedule = useMemo(() => dayScheduleEvents.filter((e) => !e.allDay), [dayScheduleEvents]);
   const allDaySchedule = useMemo(() => dayScheduleEvents.filter((e) => e.allDay), [dayScheduleEvents]);
 
+  // Covoiturage Claire/Alban possible ce jour-là (horaires de début et fin
+  // de journée proches à 1h près)
+  const carpoolPossible = useMemo(
+    () => (isUniv ? isCarpoolPossible(dateStr) : false),
+    [isUniv, dateStr]
+  );
+
   const getTaskPosition = (task) => {
     let startH = START_HOUR, startM = 0, endH = END_HOUR, endM = 0;
 
@@ -145,6 +146,16 @@ export default function Planning() {
     ? (nowH - START_HOUR) * HOUR_HEIGHT + (nowM / 60) * HOUR_HEIGHT
     : 0;
 
+  // Sur PC, l'emploi du temps universitaire se consulte semaine par semaine
+  // (couleurs variées par cours) plutôt que jour par jour comme sur mobile.
+  if (isUniv && isDesktop) {
+    return (
+      <View style={styles.container}>
+        <PlanningWeekView events={scheduleEvents} currentTheme={currentTheme} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Navigation de date FIXEE en haut */}
@@ -182,6 +193,17 @@ export default function Planning() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {carpoolPossible && (
+          <GlassCard style={styles.carpoolBannerCard}>
+            <View style={styles.carpoolBannerInner}>
+              <Ionicons name="car-sport-outline" size={20} color="#2ecc71" />
+              <Text style={styles.carpoolBannerText}>
+                Covoiturage possible {isToday ? "aujourd'hui" : 'ce jour-là'}
+              </Text>
+            </View>
+          </GlassCard>
+        )}
+
         {isUniv && scheduleEvents.length === 0 && (
           <GlassCard style={styles.univEmptyCard}>
             <Ionicons name="school-outline" size={40} color={currentTheme.primary} />
@@ -479,4 +501,15 @@ const styles = StyleSheet.create({
   univEmptyCard: { padding: 24, alignItems: 'center', gap: 10, marginBottom: 14 },
   univEmptyTitle: { fontSize: 16, fontWeight: '800' },
   univEmptySub: { fontSize: 12, color: COLORS.textMuted, textAlign: 'center', lineHeight: 18 },
+
+  carpoolBannerCard: {
+    marginBottom: 14,
+    padding: 12,
+    backgroundColor: 'rgba(46, 204, 113, 0.08)',
+    borderColor: 'rgba(46, 204, 113, 0.25)',
+    borderWidth: 1,
+    borderRadius: 16,
+  },
+  carpoolBannerInner: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  carpoolBannerText: { fontSize: 13, fontWeight: '800', color: '#1a8f4e' },
 });
