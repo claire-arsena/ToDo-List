@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { TodoContext } from '../ctx/TodoContext';
 import { ProfileContext } from '../ctx/ProfileContext';
 import { getMergedSchedule, isCarpoolPossible } from '../config/schedules';
+import { getCourseColor } from '../config/courseColors';
 import { DESKTOP_BREAKPOINT } from '../config/constants';
 import GlassCard from '../components/GlassCard';
 import PlanningWeekView from '../components/PlanningWeekView';
@@ -221,12 +222,15 @@ export default function Planning() {
             <Text style={styles.sectionTitle}>Toute la journée ({allDayItems.length})</Text>
             <View style={styles.allDayList}>
               {isUniv
-                ? allDayItems.map((evt) => (
-                    <View key={evt.id} style={[styles.allDayItem, { borderLeftColor: evt.color }]}>
-                      <Ionicons name="school-outline" size={18} color={evt.color} style={{ marginRight: 8 }} />
-                      <Text style={styles.allDayText} numberOfLines={1}>{evt.title}</Text>
-                    </View>
-                  ))
+                ? allDayItems.map((evt) => {
+                    const courseColor = getCourseColor(evt.title);
+                    return (
+                      <View key={evt.id} style={[styles.allDayItem, { borderLeftColor: courseColor }]}>
+                        <Ionicons name="school-outline" size={18} color={courseColor} style={{ marginRight: 8 }} />
+                        <Text style={styles.allDayText} numberOfLines={1}>{evt.title}</Text>
+                      </View>
+                    );
+                  })
                 : allDayItems.map((t) => {
                     const isDone = t.status === 'Réussi';
                     const color = getTaskColor(t);
@@ -288,32 +292,33 @@ export default function Planning() {
               {isUniv
                 ? timedItems.map((evt) => {
                     const pos = getEventPosition(evt);
+                    const courseColor = getCourseColor(evt.title);
                     return (
                       <View
                         key={evt.id}
                         style={[
                           styles.eventBlock,
+                          styles.courseEventBlock,
                           {
                             top: pos.top,
                             height: pos.height,
-                            backgroundColor: evt.color + '22',
-                            borderColor: evt.color,
+                            backgroundColor: courseColor,
                           },
                         ]}
                       >
                         <View style={styles.eventHeaderRow}>
-                          <Text style={[styles.eventTitle, { color: evt.color }]} numberOfLines={1}>
+                          <Text style={[styles.eventTitle, styles.courseEventTitle]} numberOfLines={1}>
                             {evt.title}
                           </Text>
                         </View>
 
                         {pos.height > 38 && (
                           <View style={{ gap: 1, marginTop: 1 }}>
-                            <Text style={styles.eventTime}>
+                            <Text style={styles.courseEventMeta}>
                               ⏰ {formatHM(evt.start)} → {formatHM(evt.end)}
                             </Text>
                             {!!evt.location && (
-                              <Text style={styles.eventTime} numberOfLines={1}>📍 {evt.location}</Text>
+                              <Text style={styles.courseEventMeta} numberOfLines={1}>📍 {evt.location}</Text>
                             )}
                           </View>
                         )}
@@ -488,6 +493,9 @@ const styles = StyleSheet.create({
   eventHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   eventTitle: { fontSize: 12, fontWeight: '700', flex: 1 },
   eventTime: { fontSize: 10, color: COLORS.textLight, marginTop: 1 },
+  courseEventBlock: { borderWidth: 0 },
+  courseEventTitle: { color: '#fff', fontWeight: '800' },
+  courseEventMeta: { fontSize: 10, color: 'rgba(255,255,255,0.92)', fontWeight: '600', marginTop: 1 },
   regularBadgeText: { fontSize: 9, fontWeight: '800', color: COLORS.pinkDark, marginTop: 1 },
   emptyWrap: {
     position: 'absolute',
