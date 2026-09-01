@@ -1,7 +1,7 @@
 // Constantes et helpers de positionnement temporel partagés entre la
 // timeline mobile (Planning.jsx) et la vue semaine PC (PlanningWeekView.jsx).
 export const HOUR_HEIGHT = 56;
-export const START_HOUR = 6;
+export const START_HOUR = 8;
 export const END_HOUR = 23;
 export const TOTAL_HOURS = END_HOUR - START_HOUR;
 
