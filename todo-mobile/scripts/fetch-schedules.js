@@ -14,7 +14,7 @@ const fs = require('fs');
 const path = require('path');
 
 const SCHEDULE_SOURCES = {
-  claire: 'https://agenda-web-consult.univ-amu.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?projectId=8&resources=&calType=ical&firstDate=2026-08-17&lastDate=2027-08-15',
+  claire: 'https://agenda-web-consult.univ-amu.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?projectId=8&resources=42526&calType=ical&firstDate=2026-08-17&lastDate=2027-08-15',
 };
 
 const OUT_DIR = path.join(__dirname, '..', 'src', 'data', 'schedules');
